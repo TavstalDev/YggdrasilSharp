@@ -8,5 +8,5 @@ public static class CustomClaimTypes
     /// <summary>
     /// Claim type for user badges.
     /// </summary>
-    public const string Badge = "mmc.User.Badge";
+    public const string Badge = "ysharp.User.Badge";
 }

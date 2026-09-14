@@ -66,7 +66,7 @@ public static class Constants
         /// Configuration key for the database connection string.
         /// The connection string contains placeholders for $DB_USER and $DB_PASSWORD that are 
         /// replaced at runtime with values from the DatabaseUser and DatabasePassword configuration keys.
-        /// Example: "server=localhost;port=3306;database=mmc;uid=$DB_USER;pwd=$DB_PASSWORD;"
+        /// Example: "server=localhost;port=3306;database=ysharp;uid=$DB_USER;pwd=$DB_PASSWORD;"
         /// </summary>
         public const string DatabaseConnectionString = "Database:ConnectionString";
 
