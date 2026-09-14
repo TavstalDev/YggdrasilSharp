@@ -29,6 +29,8 @@
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
         <PackageReference Include="SkiaSharp" Version="4.152.0" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.152.0" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.152.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.2.3" />
