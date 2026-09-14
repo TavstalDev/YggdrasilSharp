@@ -1,0 +1,42 @@
+name: CI
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+env:
+  SLN_NAME: YggdrasilSharp.sln
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore Dependencies
+        run: dotnet restore ${{ env.SLN_NAME }}
+
+      - name: Build Solution
+        run: dotnet build ${{ env.SLN_NAME }} --configuration Release --no-restore
+
+      - name: Run Tests
+        run: |
+          dotnet test ${{ env.SLN_NAME }} \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=test-results.trx" \
+            --verbosity normal

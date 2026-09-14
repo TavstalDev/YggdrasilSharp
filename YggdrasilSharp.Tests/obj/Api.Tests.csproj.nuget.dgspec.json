@@ -1,0 +1,265 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api.Tests/Api.Tests.csproj": {}
+  },
+  "projects": {
+    "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api.Tests/Api.Tests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api.Tests/Api.Tests.csproj",
+        "projectName": "Api.Tests",
+        "projectPath": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api.Tests/Api.Tests.csproj",
+        "packagesPath": "/home/tavstal/.nuget/packages/",
+        "outputPath": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api.Tests/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/tavstal/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/Api.csproj": {
+                "projectPath": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/Api.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "FluentAssertions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[18.3.0, )"
+            },
+            "Moq": {
+              "target": "Package",
+              "version": "[4.20.69, )"
+            },
+            "xunit": {
+              "target": "Package",
+              "version": "[2.5.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.111/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/Api.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/Api.csproj",
+        "projectName": "Api",
+        "projectPath": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/Api.csproj",
+        "packagesPath": "/home/tavstal/.nuget/packages/",
+        "outputPath": "/home/tavstal/Github/CSharp/NET/MesterMC-Launcher/Api/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/tavstal/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Base32": {
+              "target": "Package",
+              "version": "[1.0.0.26, )",
+              "noWarn": [
+                "NU1701"
+              ]
+            },
+            "DotEnv.Core": {
+              "target": "Package",
+              "version": "[3.1.0, )"
+            },
+            "MailKit": {
+              "target": "Package",
+              "version": "[4.14.1, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Microsoft.EntityFrameworkCore.Sqlite": {
+              "target": "Package",
+              "version": "[9.0.13, )"
+            },
+            "Mime-Detective": {
+              "target": "Package",
+              "version": "[25.8.1, )"
+            },
+            "MimeKit": {
+              "target": "Package",
+              "version": "[4.15.1, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.4, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
+            "Otp.NET": {
+              "target": "Package",
+              "version": "[1.4.1, )"
+            },
+            "OtpSharp": {
+              "target": "Package",
+              "version": "[1.3.0.4, )",
+              "noWarn": [
+                "NU1701"
+              ]
+            },
+            "Pomelo.EntityFrameworkCore.MySql": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "SixLabors.ImageSharp": {
+              "target": "Package",
+              "version": "[3.1.12, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.Annotations": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.Swagger": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerGen": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "Swashbuckle.AspNetCore.SwaggerUI": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
+            "System.IO": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            },
+            "System.Net.Sockets": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[9.0.19, 9.0.19]"
+            }
+          ],
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.111/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
