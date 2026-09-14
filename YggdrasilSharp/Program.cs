@@ -52,7 +52,8 @@ public static class Program
     /// <summary>
     /// Indicates whether the application is running in Development environment.
     /// </summary>
-    public static bool IsDevelopment { get; private set; }
+    internal static bool IsDevelopment { get; set; }
+    
     /// <summary>
     /// Gets the content root path of the application (typically the project root directory).
     /// </summary>
