@@ -15,6 +15,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -156,20 +157,8 @@ public class AvatarController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            try
-            {
-                // Check Format and Dimensions using ImageSharp
-                using var codec = SKCodec.Create(stream);
-                if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                stream.Position = 0;
-            }
-            catch (Exception)
-            {
-                Logger.LogError($"Failed to upload avatar file: {fileHash}");
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-            }
+            if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             FileData? existingAvatar =
                 await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
@@ -306,20 +295,8 @@ public class AvatarController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            try
-            {
-                // Check Format and Dimensions using ImageSharp
-                using var codec = SKCodec.Create(stream);
-                if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                stream.Position = 0;
-            }
-            catch (Exception)
-            {
-                Logger.LogError($"Failed to upload avatar file: {fileHash}");
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-            }
+            if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);

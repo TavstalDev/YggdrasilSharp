@@ -14,6 +14,7 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -138,28 +139,9 @@ public class SkinsController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            try
-            {
-                // Check Format and Dimensions using ImageSharp
-                using var codec = SKCodec.Create(stream);
-                if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                int width = codec.Info.Width;
-                int height = codec.Info.Height;
-
-                if (!((width == 64 && (height == 32 || height == 64)) ||
-                      (width == 512 && (height == 256 || height == 512))))
-                    return CodeResult(HttpStatusCode.BadRequest,
-                        "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-
-                stream.Position = 0;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"Failed to upload skin file: {fileHash}");
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-            }
+            if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
+                return CodeResult(HttpStatusCode.BadRequest,
+                    "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
             FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
@@ -345,28 +327,9 @@ public class SkinsController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            try
-            {
-                // Check Format and Dimensions using ImageSharp
-                using var codec = SKCodec.Create(stream);
-                if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                int width = codec.Info.Width;
-                int height = codec.Info.Height;
-
-                if (!((width == 64 && (height == 32 || height == 64)) ||
-                      (width == 512 && (height == 256 || height == 512))))
-                    return CodeResult(HttpStatusCode.BadRequest,
-                        "Invalid image format. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-
-                stream.Position = 0;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"Failed to upload skin file: {fileHash}");
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-            }
+            if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
+                return CodeResult(HttpStatusCode.BadRequest,
+                    "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
             FileData fd = await _fileDataRepository.AddAsync(new FileData
             {

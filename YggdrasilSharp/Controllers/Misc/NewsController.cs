@@ -15,6 +15,7 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 
@@ -261,20 +262,8 @@ public class NewsController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            try
-            {
-                // Check Format and Dimensions using ImageSharp
-                using var codec = SKCodec.Create(stream);
-                if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                stream.Position = 0;
-            }
-            catch (Exception)
-            {
-                Logger.LogError($"Failed to upload banner file: {fileHash}");
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-            }
+            if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
+                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             FileData fd = await _fileDataRepo.AddAsync(new FileData
             {
@@ -362,20 +351,8 @@ public class NewsController : CustomControllerBase
                 string fileHash = Convert.ToHexStringLower(hashBytes);
                 stream.Position = 0;
 
-                try
-                {
-                    // Check Format and Dimensions using ImageSharp
-                    using var codec = SKCodec.Create(stream);
-                    if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                        return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                    stream.Position = 0;
-                }
-                catch (Exception)
-                {
-                    Logger.LogError($"Failed to upload banner file: {fileHash}");
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-                }
+                if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
                 FileData? existingBanner =
                     await _fileDataRepo.FindAsync(x =>

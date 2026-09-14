@@ -105,20 +105,8 @@ public class RegisterController : CustomControllerBase
                 string fileHash = Convert.ToHexStringLower(hashBytes);
                 stream.Position = 0;
                 
-                try 
-                {
-                    // Check Format and Dimensions using ImageSharp
-                    using var codec = SKCodec.Create(stream);
-                    if (codec.EncodedFormat != SKEncodedImageFormat.Png)
-                        return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-
-                    stream.Position = 0;
-                }
-                catch (Exception)
-                {
-                    Logger.LogError($"Failed to upload avatar file: {fileHash}");
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format.");
-                }
+                if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
+                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
                 
                 avatarData = await _fileDataRepo.AddAsync(new FileData
                 {

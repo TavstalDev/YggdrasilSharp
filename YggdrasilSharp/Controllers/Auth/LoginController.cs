@@ -84,14 +84,14 @@ public class LoginController : CustomControllerBase
                 var user = result.User!;
                 string sessionToken = result.SessionToken!;
                 var expiry = result.TokenExpiresAt;
-                Response.Cookies.Append("mmc-userId", user.Id, new CookieOptions
+                Response.Cookies.Append("ysharp-userId", user.Id, new CookieOptions
                 {
                     HttpOnly = true,
                     Secure = true, // only over HTTPS
                     SameSite = SameSiteMode.None, // required for cross-origin
                     Expires = expiry
                 });
-                Response.Cookies.Append("mmc-twofactor-session", sessionToken, new CookieOptions
+                Response.Cookies.Append("ysharp-twofactor-session", sessionToken, new CookieOptions
                 {
                     HttpOnly = true,
                     Secure = true, // only over HTTPS
@@ -173,10 +173,10 @@ public class LoginController : CustomControllerBase
                 return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            if (!Request.Cookies.TryGetValue("mmc-twofactor-session", out var sessionCookie)  || string.IsNullOrEmpty(sessionCookie))
+            if (!Request.Cookies.TryGetValue("ysharp-twofactor-session", out var sessionCookie)  || string.IsNullOrEmpty(sessionCookie))
                 return CodeResult(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
             
-            if (!Request.Cookies.TryGetValue("mmc-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
+            if (!Request.Cookies.TryGetValue("ysharp-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
                 return CodeResult(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
             
             string fingerprint = GetMachineFingerprint(userIdCookie);
