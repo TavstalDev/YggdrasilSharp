@@ -1,15 +1,13 @@
 using System.Security.Cryptography;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using SkiaSharp;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Xunit;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
 
@@ -92,7 +90,7 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             var user =await CreateUserAsync(_controller);
-            using var stream = CreateTestImage(128, 128);
+            using var stream = TestHelper.CreateTestImage(128, 128);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -146,23 +144,5 @@ public class PublicUserControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(404);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
-    }
-
-    /// <summary>
-    /// Utility helper to create a PNG image stream for tests.
-    /// Returned stream is positioned at 0 and ready for reading.
-    /// </summary>
-    /// <param name="width">Desired image width in pixels.</param>
-    /// <param name="height">Desired image height in pixels.</param>
-    /// <returns>A <see cref="MemoryStream"/> containing a PNG image.</returns>
-    private MemoryStream CreateTestImage(int width, int height)
-    {
-        var stream = new MemoryStream();
-        using var bitmap = new SKBitmap(width, height);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        data.SaveTo(stream);
-        stream.Position = 0;
-        return stream;
     }
 }

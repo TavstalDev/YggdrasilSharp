@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,8 +6,6 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Tavstal.YggdrasilSharp.Tests.Helpers;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Yggdrasil;
 
@@ -46,7 +43,7 @@ public class TexturesControllerTests : ControllerTestBase
         string hash = "mock-hash";
         byte[] bytes = "mock-file-bytes"u8.ToArray();
         string contentType = "image/png";
-        TestHelper.MemoryCacheService.SetValue($"file:{hash}", (bytes, contentType), TimeSpan.FromDays(1));
+        _memoryCacheService.SetValue($"file:{hash}", (bytes, contentType), TimeSpan.FromDays(1));
 
         IActionResult result = await _controller.GetTexture(hash);
 
@@ -69,7 +66,7 @@ public class TexturesControllerTests : ControllerTestBase
         string hash = "mock-hash";
         byte[] bytes = "mock-file-bytes"u8.ToArray();
         string contentType = "image/png";
-        TestHelper.MemoryCacheService.SetValue($"file:{hash}", (bytes, contentType), TimeSpan.FromDays(1));
+        _memoryCacheService.SetValue($"file:{hash}", (bytes, contentType), TimeSpan.FromDays(1));
 
         // Set If-None-Match header to match the ETag that would be generated for this file
         _controllerHttpContext.Request.Headers.IfNoneMatch = '"' + hash + '"';
@@ -108,7 +105,7 @@ public class TexturesControllerTests : ControllerTestBase
     public async Task ReturnsNotFound_WhenNoFileInDbAndNoCache()
     {
         string hash = "no-such-file-hash";
-        TestHelper.MemoryCacheService.RemoveValue($"file:{hash}");
+        _memoryCacheService.RemoveValue($"file:{hash}");
 
         IActionResult result = await _controller.GetTexture(hash);
 
@@ -125,7 +122,7 @@ public class TexturesControllerTests : ControllerTestBase
     public async Task ReturnsInternalServerError_WhenFileDataMissingOnDb()
     {
         string hash = "db-file-missing";
-        TestHelper.MemoryCacheService.RemoveValue($"file:{hash}");
+        _memoryCacheService.RemoveValue($"file:{hash}");
 
         var fileData = new FileData
         {

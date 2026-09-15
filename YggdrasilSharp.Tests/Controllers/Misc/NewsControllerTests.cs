@@ -1,18 +1,16 @@
 using System.Security.Cryptography;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
-using SkiaSharp;
 using Tavstal.YggdrasilSharp.Controllers.Misc;
 using Tavstal.YggdrasilSharp.Models.Bodies.News;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Xunit;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Misc;
 
@@ -60,7 +58,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -135,7 +133,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -209,7 +207,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -283,7 +281,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
             
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
             {
                 Headers = new HeaderDictionary(),
@@ -317,7 +315,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller, givePermissions: false);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
             {
                 Headers = new HeaderDictionary(),
@@ -346,7 +344,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -383,7 +381,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -425,7 +423,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller, givePermissions: false);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -494,7 +492,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -531,7 +529,7 @@ public class NewsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller, givePermissions: false);
 
-            using var stream = CreateTestImage(600, 100);
+            using var stream = TestHelper.CreateTestImage(600, 100);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -576,22 +574,5 @@ public class NewsControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(404);
             _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
         }
-    }
-    
-    /// <summary>
-    /// Helper method used by tests to create an in-memory PNG image stream.
-    /// </summary>
-    /// <param name="width">Width of the generated image in pixels.</param>
-    /// <param name="height">Height of the generated image in pixels.</param>
-    /// <returns>A <see cref="MemoryStream"/> containing a PNG image. The stream's position is reset to 0.</returns>
-    private MemoryStream CreateTestImage(int width, int height)
-    {
-        var stream = new MemoryStream();
-        using var bitmap = new SKBitmap(width, height);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        data.SaveTo(stream);
-        stream.Position = 0; // Reset for reading
-        return stream;
     }
 }

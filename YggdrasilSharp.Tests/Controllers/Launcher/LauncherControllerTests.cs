@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,6 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Launcher;
 
@@ -242,6 +240,11 @@ public class LauncherControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             
             var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
+            if (result is ObjectResult objectResult)
+            {
+                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            }
+            
             result.Should().BeOfType<FileContentResult>();
             var fileContentResult = result as FileContentResult;
             fileContentResult.Should().NotBeNull();

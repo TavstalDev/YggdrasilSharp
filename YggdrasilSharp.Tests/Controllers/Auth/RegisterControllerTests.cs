@@ -1,5 +1,4 @@
 using System.Net;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +12,6 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 using Tavstal.YggdrasilSharp.Tests.Services;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 
@@ -23,6 +21,7 @@ namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 public class RegisterControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
+    private readonly TestHelper _testHelper;
     private readonly FakeEmailService _emailService;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly RegisterController _controller;
@@ -36,12 +35,13 @@ public class RegisterControllerTests
     public RegisterControllerTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+        _testHelper = new TestHelper();
         var loggerMock = new Mock<ILogger<RegisterController>>();
         var dbContext = TestHelper.CreateInMemoryDbContext();
         var userStore = TestHelper.CreateCustomUserStore(dbContext);
-        var userManager = TestHelper.CreateCustomUserManager(dbContext, userStore);
-        _passwordHasher = TestHelper.PasswordHasher;
-        _emailService = TestHelper.FakeEmailService;
+        var userManager = _testHelper.CreateCustomUserManager(dbContext, userStore);
+        _passwordHasher = _testHelper.PasswordHasher;
+        _emailService = _testHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         var fileDataRepo = new Repository<FileData>(dbContext);
         _controller = new RegisterController(loggerMock.Object, userManager, dbContext, userStore, _passwordHasher, _emailService, fileDataRepo, settings);

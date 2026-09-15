@@ -1,12 +1,10 @@
 using System.Text;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OtpNet;
 using Tavstal.YggdrasilSharp.Controllers.Auth;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 

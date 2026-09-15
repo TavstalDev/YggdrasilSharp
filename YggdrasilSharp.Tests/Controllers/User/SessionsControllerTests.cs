@@ -1,10 +1,8 @@
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Database.User;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
 

@@ -1,9 +1,7 @@
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Yggdrasil;
 

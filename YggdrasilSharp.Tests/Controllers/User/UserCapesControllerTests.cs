@@ -1,16 +1,14 @@
 using System.Security.Cryptography;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using SkiaSharp;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Xunit;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
 
@@ -310,12 +308,12 @@ public class UserCapesControllerTests : ControllerTestBase
     /// <returns>
     /// A tuple containing:
     /// <br/>- <see cref="FileData"/> representing the saved image file record,
-    /// <br/>- <see cref="Cape"/> the created cape record,
+    /// <br/>- <see cref="Cape"/> the created Hcape record,
     /// <br/>- <see cref="UserCape"/> the user-cape association.
     /// </returns>
     private async Task<(FileData fileData, Cape cape, UserCape userCape)> FillDatabase(string userId)
     {
-        using var stream = CreateTestImage(64, 64);
+        using var stream = TestHelper.CreateTestImage(64, 64);
         using var sha256 = SHA256.Create();
         byte[] hashBytes = await sha256.ComputeHashAsync(stream);
         string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -344,23 +342,5 @@ public class UserCapesControllerTests : ControllerTestBase
             UpdatedAt =  DateTime.UtcNow
         }, true);
         return (fd, cape, userCape);
-    }
-    
-    /// <summary>
-    /// Utility: creates and returns an in-memory PNG image stream of the specified width and height.
-    /// The returned <see cref="MemoryStream"/> is positioned at 0 and ready for reading.
-    /// </summary>
-    /// <param name="width">Width in pixels for the generated image.</param>
-    /// <param name="height">Height in pixels for the generated image.</param>
-    /// <returns>A <see cref="MemoryStream"/> containing a PNG image.</returns>
-    private MemoryStream CreateTestImage(int width, int height)
-    {
-        var stream = new MemoryStream();
-        using var bitmap = new SKBitmap(width, height);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        data.SaveTo(stream);
-        stream.Position = 0; // Reset for reading
-        return stream;
     }
 }

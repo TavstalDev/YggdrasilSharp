@@ -1,4 +1,3 @@
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,6 @@ using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 
@@ -34,7 +32,7 @@ public class RecoveryControllerTests : ControllerTestBase
     {
         // Controller expects: (logger, dbContext, userStore, passwordHasher, emailService, memoryCacheService, settings)
         _controller = new RecoveryController(_loggerMock.Object, _dbContext, _userStore, _passwordHasher,
-            TestHelper.FakeEmailService, _memoryCacheService, _settings);
+            _fakeEmailService, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -106,7 +104,7 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
-            var memoryService = TestHelper.MemoryCacheService;
+            var memoryService = _memoryCacheService;
             string fingerprint = TestHelper.GetFingerprint(user.Id);
             string cacheKey = $"recovery:{fingerprint}:password:token";
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
@@ -137,8 +135,8 @@ public class RecoveryControllerTests : ControllerTestBase
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             string token = TokenHelper.GenerateRecoverySessionToken();
             string fingerprint = TestHelper.GetFingerprint(user.Id);
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 0, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 0, TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
             {
@@ -211,8 +209,8 @@ public class RecoveryControllerTests : ControllerTestBase
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             string token = TokenHelper.GenerateRecoverySessionToken();
             string fingerprint = TestHelper.GetFingerprint(user.Id);
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 4, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 4, TimeSpan.FromMinutes(15));
             
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
             {
@@ -292,7 +290,7 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
         {
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
-            var memoryService = TestHelper.MemoryCacheService;
+            var memoryService = _memoryCacheService;
             string fingerprint = TestHelper.GetFingerprint(user.Id);
             string cacheKey = $"recovery:{fingerprint}:tfa:token";
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
@@ -332,8 +330,8 @@ public class RecoveryControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 0, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 0, TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
             {
@@ -361,8 +359,8 @@ public class RecoveryControllerTests : ControllerTestBase
 
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 0, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 0, TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
             {
@@ -391,8 +389,8 @@ public class RecoveryControllerTests : ControllerTestBase
             
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
-            TestHelper.MemoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 4, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
+            _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:attempt", 4, TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
             {

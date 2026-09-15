@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -15,7 +14,6 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
-using Xunit;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 
@@ -28,6 +26,7 @@ namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
 public class LoginControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
+    private readonly TestHelper _testHelper;
     protected readonly CustomUserStore _userStore;
     protected readonly CustomUserManager _userManager;
     protected readonly CustomSignInManager _signInManager;
@@ -49,13 +48,14 @@ public class LoginControllerTests
     public LoginControllerTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+        _testHelper = new TestHelper();
         var loggerMock = new Mock<ILogger<LoginController>>();
         var dbContext = TestHelper.CreateInMemoryDbContext();
         _userStore = TestHelper.CreateCustomUserStore(dbContext);
-        _userManager = TestHelper.CreateCustomUserManager(dbContext, _userStore);
+        _userManager = _testHelper.CreateCustomUserManager(dbContext, _userStore);
         _settings = TestHelper.CreateTestSettings();
-        var memoryCache = TestHelper.MemoryCacheService;
-        _signInManager = TestHelper.CreateSignInManager(_userStore, _userManager, _settings);
+        var memoryCache = _testHelper.MemoryCacheService;
+        _signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, _settings);
         _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, _settings);
         _controllerHttpContext = new DefaultHttpContext
         {
@@ -89,7 +89,7 @@ public class LoginControllerTests
             LockoutEnd = null,
             LockoutReason = null
         };
-        _userMock.PasswordHash = TestHelper.PasswordHasher.HashPassword(_userMock, _passwordMock);
+        _userMock.PasswordHash = _testHelper.PasswordHasher.HashPassword(_userMock, _passwordMock);
     }
 
     /// <summary>
@@ -206,8 +206,8 @@ public class LoginControllerTests
         {
             await AddMockUserAndLoginAsync(true);
             var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookie.Should().Contain("mmc-twofactor-session=");
-            setCookie.Should().Contain("mmc-userId=");
+            setCookie.Should().Contain("ysharp-twofactor-session=");
+            setCookie.Should().Contain("ysharp-userId=");
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_settings.Jwt.EncryptionKey));
@@ -274,10 +274,10 @@ public class LoginControllerTests
         {
             var loginResult = await AddMockUserAndLoginAsync(true);
             var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookie.Should().Contain("mmc-twofactor-session=");
-            setCookie.Should().Contain("mmc-userId=");
+            setCookie.Should().Contain("ysharp-twofactor-session=");
+            setCookie.Should().Contain("ysharp-userId=");
 
-            var memoryCacheService = TestHelper.MemoryCacheService;
+            var memoryCacheService = _testHelper.MemoryCacheService;
             string fingerprint = TestHelper.GetFingerprint(loginResult.userId);
             string tokenKey = $"auth:{fingerprint}:tfa:token";
             if (memoryCacheService.TryGetValue(tokenKey, out string? _))
@@ -467,7 +467,7 @@ public class LoginControllerTests
             JObject json = JObject.Parse(content);
             string sessionToken = json["token"]?.ToString()!;
 
-            var memoryCacheService = TestHelper.MemoryCacheService;
+            var memoryCacheService = _testHelper.MemoryCacheService;
             string fingerprint = TestHelper.GetFingerprint(loginResult.userId);
             string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
             if (memoryCacheService.TryGetValue(tokenKey, out string? _))

@@ -1,16 +1,14 @@
 using System.Security.Cryptography;
-using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using SkiaSharp;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
-using Xunit;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
 
@@ -56,7 +54,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             string cacheKey = $"avatar:{user.Id}";
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -118,7 +116,7 @@ public class AvatarControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller);
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
             {
                 Headers = new HeaderDictionary(),
@@ -132,7 +130,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            var fds = await _fileDataRepo.QueryAsync(x => x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
@@ -183,7 +181,7 @@ public class AvatarControllerTests : ControllerTestBase
         public async Task ReturnsBadRequest_InvalidFileType()
         {
             await CreateUserAsync(_controller);
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -205,7 +203,7 @@ public class AvatarControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Unauthorized")]
         public async Task ReturnsUnauthorized()
         {
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -237,7 +235,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -304,7 +302,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.png")
             {
                 Headers = new HeaderDictionary(),
@@ -318,7 +316,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            var fds = await _fileDataRepo.QueryAsync(x => x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
@@ -370,7 +368,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -393,7 +391,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             IFormFile file = new FormFile(stream, 0, stream.Length, "file", "test.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -425,7 +423,7 @@ public class AvatarControllerTests : ControllerTestBase
             var user =    await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             
-            using var stream = CreateTestImage(256, 256);
+            using var stream = TestHelper.CreateTestImage(256, 256);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
@@ -478,23 +476,5 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(403);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
-    }
-    
-    /// <summary>
-    /// Utility: creates and returns an in-memory PNG image stream of the specified width and height.
-    /// The returned <see cref="MemoryStream"/> is positioned at 0 and ready for reading.
-    /// </summary>
-    /// <param name="width">Width in pixels for the generated image.</param>
-    /// <param name="height">Height in pixels for the generated image.</param>
-    /// <returns>A <see cref="MemoryStream"/> containing a PNG image.</returns>
-    private MemoryStream CreateTestImage(int width, int height)
-    {
-        var stream = new MemoryStream();
-        using var bitmap = new SKBitmap(width, height);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        data.SaveTo(stream);
-        stream.Position = 0; // Reset for reading
-        return stream;
     }
 }
