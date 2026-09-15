@@ -79,8 +79,7 @@ public class Settings
         Swagger = new SwaggerConfig(configuration);
         Misc = new  MiscConfig(configuration);
     }
-
-    #if DEBUG
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="Settings"/> class with explicit values for all settings.
     /// </summary>
@@ -102,7 +101,7 @@ public class Settings
     /// <param name="serverName">The server name presented by Yggdrasil-compatible endpoints.</param>
     /// <param name="implementationName">The name of the Yggdrasil implementation (metadata shown to clients).</param>
     /// <param name="implementationVersion">The version string of the Yggdrasil implementation.</param>
-    public Settings(string websiteUrl, string apiUrl, string encryptionKey, string issuer, 
+    internal Settings(string websiteUrl, string apiUrl, string encryptionKey, string issuer, 
         string audience, TimeSpan clockSkew, int lockoutMaxAttempts, TimeSpan lockoutDuration, string emailProvider, int emailPort, 
         string emailAddress, string emailPassword, string[] skinDomains, string certificateFingerprint, string certificatePassword,
         string serverName, string implementationName, string implementationVersion)
@@ -118,7 +117,6 @@ public class Settings
             implementationVersion);
         Swagger = new SwaggerConfig();
     }
-    #endif
 
     /// <summary>
     /// Retrieves a required string value from the configuration.

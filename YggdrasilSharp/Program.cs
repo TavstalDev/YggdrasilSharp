@@ -62,11 +62,7 @@ public static class Program
     /// <summary>
     /// Gets the directory path where user-uploaded files are stored.
     /// </summary>
-    #if DEBUG
-    public static string UploadDir { get; set; } = string.Empty;
-    #else 
-    public static string UploadDir { get; private set; } = string.Empty;
-    #endif
+    internal static string UploadDir { get; set; } = string.Empty;
     
     /// <summary>
     /// Main entry point of the application.
