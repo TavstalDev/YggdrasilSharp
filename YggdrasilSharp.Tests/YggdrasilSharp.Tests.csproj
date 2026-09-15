@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
-        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <UseNewTestPlatform>true</UseNewTestPlatform>
     </PropertyGroup>
 
     <ItemGroup>
