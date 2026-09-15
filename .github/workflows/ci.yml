@@ -8,6 +8,7 @@ on:
 
 env:
   SLN_NAME: YggdrasilSharp.sln
+  TEST_PROJECT: ./YggdrasilSharp.Tests/YggdrasilSharp.Tests.csproj
 
 permissions:
   contents: read
@@ -35,7 +36,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          dotnet test ${{ env.SLN_NAME }} \
-            --configuration Release \
-            --no-build \
-            --verbosity normal
+          dotnet test --project ${{ env.TEST_PROJECT }} \
+            -c Debug
