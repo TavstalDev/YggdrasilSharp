@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
-using SkiaSharp;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Claims;
