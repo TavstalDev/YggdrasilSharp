@@ -35,8 +35,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          dotnet test ${{ env.SLN_NAME }} \
+          dotnet test --solution ${{ env.SLN_NAME }} \
             --configuration Release \
             --no-build \
-            --logger "trx;LogFileName=test-results.trx" \
             --verbosity normal
