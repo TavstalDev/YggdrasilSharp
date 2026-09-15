@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          dotnet test --solution ${{ env.SLN_NAME }} \
+          dotnet test ${{ env.SLN_NAME }} \
             --configuration Release \
             --no-build \
             --verbosity normal
