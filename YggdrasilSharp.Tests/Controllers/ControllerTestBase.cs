@@ -11,19 +11,21 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
-using Xunit;
+using Tavstal.YggdrasilSharp.Tests.Services;
 
 namespace Tavstal.YggdrasilSharp.Tests.Controllers;
 
 public abstract class ControllerTestBase
 {
     protected readonly ITestOutputHelper _testOutputHelper;
+    protected readonly TestHelper _testHelper;
     protected readonly CustomDbContext _dbContext;
     protected readonly CustomUserStore _userStore;
     protected readonly CustomUserManager _userManager;
     protected readonly IPasswordHasher<CustomUser> _passwordHasher;
     protected readonly DefaultHttpContext _controllerHttpContext;
     protected readonly MemoryCacheService _memoryCacheService;
+    protected readonly FakeEmailService _fakeEmailService;
     protected readonly Settings _settings;
     protected readonly CustomUser _userMock;
     protected readonly CustomUser _userMock2;
@@ -32,27 +34,27 @@ public abstract class ControllerTestBase
     protected ControllerTestBase(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        // Ensure test services are fresh for each test class run to avoid cross-test pollution
-        TestHelper.InitTestServices();
+        // Fresh, non-shared test services per test instance so parallel test classes cannot
+        // interfere with each other's caches, email records or upload directories.
+        _testHelper = new TestHelper();
 
         _dbContext = TestHelper.CreateInMemoryDbContext();
         _userStore = TestHelper.CreateCustomUserStore(_dbContext);
-        _userManager = TestHelper.CreateCustomUserManager(_dbContext, _userStore);
-        _passwordHasher = TestHelper.PasswordHasher;
-        _memoryCacheService = TestHelper.MemoryCacheService;
+        _userManager = _testHelper.CreateCustomUserManager(_dbContext, _userStore);
+        _passwordHasher = _testHelper.PasswordHasher;
+        _memoryCacheService = _testHelper.MemoryCacheService;
+        _fakeEmailService = _testHelper.FakeEmailService;
         _settings = TestHelper.CreateTestSettings();
 
-        // Clear any previous fake emails in case tests reused the same process
-        TestHelper.FakeEmailService.Clear();
-
-        var uploadTempDir = Path.Combine(Path.GetTempPath(), "mmc-tests-uploads");
-        // ensure unique per-run temporary upload directory to avoid collisions when tests run in parallel
+        var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
+        // ensure unique per-test upload directory to avoid collisions when tests run in parallel
         uploadTempDir = Path.Combine(uploadTempDir, Guid.NewGuid().ToString());
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["UploadDirectory"] = uploadTempDir
         }).Build();
         Program.UploadDir = uploadTempDir;
+        Program.IsDevelopment = true;
         
         _controllerHttpContext = new DefaultHttpContext
         {
