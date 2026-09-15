@@ -36,5 +36,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          dotnet test --project ${{ env.TEST_PROJECT }} \
-            -c Debug
+          dotnet run --project ${{ env.TEST_PROJECT }} --configuration Debug
