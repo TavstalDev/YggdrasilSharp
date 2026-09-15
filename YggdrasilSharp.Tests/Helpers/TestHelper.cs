@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using SkiaSharp;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
@@ -19,18 +20,20 @@ public class TestHelper
 {
     public const string UserAgent = "UnitTest/1.0";
     public const string IpAddress = "127.0.0.1";
-    public static ServiceProvider ServiceProvider { get; private set; } = new ServiceCollection()
-        .AddLogging()
-        .AddMemoryCache()
-        .BuildServiceProvider();
 
-    public static MemoryCacheService MemoryCacheService { get; private set; } = new(ServiceProvider.GetRequiredService<IMemoryCache>());
-    
-    public static FakeEmailService FakeEmailService { get; private set; } = new();
-    
-    public static IPasswordHasher<CustomUser> PasswordHasher { get; private set; } = new PasswordHasher<CustomUser>();
-    
-    public static void InitTestServices()
+    /// <summary>
+    /// A fresh service provider for this helper instance. Never shared between tests so that
+    /// parallel test classes cannot interfere with each other's caches or email records.
+    /// </summary>
+    public ServiceProvider ServiceProvider { get; }
+
+    public MemoryCacheService MemoryCacheService { get; }
+
+    public FakeEmailService FakeEmailService { get; }
+
+    public IPasswordHasher<CustomUser> PasswordHasher { get; } = new PasswordHasher<CustomUser>();
+
+    public TestHelper()
     {
         ServiceProvider = new ServiceCollection()
             .AddLogging()
@@ -62,7 +65,7 @@ public class TestHelper
         return db;
     }
 
-    public static CustomUserManager CreateCustomUserManager(CustomDbContext db, CustomUserStore userStore)
+    public CustomUserManager CreateCustomUserManager(CustomDbContext db, CustomUserStore userStore)
     {
         var httpClientFactory = new Mock<IHttpClientFactory>().Object;
         var logger = NullLogger<CustomUserManager>.Instance;
@@ -83,10 +86,8 @@ public class TestHelper
         return manager;
     }
 
-    public static CustomSignInManager CreateSignInManager(CustomUserStore userStore, CustomUserManager userManager, Settings settings)
-    {
-        return new CustomSignInManager(userStore, userManager, PasswordHasher, MemoryCacheService, settings);
-    }
+    public CustomSignInManager CreateSignInManager(CustomUserStore userStore, CustomUserManager userManager, Settings settings) =>
+        new(userStore, userManager, PasswordHasher, MemoryCacheService, settings);
 
     /// <summary>
     /// Create a <see cref="CustomUserStore"/> backed by the provided <see cref="CustomDbContext"/>.
@@ -142,7 +143,7 @@ public class TestHelper
             ["localhost"],
             pfxFilePath,
             password,
-            "MesterMC Development",
+            "Development",
             "yggdrasil-mock-server",
             "1.0.0"
             );
@@ -176,5 +177,23 @@ public class TestHelper
         // Export PFX bytes (include private key)
         var pfx = cert.Export(X509ContentType.Pkcs12, password);
         return (pfx, password);
+    }
+    
+    /// <summary>
+    /// Utility: creates and returns an in-memory PNG image stream of the specified width and height.
+    /// The returned <see cref="MemoryStream"/> is positioned at 0 and ready for reading.
+    /// </summary>
+    /// <param name="width">Width in pixels for the generated image.</param>
+    /// <param name="height">Height in pixels for the generated image.</param>
+    /// <returns>A <see cref="MemoryStream"/> containing a PNG image.</returns>
+    public static MemoryStream CreateTestImage(int width, int height)
+    {
+        var stream = new MemoryStream();
+        using var bitmap = new SKBitmap(width, height);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        data.SaveTo(stream);
+        stream.Position = 0; // Reset for reading
+        return stream;
     }
 }
