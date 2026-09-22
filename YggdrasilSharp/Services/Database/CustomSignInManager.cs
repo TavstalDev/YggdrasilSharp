@@ -156,7 +156,7 @@ public class CustomSignInManager
                 user.Id,
                 "AccessToken",
                 _userManager.CreateJwtToken(lifeSpan),
-                "MesterMC",
+                "Default",
                 DateTimeOffset.UtcNow
             ), true);
         
@@ -167,8 +167,8 @@ public class CustomSignInManager
         string browser = HttpHelper.GetBrowser(userAgent);
         IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
         
-        var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "MesterMC",
-            "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
+        var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "Default",
+            "Default", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
 
         user.AccessFailedCount = 0;
         user.LockoutEnabled = false;
@@ -245,7 +245,7 @@ public class CustomSignInManager
                 user.Id,
                 "AccessToken",
                 _userManager.CreateJwtToken(lifeSpan),
-                "MesterMC",
+                "Default",
                 DateTimeOffset.UtcNow
             ), true);
         
@@ -256,8 +256,8 @@ public class CustomSignInManager
         string browser = HttpHelper.GetBrowser(userAgent);
         IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
         
-        var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "MesterMC",
-            "MesterMC", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
+        var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "Default",
+            "Default", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
         
         user.AccessFailedCount = 0;
         user.LockoutEnabled = false;

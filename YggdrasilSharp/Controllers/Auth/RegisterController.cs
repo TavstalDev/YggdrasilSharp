@@ -243,7 +243,7 @@ public class RegisterController : CustomControllerBase
         confirmationToken = await UserStore.UserTokens.AddAsync(new CustomUserToken
         {
             Name = "EmailConfirmationToken",
-            LoginProvider = "MesterMC",
+            LoginProvider = "Default",
             Value = TokenHelper.GenerateAccountConfirmationToken(),
             CreateDate = DateTimeOffset.UtcNow,
             UserId = user.Id

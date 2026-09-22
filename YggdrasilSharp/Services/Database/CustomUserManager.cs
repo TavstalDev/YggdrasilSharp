@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -413,7 +414,7 @@ public class CustomUserManager(
     {
         if (!await VerifyJwtTokenAsync(token))
             return null;
-        
+
         CustomUserToken? userToken = await userStore.UserTokens.FindAsync(x => x.Value == token);
         if (userToken == null)
             return null;
