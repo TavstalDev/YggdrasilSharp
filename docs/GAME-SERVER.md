@@ -80,15 +80,13 @@ On Windows, copy the fingerprint of the generated certificate and modify your .e
 On Linux/MacO, copy the absolute path of the generated certificate and modify your .env file to set the value of the `CERTIFICATE_FINGERPRINT` variable to the path of the generated certificate.
 Also modify the `CERTIFICATE_PASSWORD` variable to set the password of the generated certificate, in this case it is `changeit`.
 
-Finally import it to the launcher Java trust store.
-The java installation is located in the `<launcher_root>/java/jdk-21.0.8+9` directory.
-In debug mode the launcher will create its directory (`LauncherDebug`) to the same directory where the executable is located, the path of the executable is `<path_to_project>/MMC-Launcher/bind/Debug/net9.0/<arch>/MMC-Launcher`.
+Finally import it to the Java trust store.
 
 ```bash
-cd <launcher_root>/java/jdk-21.0.8+9/bin
+cd <path_to_java_root>/bin
 keytool -importcert
   -file <path_to_certificate>/localhost+2.pem
   -keystore ../lib/security/cacerts
-  -alias mmc-dev
+  -alias client-dev
   -storepass changeit
 ```
