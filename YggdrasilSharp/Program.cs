@@ -88,7 +88,7 @@ public static class Program
             var app = builder.Build();
 
             // 5. Configure the database
-            if (!InitializeDatabase(app))
+            if (!await InitializeDatabaseAsync(app))
                 return;
             
             // 6. Configure Middleware (Equivalent to Startup.Configure)
@@ -162,10 +162,9 @@ public static class Program
             throw new InvalidOperationException("Database Provider is missing from the configuration.");
         
         
-        /* UNUSED FOR NOW
-         string? databaseVersion = configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseVersion);
+        string? databaseVersion = configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseVersion);
         if (string.IsNullOrEmpty(databaseVersion) || !Version.TryParse(databaseVersion, out Version? dbVersion))
-            throw new  InvalidOperationException("Database Version is missing from the configuration.");*/
+            throw new  InvalidOperationException("Database Version is missing from the configuration.");
         
         // Configure the database context
         services.AddDbContext<CustomDbContext>(options =>
@@ -180,7 +179,7 @@ public static class Program
                     options.UseSqlite(connectionString);
                     break;
                 default:
-                    options.UseMySQL(connectionString);
+                    options.UseMySql(connectionString, new MySqlServerVersion(dbVersion), optionsBuilder => optionsBuilder.EnableRetryOnFailure());
                     break;
             }
         });
@@ -244,16 +243,14 @@ public static class Program
                 In = ParameterLocation.Cookie,
                 Description = "JWT Authorization cookie. \r\n\r\nExample: \"auth-token=12345abcdef\"",
                 Name = "auth-token",
-                Type = SecuritySchemeType.Http,
-                BearerFormat = "JWT",
-                Scheme = "cookie",
+                Type = SecuritySchemeType.ApiKey
             });
             // Add security requirements for Bearer, Basic and cookie authentication
-            config.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+            config.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
             {
-                { new OpenApiSecuritySchemeReference("Bearer"), [] },
-                { new OpenApiSecuritySchemeReference("Basic"), [] },
-                { new OpenApiSecuritySchemeReference("Cookie"), [] }
+                { new OpenApiSecuritySchemeReference("Bearer", doc), [] },
+                { new OpenApiSecuritySchemeReference("Basic", doc), [] },
+                { new OpenApiSecuritySchemeReference("Cookie", doc), [] }
             });
         });
         #endregion
@@ -374,7 +371,7 @@ public static class Program
         // JwtSettings
         services.AddSingleton<Settings>();
         // Email Service
-        services.AddSingleton<EmailService>();
+        services.AddSingleton<IEmailService, EmailService>();
         #endregion
     }
 
@@ -484,7 +481,7 @@ public static class Program
     /// Initializes the application's database.
     /// </summary>
     /// <param name="app">The WebApplication instance containing the service provider.</param>
-    private static bool InitializeDatabase(WebApplication app)
+    private static async Task<bool> InitializeDatabaseAsync(WebApplication app)
     {
         using var scope = app.Services.CreateScope();
         var services = scope.ServiceProvider;
@@ -493,8 +490,7 @@ public static class Program
         {
             var database = services.GetRequiredService<CustomDbContext>();
             var userStore = services.GetRequiredService<CustomUserStore>();
-        
-            _ = DatabaseInitializer.InitializeAsync(database, userStore);
+            await DatabaseInitializer.InitializeAsync(database, userStore);
             return true;
         }
         catch (Exception ex)
