@@ -6,6 +6,7 @@ This document provides instructions on how to set up and use a custom Yggdrasil 
 - [Server](#server)
 - [Client](#client)
 - [HTTPS Development certificate](#https-development-certificate)
+- [Skins](#skins)
 
 ## Server
 
@@ -89,4 +90,44 @@ keytool -importcert
   -keystore ../lib/security/cacerts
   -alias client-dev
   -storepass changeit
+```
+
+### Skins
+
+To make custom skins work you must install the [MCCustomSkinLoader](https://github.com/xfl03/MCCustomSkinLoader) mod.
+
+Example config
+```json
+{
+  "version": "15.0.1",
+  "buildNumber": 40,
+  "loadlist": [
+    {
+      "name": "GameProfile",
+      "type": "GameProfile"
+    },
+    {
+      "name": "YggdrasilSharp",
+      "type": "MojangAPI",
+      "apiRoot": "https://localhost:36767/yggdrasil/",
+      "sessionRoot": "https://localhost:36767/yggdrasil/"
+    },
+    {
+      "name": "Mojang",
+      "type": "MojangAPI",
+      "apiRoot": "https://api.mojang.com/",
+      "sessionRoot": "https://sessionserver.mojang.com/"
+    }
+  ],
+  "enableTransparentSkin": false,
+  "forceLoadAllTextures": true,
+  "enableCape": true,
+  "threadPoolSize": 8,
+  "enableLogStdOut": false,
+  "cacheExpiry": 30,
+  "forceUpdateSkull": false,
+  "enableLocalProfileCache": false,
+  "enableCacheAutoClean": false,
+  "forceDisableCache": false
+}
 ```

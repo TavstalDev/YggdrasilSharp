@@ -21,7 +21,7 @@ A lightweight, self-hostable implementation of the Minecraft [Yggdrasil](https:/
 | Setup & configuration | [Getting Started](docs/GETTING-STARTED.md) |
 | Build & test | [Building](docs/BUILDING.md) |
 | Database options | [Database](docs/DATABASE.md) |
-| Game server integration | [Game Server](docs/GAME-SERVER.md) |
+| Game client/server integration | [Game](docs/GAME.md) |
 | All endpoints | [API Reference](docs/API.md) |
 
 ## Quick Start
