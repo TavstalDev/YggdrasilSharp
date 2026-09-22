@@ -19,6 +19,6 @@ public class ConfirmRegisterRequestBody
     /// Gets or sets the confirmation token for verifying the registration.
     /// </summary>
     [Required]
-    [StringLength(48)]
+    [StringLength(64)]
     public required string ConfirmationToken { get; set; } 
 }

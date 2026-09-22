@@ -26,7 +26,7 @@ public class UserPlaySession
     /// <summary>
     /// Gets or sets the token associated with the play session.
     /// </summary>
-    [StringLength(64)]
+    [StringLength(255)]
     public required string Token { get; set; }
     
     /// <summary>

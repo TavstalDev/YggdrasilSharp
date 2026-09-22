@@ -12,8 +12,8 @@ public class YigJoinServerRequest
     /// This field is required.
     /// </summary>
     [Required]
-    [MinLength(48)]
-    [MaxLength(48)]
+    [MinLength(32)]
+    [MaxLength(1024)]
     public required string accessToken { get; set; }
 
     /// <summary>
@@ -22,7 +22,7 @@ public class YigJoinServerRequest
     /// </summary>
     [Required]
     [MinLength(32)]
-    [MaxLength(36)]
+    [MaxLength(64)]
     public required string selectedProfile { get; set; }
 
     /// <summary>
