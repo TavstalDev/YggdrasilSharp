@@ -55,6 +55,7 @@ public class CapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Success: Upload Cape")]
         public async Task ReturnsOK()
         {
+            string fileHash = string.Empty;
             try
             {
                 await CreateUserAsync(_controller);
@@ -65,6 +66,11 @@ public class CapesControllerTests : ControllerTestBase
                     Headers = new HeaderDictionary(),
                     ContentType = "image/png"
                 };
+                
+                stream.Position = 0;
+                using var sha256 = SHA256.Create();
+                byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+                fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
                 result.Should().BeOfType<ObjectResult>();
@@ -75,7 +81,7 @@ public class CapesControllerTests : ControllerTestBase
             finally
             {
                 // Clean-up
-                var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+                var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE, TestContext.Current.CancellationToken);
                 foreach (var file in files)
                     file.DeleteFile();
             }
@@ -153,6 +159,7 @@ public class CapesControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Duplicate Cape Content")]
         public async Task ReturnsBadRequest_ForDuplicateCapeContent()
         {
+            string fileHash = string.Empty;
             try
             {
                 await CreateUserAsync(_controller);
@@ -163,6 +170,11 @@ public class CapesControllerTests : ControllerTestBase
                     Headers = new HeaderDictionary(),
                     ContentType = "image/png"
                 };
+                
+                stream.Position = 0;
+                using var sha256 = SHA256.Create();
+                byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+                fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
                 result.Should().BeOfType<ObjectResult>();
@@ -179,7 +191,7 @@ public class CapesControllerTests : ControllerTestBase
             finally
             {
                 // Clean-up
-                var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+                var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.CAPE, TestContext.Current.CancellationToken);
                 foreach (var file in files)
                     file.DeleteFile();
             }

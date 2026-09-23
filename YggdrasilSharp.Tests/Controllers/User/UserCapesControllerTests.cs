@@ -321,7 +321,7 @@ public class UserCapesControllerTests : ControllerTestBase
         var fd = await _fileDataRepo.AddAsync(new FileData
         {
             Hash = fileHash,
-            FileName = "skin.png",
+            FileName = $"{Guid.NewGuid():N}.png",
             ContentType = "image/png",
             UserId = userId,
             Type = EFileDataType.CAPE,

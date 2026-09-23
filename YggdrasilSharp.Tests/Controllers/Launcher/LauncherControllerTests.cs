@@ -158,7 +158,7 @@ public class LauncherControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "test.zip",
+                FileName = $"{Guid.NewGuid():N}.zip",
                 ContentType = "application/zip",
                 Type = EFileDataType.LAUNCHER,
             }, true, TestContext.Current.CancellationToken);
@@ -220,37 +220,41 @@ public class LauncherControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            
+            stream.Position = 0;
             
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "test.zip",
+                FileName = $"{Guid.NewGuid():N}.zip",
                 ContentType = "application/zip",
                 Type = EFileDataType.LAUNCHER,
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
+
+            try
             {
-                VersionId = version.Id,
-                FileId = fd.Id,
-                Os = ELauncherOs.WINDOWS,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-            }, true, TestContext.Current.CancellationToken);
-            
-            var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
-            if (result is ObjectResult objectResult)
-            {
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
+                {
+                    VersionId = version.Id,
+                    FileId = fd.Id,
+                    Os = ELauncherOs.WINDOWS,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                }, true, TestContext.Current.CancellationToken);
+
+                var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
+                if (result is ObjectResult objectResult)
+                    _testOutputHelper.WriteLine("UNEXPECTED RESULT: " + objectResult.Value);
+
+                result.Should().BeOfType<FileContentResult>();
+                var fileContentResult = result as FileContentResult;
+                fileContentResult.Should().NotBeNull();
+                _testOutputHelper.WriteLine("Result: " + fileContentResult.ContentType);
             }
-            
-            result.Should().BeOfType<FileContentResult>();
-            var fileContentResult = result as FileContentResult;
-            fileContentResult.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + fileContentResult.ContentType);
-            
-            fd.DeleteFile();
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
 
         /// <summary>
@@ -747,29 +751,34 @@ public class LauncherControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "test.zip",
+                FileName = $"{Guid.NewGuid():N}.zip",
                 ContentType = "application/zip",
                 Type = EFileDataType.LAUNCHER
             }, true, TestContext.Current.CancellationToken);
             stream.Position = 0;
             fd.SaveFile(stream);
 
-            var versionData = await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
+            try
             {
-                VersionId = version.Id,
-                FileId = fd.Id,
-                Os = ELauncherOs.WINDOWS,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            }, true, TestContext.Current.CancellationToken);
+                var versionData = await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
+                {
+                    VersionId = version.Id,
+                    FileId = fd.Id,
+                    Os = ELauncherOs.WINDOWS,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }, true, TestContext.Current.CancellationToken);
 
-            var result = await _controller.DeleteLauncherVersionData(version.Id, versionData.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
-
-            fd.DeleteFile();
+                var result = await _controller.DeleteLauncherVersionData(version.Id, versionData.Id);
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(200);
+                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
 
         /// <summary>

@@ -47,8 +47,6 @@ public abstract class ControllerTestBase
         _settings = TestHelper.CreateTestSettings();
 
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
-        // ensure unique per-test upload directory to avoid collisions when tests run in parallel
-        uploadTempDir = Path.Combine(uploadTempDir, Guid.NewGuid().ToString());
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["UploadDirectory"] = uploadTempDir

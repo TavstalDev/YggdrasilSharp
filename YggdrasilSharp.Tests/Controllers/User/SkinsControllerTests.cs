@@ -60,20 +60,26 @@ public class SkinsControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "skin.png",
+                FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            var result = await _controller.GetSkin();
-            
-            result.Should().BeOfType<FileStreamResult>();
-            var fileStreamResult = result as FileStreamResult;
-            fileStreamResult.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
-            
-            fd.DeleteFile();
+
+            try
+            {
+                var result = await _controller.GetSkin();
+
+                result.Should().BeOfType<FileStreamResult>();
+                var fileStreamResult = result as FileStreamResult;
+                fileStreamResult.Should().NotBeNull();
+                _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
+            }
+            finally
+            {
+                fd.DeleteFile();   
+            }
         }
         
         /// <summary>
@@ -132,7 +138,11 @@ public class SkinsControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.SKIN, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -220,20 +230,25 @@ public class SkinsControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "skin.png",
+                FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            var result = await _controller.DeleteSkin();
-            
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
-            
-            fd.DeleteFile();
+            try
+            {
+                var result = await _controller.DeleteSkin();
+
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(200);
+                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
         
         /// <summary>
@@ -287,20 +302,26 @@ public class SkinsControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "skin.png",
+                FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            var result = await _controller.GetSkinAdmin(user.Id);
-            
-            result.Should().BeOfType<FileStreamResult>();
-            var fileStreamResult = result as FileStreamResult;
-            fileStreamResult.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
-            
-            fd.DeleteFile();
+
+            try
+            {
+                var result = await _controller.GetSkinAdmin(user.Id);
+
+                result.Should().BeOfType<FileStreamResult>();
+                var fileStreamResult = result as FileStreamResult;
+                fileStreamResult.Should().NotBeNull();
+                _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
         
         /// <summary>
@@ -363,7 +384,11 @@ public class SkinsControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.SKIN, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -455,20 +480,26 @@ public class SkinsControllerTests : ControllerTestBase
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
-                FileName = "skin.png",
+                FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            var result = await _controller.DeleteSkinAdmin(user.Id);
-            
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
-            
-            fd.DeleteFile();
+
+            try
+            {
+                var result = await _controller.DeleteSkinAdmin(user.Id);
+
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(200);
+                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
         
         /// <summary>

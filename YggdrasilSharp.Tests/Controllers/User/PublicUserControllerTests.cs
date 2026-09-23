@@ -99,20 +99,25 @@ public class PublicUserControllerTests : ControllerTestBase
             {
                 Hash = fileHash,
                 ContentType = "image/png",
-                FileName = "avatar.png",
+                FileName = $"{Guid.NewGuid():N}.png",
                 Type = EFileDataType.PROFILE_PICTURE,
                 UserId = user.Id
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
-            
-            IActionResult result = await _controller.GetAvatar(user.Id);
-            
-            result.Should().BeOfType<FileStreamResult>();
-            var fileStreamResult = result as FileStreamResult;
-            fileStreamResult.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
-            
-            fd.DeleteFile();
+
+            try
+            {
+                IActionResult result = await _controller.GetAvatar(user.Id);
+
+                result.Should().BeOfType<FileStreamResult>();
+                var fileStreamResult = result as FileStreamResult;
+                fileStreamResult.Should().NotBeNull();
+                _testOutputHelper.WriteLine("Result: " + fileStreamResult.ContentType);
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
         
         /// <summary>

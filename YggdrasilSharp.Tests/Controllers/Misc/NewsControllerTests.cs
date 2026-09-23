@@ -90,7 +90,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.NEWS_BANNER, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -165,7 +165,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.NEWS_BANNER, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -239,7 +239,7 @@ public class NewsControllerTests : ControllerTestBase
             list.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Response: {contentResult.Content}");
             
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.NEWS_BANNER, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -301,7 +301,11 @@ public class NewsControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
             
             // Clean-up
-            var files = await _fileDataRepo.QueryAsync(null, TestContext.Current.CancellationToken);
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
+            var files = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.NEWS_BANNER, TestContext.Current.CancellationToken);
             foreach (var f in files)
                 f.DeleteFile();
         }
@@ -394,24 +398,29 @@ public class NewsControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
 
-            var news = await _newsRepo.AddAsync(new News
+            try
             {
-                Title = "Test title",
-                Content = "This is a test news item.",
-                BannerId = fd.Id,
-                CreatedAt = DateTimeOffset.UtcNow
-            }, true, TestContext.Current.CancellationToken);
-            
-            var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+                var news = await _newsRepo.AddAsync(new News
+                {
+                    Title = "Test title",
+                    Content = "This is a test news item.",
+                    BannerId = fd.Id,
+                    CreatedAt = DateTimeOffset.UtcNow
+                }, true, TestContext.Current.CancellationToken);
+
+                var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+                {
+                    Title = "Updated Title"
+                });
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(200);
+                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            }
+            finally
             {
-                Title = "Updated Title"
-            });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
-            
-            fd.DeleteFile();
+                fd.DeleteFile();
+            }
         }
 
         /// <summary>
@@ -436,24 +445,29 @@ public class NewsControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
 
-            var news = await _newsRepo.AddAsync(new News
+            try
             {
-                Title = "Test title",
-                Content = "This is a test news item.",
-                BannerId = fd.Id,
-                CreatedAt = DateTimeOffset.UtcNow
-            }, true, TestContext.Current.CancellationToken);
-            
-            var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+                var news = await _newsRepo.AddAsync(new News
+                {
+                    Title = "Test title",
+                    Content = "This is a test news item.",
+                    BannerId = fd.Id,
+                    CreatedAt = DateTimeOffset.UtcNow
+                }, true, TestContext.Current.CancellationToken);
+
+                var result = await _controller.UpdateNews(news.Id, new NewsUpdateRequestBody
+                {
+                    Title = "Updated Title"
+                });
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(403);
+                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            }
+            finally
             {
-                Title = "Updated Title"
-            });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
-            
-            fd.DeleteFile();
+                fd.DeleteFile();
+            }
         }
 
         /// <summary>
@@ -542,21 +556,26 @@ public class NewsControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             fd.SaveFile(stream);
 
-            var news = await _newsRepo.AddAsync(new News
+            try
             {
-                Title = "Test title",
-                Content = "This is a test news item.",
-                BannerId = fd.Id,
-                CreatedAt = DateTimeOffset.UtcNow
-            }, true, TestContext.Current.CancellationToken);
-            
-            var result = await _controller.DeleteNews(news.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
-            
-            fd.DeleteFile();
+                var news = await _newsRepo.AddAsync(new News
+                {
+                    Title = "Test title",
+                    Content = "This is a test news item.",
+                    BannerId = fd.Id,
+                    CreatedAt = DateTimeOffset.UtcNow
+                }, true, TestContext.Current.CancellationToken);
+
+                var result = await _controller.DeleteNews(news.Id);
+                result.Should().BeOfType<ObjectResult>();
+                var objectResult = result as ObjectResult;
+                objectResult!.StatusCode.Should().Be(403);
+                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            }
+            finally
+            {
+                fd.DeleteFile();
+            }
         }
 
         /// <summary>

@@ -123,6 +123,10 @@ public class AvatarControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatar(file);
 
             result.Should().BeOfType<ObjectResult>();
@@ -130,7 +134,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _fileDataRepo.QueryAsync(x => x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
+            var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
@@ -309,6 +313,10 @@ public class AvatarControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
+            string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
             result.Should().BeOfType<ObjectResult>();
@@ -316,7 +324,7 @@ public class AvatarControllerTests : ControllerTestBase
             objectResult!.StatusCode.Should().Be(200);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
 
-            var fds = await _fileDataRepo.QueryAsync(x => x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
+            var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
                 fd.DeleteFile();
         }
