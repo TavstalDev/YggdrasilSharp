@@ -5,8 +5,8 @@ This document provides instructions on how to set up and use a custom Yggdrasil 
 ## Table of Contents
 - [Server](#server)
 - [Client](#client)
+- - [Skins](#skins)
 - [HTTPS Development certificate](#https-development-certificate)
-- [Skins](#skins)
 
 ## Server
 
@@ -34,8 +34,48 @@ The client requires the following JVM arguments to be able to use the custom Ygg
 -Dminecraft.api.services.host=https://localhost:36767/yggdrasil/
 ```
 
-Optionally for HD skin support, it needs the CustomSkinLoader mod installed, you can download it from [here](https://modrinth.com/mod/customskinloader).
+### Skins
+
+To make custom skin server work on the client it must have the [MCCustomSkinLoader](https://github.com/xfl03/MCCustomSkinLoader) mod installed.
+This is necessary because Mojang hardcoded their skin url checks on client side so a mod must modify that part of the code.
 > Other mods may work as well, but this is the only one that has been tested and confirmed to work with the custom Yggdrasil server.
+> If you make a custom client with MCP then the mod is optional as long as you know how to modify the URLs in the code of the client.
+
+Example config
+```json
+{
+  "version": "15.0.1",
+  "buildNumber": 40,
+  "loadlist": [
+    {
+      "name": "GameProfile",
+      "type": "GameProfile"
+    },
+    {
+      "name": "YggdrasilSharp",
+      "type": "MojangAPI",
+      "apiRoot": "https://localhost:36767/yggdrasil/",
+      "sessionRoot": "https://localhost:36767/yggdrasil/"
+    },
+    {
+      "name": "Mojang",
+      "type": "MojangAPI",
+      "apiRoot": "https://api.mojang.com/",
+      "sessionRoot": "https://sessionserver.mojang.com/"
+    }
+  ],
+  "enableTransparentSkin": false,
+  "forceLoadAllTextures": true,
+  "enableCape": true,
+  "threadPoolSize": 8,
+  "enableLogStdOut": false,
+  "cacheExpiry": 30,
+  "forceUpdateSkull": false,
+  "enableLocalProfileCache": false,
+  "enableCacheAutoClean": false,
+  "forceDisableCache": false
+}
+```
 
 ## HTTPS Development certificate
 Java is very strict about trusting certificates, so you will need to add the development certificate to your Java trust store.
@@ -90,44 +130,4 @@ keytool -importcert
   -keystore ../lib/security/cacerts
   -alias client-dev
   -storepass changeit
-```
-
-### Skins
-
-To make custom skins work you must install the [MCCustomSkinLoader](https://github.com/xfl03/MCCustomSkinLoader) mod.
-
-Example config
-```json
-{
-  "version": "15.0.1",
-  "buildNumber": 40,
-  "loadlist": [
-    {
-      "name": "GameProfile",
-      "type": "GameProfile"
-    },
-    {
-      "name": "YggdrasilSharp",
-      "type": "MojangAPI",
-      "apiRoot": "https://localhost:36767/yggdrasil/",
-      "sessionRoot": "https://localhost:36767/yggdrasil/"
-    },
-    {
-      "name": "Mojang",
-      "type": "MojangAPI",
-      "apiRoot": "https://api.mojang.com/",
-      "sessionRoot": "https://sessionserver.mojang.com/"
-    }
-  ],
-  "enableTransparentSkin": false,
-  "forceLoadAllTextures": true,
-  "enableCape": true,
-  "threadPoolSize": 8,
-  "enableLogStdOut": false,
-  "cacheExpiry": 30,
-  "forceUpdateSkull": false,
-  "enableLocalProfileCache": false,
-  "enableCacheAutoClean": false,
-  "forceDisableCache": false
-}
 ```
