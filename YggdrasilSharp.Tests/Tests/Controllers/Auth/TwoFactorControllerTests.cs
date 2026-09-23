@@ -5,6 +5,7 @@ using Moq;
 using OtpNet;
 using Tavstal.YggdrasilSharp.Controllers.Auth;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
+using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 

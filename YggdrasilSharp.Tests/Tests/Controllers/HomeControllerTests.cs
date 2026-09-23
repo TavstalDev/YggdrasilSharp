@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
+using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers;
 

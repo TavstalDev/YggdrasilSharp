@@ -27,6 +27,6 @@
         <Using Include="FluentAssertions"/>
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="Tests\" />
+      <Folder Include="Tests\RateLimiting\" />
     </ItemGroup>
 </Project>

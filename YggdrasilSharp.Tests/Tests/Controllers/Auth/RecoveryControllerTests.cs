@@ -6,6 +6,7 @@ using Tavstal.YggdrasilSharp.Controllers.Auth;
 using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
+using Tavstal.YggdrasilSharp.Tests.Models;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;

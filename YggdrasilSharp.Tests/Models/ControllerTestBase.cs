@@ -13,7 +13,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Services;
 
-namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers;
+namespace Tavstal.YggdrasilSharp.Tests.Models;
 
 public abstract class ControllerTestBase
 {

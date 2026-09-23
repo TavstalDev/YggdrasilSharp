@@ -10,6 +10,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
+using Tavstal.YggdrasilSharp.Tests.Models;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Yggdrasil;

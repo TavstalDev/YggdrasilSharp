@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.User;
 
