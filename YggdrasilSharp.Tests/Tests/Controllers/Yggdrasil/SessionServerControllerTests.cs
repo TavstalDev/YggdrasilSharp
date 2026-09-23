@@ -12,7 +12,7 @@ using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Yggdrasil;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Yggdrasil;
 
 /// <summary>
 /// Tests for the <see cref="SessionServerController"/> responsible for session-server interactions

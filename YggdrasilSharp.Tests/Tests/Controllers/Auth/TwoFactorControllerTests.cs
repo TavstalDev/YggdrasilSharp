@@ -6,7 +6,7 @@ using OtpNet;
 using Tavstal.YggdrasilSharp.Controllers.Auth;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 
 /// <summary>
 /// Unit tests for <see cref="TwoFactorController"/> covering enabling/disabling 2FA,

@@ -10,7 +10,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Misc;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Misc;
 
 /// <summary>
 /// Unit tests for the <see cref="CapesController"/> controller.

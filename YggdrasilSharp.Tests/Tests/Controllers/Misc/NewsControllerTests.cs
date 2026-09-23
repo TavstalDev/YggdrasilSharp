@@ -12,7 +12,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Misc;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Misc;
 
 /// <summary>
 /// Tests for <see cref="NewsController"/> instance methods.

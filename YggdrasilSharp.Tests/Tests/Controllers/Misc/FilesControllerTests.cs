@@ -1,41 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
+using Tavstal.YggdrasilSharp.Controllers.Misc;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Yggdrasil;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Misc;
 
 /// <summary>
-/// Unit tests for <see cref="TexturesController"/>.
+/// Unit tests for <see cref="FilesController"/> covering file retrieval behavior:
+/// <br/>- returning cached files,
+/// <br/>- conditional GET (ETag / If-None-Match),
+/// <br/>- handling invalid model state,
+/// <br/>- missing file scenarios (404 and 500 cases).
+/// <br/>Tests use an in-memory database and the shared TestHelper memory cache to avoid disk IO where possible.
 /// </summary>
-public class TexturesControllerTests : ControllerTestBase
+public class FilesControllerTests : ControllerTestBase
 {
     private readonly IRepository<FileData> _fileDataRepo;
-    private readonly Mock<ILogger<TexturesController>> _loggerMock = new();
-    private readonly TexturesController _controller;
-    
+    private readonly Mock<ILogger<FilesController>> _loggerMock = new();
+    private readonly FilesController _controller;
+
     /// <summary>
-    /// Initializes a new instance of <see cref="TexturesControllerTests"/>.
-    /// Constructs the controller with the mock logger, test database context, memory cache service and test settings.
-    /// Also wires the controller's ControllerContext to the test HttpContext provided by <see cref="ControllerTestBase"/>.
+    /// Initializes the test fixture:
+    /// <br/>- creates an in-memory DB context,
+    /// <br/>- uses the shared TestHelper memory cache,
+    /// <br/>- constructs a FilesController with fake logger and test settings,
+    /// <br/>- attaches a DefaultHttpContext configured with a test IP, User-Agent and Host.
     /// </summary>
-    /// <param name="testOutputHelper">XUnit output helper forwarded to the base class for logging test output.</param>
-    public TexturesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+    /// <param name="testOutputHelper">XUnit-provided output helper for logging.</param>
+    public FilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new TexturesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, _settings);
+        _controller = new FilesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, _settings);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
         };
     }
-    
+
     /// <summary>
-    /// Success case: When the memory cache already contains the file bytes and content type for the requested hash.
+    /// Success: when the memory cache contains the file bytes for the provided hash,
+    /// the controller should return a FileContentResult with the same content-type and bytes,
+    /// and the response should include the expected ETag header.
     /// </summary>
     [Fact(DisplayName = "Success: Returns file from cache")]
     public async Task ReturnsFileFromCache_WhenCacheContainsBytes()
@@ -45,7 +54,7 @@ public class TexturesControllerTests : ControllerTestBase
         string contentType = "image/png";
         _memoryCacheService.SetValue($"file:{hash}", (bytes, contentType), TimeSpan.FromDays(1));
 
-        IActionResult result = await _controller.GetTexture(hash);
+        IActionResult result = await _controller.GetFile(hash);
 
         result.Should().BeOfType<FileContentResult>();
         var fileResult = result as FileContentResult;
@@ -56,9 +65,10 @@ public class TexturesControllerTests : ControllerTestBase
         etag.Should().Be('"' + hash + '"');
         _testOutputHelper.WriteLine("Result: " + fileResult.ContentType);
     }
-    
+
     /// <summary>
-    /// Success case: If the incoming request contains an If-None-Match header that matches the file ETag.
+    /// Success: when the request contains an If-None-Match header that matches the generated ETag,
+    /// the controller should return a 304 Not Modified (StatusCodeResult) and set the ETag header.
     /// </summary>
     [Fact(DisplayName = "Success: Returns 304 Not Modified when If-None-Match matches ETag")]
     public async Task ReturnsNotModified_WhenIfNoneMatchMatches()
@@ -71,7 +81,7 @@ public class TexturesControllerTests : ControllerTestBase
         // Set If-None-Match header to match the ETag that would be generated for this file
         _controllerHttpContext.Request.Headers.IfNoneMatch = '"' + hash + '"';
 
-        IActionResult result = await _controller.GetTexture(hash);
+        IActionResult result = await _controller.GetFile(hash);
 
         result.Should().BeOfType<StatusCodeResult>();
         var status = result as StatusCodeResult;
@@ -81,25 +91,26 @@ public class TexturesControllerTests : ControllerTestBase
         etag.Should().Be('"' + hash + '"');
         _testOutputHelper.WriteLine("Returned 304 with ETag: " + etag);
     }
-    
+
     /// <summary>
-    /// Failure case: When the model state is invalid (e.g. missing or invalid hash).
+    /// Failure: when ModelState is invalid (e.g. missing required route parameter),
+    /// the controller should return a 400 Bad Request (ObjectResult).
     /// </summary>
     [Fact(DisplayName = "Failure: Model state is invalid")]
     public async Task ReturnsBadRequest_WhenModelStateInvalid()
     {
         _controller.ModelState.AddModelError("hash", "Hash is required.");
 
-        IActionResult result = await _controller.GetTexture(null!);
+        IActionResult result = await _controller.GetFile(null!);
 
         result.Should().BeOfType<ObjectResult>();
         var obj = result as ObjectResult;
         obj!.StatusCode.Should().Be(400);
         _testOutputHelper.WriteLine("Result: " + obj.Value);
     }
-    
+
     /// <summary>
-    /// Failure case: When neither the memory cache nor the database contains a file record for the requested hash.
+    /// Failure: when there is no cache entry and no matching DB record, the controller should return 404 Not Found.
     /// </summary>
     [Fact(DisplayName = "Failure: File is not found")]
     public async Task ReturnsNotFound_WhenNoFileInDbAndNoCache()
@@ -107,16 +118,17 @@ public class TexturesControllerTests : ControllerTestBase
         string hash = "no-such-file-hash";
         _memoryCacheService.RemoveValue($"file:{hash}");
 
-        IActionResult result = await _controller.GetTexture(hash);
+        IActionResult result = await _controller.GetFile(hash);
 
         result.Should().BeOfType<ObjectResult>();
         var obj = result as ObjectResult;
         obj!.StatusCode.Should().Be(404);
         _testOutputHelper.WriteLine("Result: " + obj.Value);
     }
-    
+
     /// <summary>
-    /// Failure case: When the database contains a FileData record for the requested hash but the actual file bytes are missing on disk/storage.
+    /// Failure: when a DB entry exists but its physical file data is missing (FileData.GetFileData returns null),
+    /// the controller should return 500 Internal Server Error.
     /// </summary>
     [Fact(DisplayName = "Failure: DB entry exists but file data is missing")]
     public async Task ReturnsInternalServerError_WhenFileDataMissingOnDb()
@@ -133,7 +145,7 @@ public class TexturesControllerTests : ControllerTestBase
         };
         await _fileDataRepo.AddAsync(fileData, true, TestContext.Current.CancellationToken);
 
-        IActionResult result = await _controller.GetTexture(hash);
+        IActionResult result = await _controller.GetFile(hash);
 
         result.Should().BeOfType<ObjectResult>();
         var obj = result as ObjectResult;

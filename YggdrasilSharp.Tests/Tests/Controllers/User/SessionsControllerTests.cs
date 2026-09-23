@@ -4,7 +4,7 @@ using Moq;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.User;
 
 /// <summary>
 /// Tests for <see cref="SessionsController"/>. 

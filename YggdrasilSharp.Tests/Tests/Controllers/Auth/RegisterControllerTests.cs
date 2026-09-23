@@ -13,7 +13,7 @@ using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 using Tavstal.YggdrasilSharp.Tests.Services;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 
 /// <summary>
 /// Test suite for <see cref="RegisterController"/> covering registration and confirmation flows.

@@ -11,7 +11,7 @@ using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Launcher;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Launcher;
 
 /// <summary>
 /// Unit tests for the LauncherController.

@@ -4,7 +4,7 @@ using Moq;
 using Tavstal.YggdrasilSharp.Controllers;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers;
 
 /// <summary>
 /// Unit tests for <see cref="HomeController"/>.

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Yggdrasil;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Yggdrasil;
 
 /// <summary>
 /// Tests for <see cref="ProfilesController"/>.

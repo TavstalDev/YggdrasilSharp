@@ -9,7 +9,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.User;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.User;
 
 /// <summary>
 /// Unit tests for <see cref="PublicUserController"/>.

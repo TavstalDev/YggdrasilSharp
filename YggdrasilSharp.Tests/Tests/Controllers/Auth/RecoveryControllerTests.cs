@@ -8,7 +8,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
-namespace Tavstal.YggdrasilSharp.Tests.Controllers.Auth;
+namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 
 /// <summary>
 /// Tests for <see cref="RecoveryController"/> covering password and two-factor recovery flows.
