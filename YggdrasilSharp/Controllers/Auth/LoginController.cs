@@ -11,6 +11,7 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 using SignInResult = Tavstal.YggdrasilSharp.Models.Database.SignInResult;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Auth;
@@ -52,7 +53,7 @@ public class LoginController : CustomControllerBase
     /// <response code="423">Locked. Account is locked; includes lockout reason and expiration when applicable.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login")]
-    [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
@@ -155,7 +156,7 @@ public class LoginController : CustomControllerBase
     /// <response code="423">Locked. User account is locked; includes lockout reason and expiration.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPatch("/login/2fa")]
-    [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
@@ -230,7 +231,7 @@ public class LoginController : CustomControllerBase
     /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login/launcher")]
-    [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),
@@ -298,7 +299,7 @@ public class LoginController : CustomControllerBase
     /// <response code="423">Locked. User account is locked; includes lockout reason and expiration.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPatch("/login/launcher/2fa")]
-    [EnableRateLimiting(RateLimits.AUTH_LOGIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound),

@@ -16,6 +16,7 @@ using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 
@@ -226,7 +227,7 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateNews([Required, FromForm] NewsCreateRequestBody requestBody)
@@ -303,7 +304,7 @@ public class NewsController : CustomControllerBase
     /// <response code="404">News article not found.</response>
     [HttpPut("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateNews([BindRequired, FromRoute] ulong id, [Required, FromForm] NewsUpdateRequestBody requestBody)
@@ -394,7 +395,7 @@ public class NewsController : CustomControllerBase
     /// <response code="404">News article not found.</response>
     [HttpDelete("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNews([BindRequired, FromRoute] ulong id)
     {

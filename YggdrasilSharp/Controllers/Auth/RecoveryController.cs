@@ -11,6 +11,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 
@@ -57,7 +58,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("password/request")]
-    [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RequestRecoveryAsync([BindRequired, EmailAddress] string email)
@@ -124,7 +125,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="404">Not found. User or required claims do not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("password")]
-    [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_RESET)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
@@ -195,7 +196,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("2fa/request")]
-    [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_RESET)]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RequestTFARecoveryAsync([BindRequired, EmailAddress] string email)
@@ -261,7 +262,7 @@ public class RecoveryController : CustomControllerBase
     /// <response code="404">Not found. User or required claims do not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("2fa")]
-    [EnableRateLimiting(RateLimits.AUTH_RESET)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_RESET)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]

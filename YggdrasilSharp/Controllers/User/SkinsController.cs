@@ -14,6 +14,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -93,7 +94,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="401">User not authenticated.</response>
     /// <response code="403">User does not have permission to upload a skin.</response>
     [HttpPut("skin")]
-    [EnableRateLimiting(RateLimits.UPLOAD)]
+    [EnableRateLimiting(RateLimits.FixedWindow.UPLOAD)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden)]
@@ -169,7 +170,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="403">User does not have permission to delete the skin.</response>
     /// <response code="404">No skin found for the user.</response>
     [HttpDelete("skin")]
-    [EnableRateLimiting(RateLimits.WRITE)]
+    [EnableRateLimiting(RateLimits.FixedWindow.WRITE)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkin()
@@ -211,7 +212,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="403">User does not have permission to view the skin.</response>
     /// <response code="404">No skin found for the user.</response>
     [HttpGet("{userId}/skin")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
@@ -274,7 +275,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="403">User does not have permission to upload the skin.</response>
     /// <response code="404">Target user not found.</response>
     [HttpPut("{userId}/skin")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
@@ -358,7 +359,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="403">User does not have permission to delete the skin.</response>
     /// <response code="404">No skin found for the user.</response>
     [HttpDelete("{userId}/skin")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)

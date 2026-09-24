@@ -9,6 +9,7 @@ using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -76,7 +77,7 @@ public class SessionsController : CustomControllerBase
     /// <response code="403">User does not have permission to revoke the session.</response>
     /// <response code="404">Session not found.</response>
     [HttpDelete("sessions/{sessionId}")]
-    [EnableRateLimiting(RateLimits.WRITE)]
+    [EnableRateLimiting(RateLimits.FixedWindow.WRITE)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSession([BindRequired, FromRoute] ulong sessionId)
     {
@@ -121,7 +122,7 @@ public class SessionsController : CustomControllerBase
     /// <response code="401">User not authenticated.</response>
     /// <response code="403">User does not have permission to revoke all sessions.</response>
     [HttpDelete("sessions")]
-    [EnableRateLimiting(RateLimits.WRITE)]
+    [EnableRateLimiting(RateLimits.FixedWindow.WRITE)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RevokeAllSessions()
     {
@@ -155,7 +156,7 @@ public class SessionsController : CustomControllerBase
     /// <response code="403">User does not have permission to view sessions for another user.</response>
     /// <response code="404">Target user not found.</response>
     [HttpGet("{userId}/sessions")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
@@ -206,7 +207,7 @@ public class SessionsController : CustomControllerBase
     /// <response code="403">User does not have permission to revoke the session for another user.</response>
     /// <response code="404">Target user or session not found.</response>
     [HttpDelete("{userId}/sessions/{sessionId}")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
@@ -260,7 +261,7 @@ public class SessionsController : CustomControllerBase
     /// <response code="403">User does not have permission to revoke all sessions for another user.</response>
     /// <response code="404">Target user not found.</response>
     [HttpDelete("{userId}/sessions")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeAllSessionsAdmin([BindRequired, FromRoute] string userId)
     {

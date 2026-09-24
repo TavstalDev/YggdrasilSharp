@@ -13,6 +13,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 
@@ -56,7 +57,7 @@ public class CapesController : CustomControllerBase
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
-    [EnableRateLimiting(RateLimits.UPLOAD)]
+    [EnableRateLimiting(RateLimits.FixedWindow.UPLOAD)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
@@ -145,7 +146,7 @@ public class CapesController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     /// <response code="404">Cape not found.</response>
     [HttpDelete("{capeId}")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
         [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
         TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound)]

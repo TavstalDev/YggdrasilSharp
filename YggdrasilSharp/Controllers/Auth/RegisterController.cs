@@ -17,6 +17,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Extensions;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 
@@ -66,7 +67,7 @@ public class RegisterController : CustomControllerBase
     /// <response code="409">Conflict. User already exists.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPost("")]
-    [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_REGISTER)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status201Created), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),
@@ -173,7 +174,7 @@ public class RegisterController : CustomControllerBase
     /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. An unknown error occurred while processing the request.</response>
     [HttpPatch("confirm")]
-    [EnableRateLimiting(RateLimits.AUTH_REGISTER)]
+    [EnableRateLimiting(RateLimits.FixedWindow.AUTH_REGISTER)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status403Forbidden),

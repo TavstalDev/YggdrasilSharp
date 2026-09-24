@@ -16,6 +16,7 @@ using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -117,7 +118,7 @@ public class AvatarController : CustomControllerBase
     /// <response code="403">User does not have permission to upload an avatar.</response>
     /// <response code="500">An error occurred while processing the avatar upload.</response>
     [HttpPost("avatar")]
-    [EnableRateLimiting(RateLimits.UPLOAD)]
+    [EnableRateLimiting(RateLimits.FixedWindow.UPLOAD)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK),
      TextResponse(StatusCodes.Status400BadRequest),
@@ -197,7 +198,7 @@ public class AvatarController : CustomControllerBase
     /// <response code="404">No avatar found to delete.</response>
     /// <response code="500">An error occurred while deleting the avatar.</response>
     [HttpDelete("avatar")]
-    [EnableRateLimiting(RateLimits.WRITE)]
+    [EnableRateLimiting(RateLimits.FixedWindow.WRITE)]
     [TextResponse(StatusCodes.Status200OK),
      TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden),
@@ -246,7 +247,7 @@ public class AvatarController : CustomControllerBase
     /// <response code="404">Target user not found.</response>
     /// <response code="500">An error occurred while processing the avatar upload.</response>
     [HttpPost("{userId}/avatar")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK),
         TextResponse(StatusCodes.Status400BadRequest),
@@ -336,7 +337,7 @@ public class AvatarController : CustomControllerBase
     /// <response code="404">Target user or their avatar not found.</response>
     /// <response code="500">An error occurred while deleting the avatar.</response>
     [HttpDelete("{userId}/avatar")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK),
      TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden),

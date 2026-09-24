@@ -9,6 +9,7 @@ using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.User;
 
@@ -149,7 +150,7 @@ public class UserCapesController : CustomControllerBase
     /// <response code="403">User does not have permission to select a cape for another user.</response>
     /// <response code="404">Target user or cape not found.</response>
     [HttpPatch("{userId}/cape/{capeId}")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
         [TextResponse(StatusCodes.Status200OK),
         TextResponse(StatusCodes.Status400BadRequest),
         TextResponse(StatusCodes.Status401Unauthorized),
@@ -219,7 +220,7 @@ public class UserCapesController : CustomControllerBase
     /// <response code="403">User does not have permission to clear the selected cape for another user.</response>
     /// <response code="404">Target user or selected cape not found.</response>
     [HttpDelete("{userId}/cape")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
         [TextResponse(StatusCodes.Status200OK),
             TextResponse(StatusCodes.Status401Unauthorized),
             TextResponse(StatusCodes.Status403Forbidden),

@@ -16,6 +16,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Launcher;
 
@@ -113,7 +114,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="200">Returns the launcher version details.</response>
     /// <response code="404">Launcher version not found.</response>
     [HttpGet("version/{id}")]
-    [EnableRateLimiting(RateLimits.SEARCH)]
+    [EnableRateLimiting(RateLimits.FixedWindow.SEARCH)]
     [JsonResponse(typeof(LauncherVersion)), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLauncherVersionDetails([BindRequired, FromRoute] ulong id)
     {
@@ -152,7 +153,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="404">Launcher version or file data not found.</response>
     /// <response code="500">Failed to retrieve the file.</response>
     [HttpGet("version/{id}/download")]
-    [EnableRateLimiting(RateLimits.DOWNLOAD)]
+    [EnableRateLimiting(RateLimits.FixedWindow.DOWNLOAD)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DownloadLauncherVersion([BindRequired, FromRoute] ulong id, [BindRequired, FromQuery] ELauncherOs os)
     {
@@ -211,7 +212,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="403">Insufficient permissions.</response>
     [HttpPost("version")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateLauncherVersion([Required, FromBody] CreateLauncherVersionRequest request)
@@ -270,7 +271,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="404">Launcher version not found.</response>
     [HttpPut("version/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateLauncherVersion([BindRequired, FromRoute] ulong id, [Required, FromBody] UpdateLauncherVersionRequest request)
@@ -335,7 +336,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="404">Launcher version not found.</response>
     [HttpDelete("version/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersion([BindRequired, FromRoute] ulong id)
     {
@@ -396,7 +397,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="404">Launcher version not found.</response>
     [HttpPost("version/{id}/data")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddLauncherVersionData([BindRequired, FromRoute] ulong id, [Required, FromForm] CreateLauncherVersionDataRequest request)
@@ -481,7 +482,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="404">Launcher version data not found.</response>
     [HttpDelete("version/{versionId}/data/{dataId}")]
     [Authorize(AuthenticationSchemes = "Bearer,Basic")]
-    [EnableRateLimiting(RateLimits.ADMIN)]
+    [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersionData([BindRequired, FromRoute] ulong versionId, [BindRequired, FromRoute] ulong dataId)
     {
