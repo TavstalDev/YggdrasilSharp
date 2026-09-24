@@ -26,7 +26,4 @@
         <Using Include="Xunit"/>
         <Using Include="FluentAssertions"/>
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Tests\RateLimiting\" />
-    </ItemGroup>
 </Project>

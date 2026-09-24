@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Tavstal.YggdrasilSharp.Models.RateLimiting.Rules;
 
 namespace Tavstal.YggdrasilSharp.Models.RateLimiting;
@@ -11,20 +12,24 @@ public class RateLimiterData
     /// <summary>
     /// Gets or sets the fixed window rules, keyed by rate limit category.
     /// </summary>
-    public Dictionary<string, FixedWindowRule> FixedWindowRules { get; set; } = [];
+    [JsonPropertyName("FixedWindow")]
+    public Dictionary<string, FixedWindowRule> FixedWindow { get; set; } = [];
     
     /// <summary>
     /// Gets or sets the sliding window rules, keyed by rate limit category.
     /// </summary>
-    public Dictionary<string, SlidingWindowRule> SlidingWindowRules { get; set; } = [];
+    [JsonPropertyName("SlidingWindow")]
+    public Dictionary<string, SlidingWindowRule> SlidingWindow { get; set; } = [];
     
     /// <summary>
     /// Gets or sets the concurrent rules, keyed by rate limit category.
     /// </summary>
-    public Dictionary<string, ConcurrentRule> ConcurrentRules { get; set; } = [];
+    [JsonPropertyName("Concurrent")]
+    public Dictionary<string, ConcurrentRule> Concurrent { get; set; } = [];
     
     /// <summary>
     /// Gets or sets the token bucket rules, keyed by rate limit category.
     /// </summary>
-    public Dictionary<string, TokenBucketRule> TokenBucketRules { get; set; } = [];
+    [JsonPropertyName("TokenBucket")]
+    public Dictionary<string, TokenBucketRule> TokenBucket { get; set; } = [];
 }

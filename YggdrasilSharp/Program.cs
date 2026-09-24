@@ -355,7 +355,7 @@ public static class Program
         {
             options.RejectionStatusCode = configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);
             // Fixed Window
-            foreach (var ruleEntry in rules.FixedWindowRules)
+            foreach (var ruleEntry in rules.FixedWindow)
             {
                 var rule = ruleEntry.Value;
                 options.AddFixedWindowLimiter(ruleEntry.Key, config =>
@@ -369,7 +369,7 @@ public static class Program
             }
             
             // Sliding Window
-            foreach (var ruleEntry in rules.SlidingWindowRules)
+            foreach (var ruleEntry in rules.SlidingWindow)
             {
                 var rule = ruleEntry.Value;
                 options.AddSlidingWindowLimiter(ruleEntry.Key, config =>
@@ -384,7 +384,7 @@ public static class Program
             }
             
             // Concurrent
-            foreach (var ruleEntry in rules.ConcurrentRules)
+            foreach (var ruleEntry in rules.Concurrent)
             {
                 var rule = ruleEntry.Value;
                 options.AddConcurrencyLimiter(ruleEntry.Key, config =>
@@ -396,7 +396,7 @@ public static class Program
             }
             
             // Token Bucket
-            foreach (var ruleEntry in rules.TokenBucketRules)
+            foreach (var ruleEntry in rules.TokenBucket)
             {
                 var rule = ruleEntry.Value;
                 options.AddTokenBucketLimiter(ruleEntry.Key, config =>
@@ -509,6 +509,7 @@ public static class Program
         });
 
         app.UseRouting();
+        app.UseRateLimiter();
 
         app.UseSession();
         app.UseAuthentication();
