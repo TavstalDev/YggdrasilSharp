@@ -4,7 +4,6 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using DotEnv.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,10 +15,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.RateLimiting;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Authentication;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp;
 
@@ -347,21 +348,65 @@ public static class Program
 
         var rules = configuration
             .GetSection(Constants.ConfigurationKeys.RateLimitingRules)
-            .Get<Dictionary<string, RateLimitRule>>();
+            .Get<RateLimiterData>();
         if (rules == null)
             throw new InvalidOperationException("Rate limiting rules are missing from the configuration.");
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);
-            foreach (var rule in rules)
+            // Fixed Window
+            foreach (var ruleEntry in rules.FixedWindowRules)
             {
-                var value = rule.Value;
-                options.AddFixedWindowLimiter(rule.Key, config =>
+                var rule = ruleEntry.Value;
+                options.AddFixedWindowLimiter(ruleEntry.Key, config =>
                 {
-                    config.PermitLimit = value.PermitLimit;
-                    config.Window = TimeSpan.FromSeconds(value.WindowSeconds);
-                    config.QueueLimit = value.QueueLimit;
-                    config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    config.AutoReplenishment = true;
+                    config.PermitLimit = rule.PermitLimit;
+                    config.Window = TimeSpan.FromSeconds(rule.WindowSeconds);
+                    config.QueueLimit = rule.QueueLimit;
+                    config.QueueProcessingOrder = rule.ProcessingOrder;
+                });
+            }
+            
+            // Sliding Window
+            foreach (var ruleEntry in rules.SlidingWindowRules)
+            {
+                var rule = ruleEntry.Value;
+                options.AddSlidingWindowLimiter(ruleEntry.Key, config =>
+                {
+                    config.AutoReplenishment = true;
+                    config.PermitLimit = rule.PermitLimit;
+                    config.Window = TimeSpan.FromSeconds(rule.WindowSeconds);
+                    config.QueueLimit = rule.QueueLimit;
+                    config.QueueProcessingOrder = rule.ProcessingOrder;
+                    config.SegmentsPerWindow = rule.SegmentsPerWindow;
+                });
+            }
+            
+            // Concurrent
+            foreach (var ruleEntry in rules.ConcurrentRules)
+            {
+                var rule = ruleEntry.Value;
+                options.AddConcurrencyLimiter(ruleEntry.Key, config =>
+                {
+                    config.PermitLimit = rule.PermitLimit;
+                    config.QueueLimit = rule.QueueLimit;
+                    config.QueueProcessingOrder = rule.ProcessingOrder;
+                });
+            }
+            
+            // Token Bucket
+            foreach (var ruleEntry in rules.TokenBucketRules)
+            {
+                var rule = ruleEntry.Value;
+                options.AddTokenBucketLimiter(ruleEntry.Key, config =>
+                {
+                    config.AutoReplenishment = true;
+                    config.QueueLimit = rule.QueueLimit;
+                    config.QueueProcessingOrder = rule.ProcessingOrder;
+                    config.ReplenishmentPeriod = TimeSpan.FromSeconds(rule.ReplenishmentSeconds);
+                    config.TokenLimit = rule.TokenLimit;
+                    config.TokensPerPeriod = rule.TokensPerPeriod;
                 });
             }
         });
