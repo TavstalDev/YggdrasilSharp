@@ -101,6 +101,7 @@ public static class Program
         catch (Exception ex)
         {
             Console.WriteLine($"Host terminated unexpectedly: {ex}");
+            throw;
         }
     }
     
@@ -433,31 +434,27 @@ public static class Program
 
         builder.WebHost.ConfigureKestrel(serverOptions =>
         {
-            if (string.IsNullOrEmpty(thumbprint))
-            {
-                _logger?.LogWarning("No certificate configured. Server will listen on HTTP only.");
-                return;
-            }
-
             try
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                X509Certificate2? certificate = null;
+
+                if (!string.IsNullOrEmpty(thumbprint))
                 {
-                    var certificate = GetCertificateFromStore(thumbprint);
-                    serverOptions.ListenAnyIP(port, listenOptions =>
-                    {
-                        listenOptions.UseHttps(certificate);
-                    });
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        certificate = GetCertificateFromStore(thumbprint);
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                             RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                        // On Unix/Linux, treat thumbprint as a file path to the certificate
+                        certificate = GetCertificateFromFile(thumbprint, password!);
                 }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                else 
+                    _logger?.LogWarning("No certificate configured. Server will listen on HTTP only.");
+                
+                serverOptions.ListenAnyIP(port, listenOptions =>
                 {
-                    // On Unix/Linux, treat thumbprint as a file path to the certificate
-                    var certificate = GetCertificateFromFile(thumbprint, password!);
-                    serverOptions.ListenAnyIP(port, listenOptions =>
-                    {
+                    if (certificate != null)
                         listenOptions.UseHttps(certificate);
-                    });
-                }
+                });
             }
             catch (Exception ex)
             {
@@ -508,17 +505,17 @@ public static class Program
             await next();
         });
 
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+        
         app.UseRouting();
         app.UseRateLimiter();
 
         app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
-            
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
-        {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-        });
 
         app.MapControllers().RequireRateLimiting(RateLimits.DEFAULT);
     }
