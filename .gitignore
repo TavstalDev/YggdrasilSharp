@@ -132,9 +132,22 @@ secrets.json
 appsettings.Development.json
 appsettings.local.json
 
+# Certificates & Private Keys (see docs/GAME.md for the mkcert workflow)
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+*.truststore
+localhost+*.pem
+localhost+*-key.pem
+
 # User/Local DotSettings
 *.sln.DotSettings
-*.sln.DotSettings.user
 
 # Strong name files (Signing keys - hidden by default for security)
 # *.snk
@@ -230,10 +243,27 @@ _pkginfo.txt
 *.appxbundle
 *.appxupload
 
+# Runtime Uploads (user assets written by the app, see Runtime:UploadDir)
+**/wwwroot/uploads/
+**/wwwroot/uploads/avatars/
+**/wwwroot/uploads/skins/
+**/wwwroot/uploads/capes/
+**/wwwroot/uploads/launcher/
+**/wwwroot/uploads/files/
+
 # Databases & SQL Server
 *.mdf
 *.ldf
 *.ndf
+
+# SQLite (Data Source=yggdrasil.db)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
 
 # Business Intelligence & LightSwitch
 *.rdl.data
