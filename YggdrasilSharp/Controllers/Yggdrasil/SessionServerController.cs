@@ -16,6 +16,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 
@@ -32,7 +33,7 @@ public class SessionServerController : CustomControllerBase
     private readonly IRepository<Cape> _capeRepo;
     private readonly IRepository<FileData> _fileDataRepository;
     private readonly IRepository<ServerJoin> _serverJoinRepo;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private readonly MemoryCacheService _cacheService;
     private static readonly TimeSpan SignedTtl = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan UnsignedTtl = TimeSpan.FromHours(1);
@@ -48,15 +49,15 @@ public class SessionServerController : CustomControllerBase
     /// <param name="fileDataRepository">Repository for managing file data (skins, capes, etc.).</param>
     /// <param name="capeRepo">Repository for managing cape entities.</param>
     /// <param name="cacheService">The memory cache service for caching data.</param>
-    /// <param name="settings">The application settings.</param>
+    /// <param name="appConfiguration">The application settings.</param>
     public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<ServerJoin> serverJoinRepo,
-        IRepository<FileData> fileDataRepository, IRepository<Cape> capeRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
+        IRepository<FileData> fileDataRepository, IRepository<Cape> capeRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _fileDataRepository = fileDataRepository;
         _capeRepo = capeRepo;
         _serverJoinRepo = serverJoinRepo;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
         _cacheService = cacheService;
     }
     
@@ -130,8 +131,8 @@ public class SessionServerController : CustomControllerBase
             if (now > session.ExpiresAt)
                 return CodeResult(HttpStatusCode.Unauthorized, "The access token has expired");
 
-            string host = HttpContext.Request.Host.Host;
-            if (session.UserIp != host)
+            string host = HttpHelper.GetClientIp(HttpContext) ?? "";
+            if (_appConfiguration.Yggdrasil.EnforceIpCheckInJoin && session.UserIp != host)
                 return CodeResult(HttpStatusCode.Forbidden,
                     "The IP address associated with the access token does not match the IP address of the request");
 
@@ -185,7 +186,8 @@ public class SessionServerController : CustomControllerBase
                 return CodeResult(HttpStatusCode.NotFound, "User not found");
 
             ServerJoin? join =
-                await _serverJoinRepo.FindAsync(x => x.ServerId == serverId && (x.UserIp == ip || ip == null));
+                await _serverJoinRepo.FindAsync(x => x.ServerId == serverId && ((_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined && x.UserIp == ip) 
+                    || (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
             if (join == null)
                 return CodeResult(HttpStatusCode.NotFound,
                     "No matching server join found for the provided serverId and IP address");
@@ -291,7 +293,7 @@ public class SessionServerController : CustomControllerBase
             {
                 textures.Add("SKIN", new Dictionary<string, object>
                 {
-                    { "url", skin.GetUrl(_settings.Misc.ApiUrl, true) },
+                    { "url", skin.GetUrl(_appConfiguration.Misc.ApiUrl, true) },
                     {
                         "metadata", new Dictionary<string, object>
                         {
@@ -314,7 +316,7 @@ public class SessionServerController : CustomControllerBase
                     {
                         textures.Add("CAPE", new Dictionary<string, object>
                         {
-                            { "url", capeData.GetUrl(_settings.Misc.ApiUrl, true) },
+                            { "url", capeData.GetUrl(_appConfiguration.Misc.ApiUrl, true) },
                         });
                     }
                 }
@@ -341,7 +343,7 @@ public class SessionServerController : CustomControllerBase
             };
             if (!unsigned)
             {
-                using var cert = Program.GetCertificate(_settings.CertificateFingerprint, _settings.CertificatePassword);
+                using var cert = Program.GetCertificate(_appConfiguration.CertificateFingerprint, _appConfiguration.CertificatePassword);
                 using var rsa = cert.GetRSAPrivateKey();
 
                 if (rsa != null)
