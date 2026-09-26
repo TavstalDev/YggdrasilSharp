@@ -199,7 +199,69 @@ public static class Constants
         /// Example: false
         /// </summary>
         public const string YggdrasilAllowEmptyJoinedAddress = "Yggdrasil:AllowEmptyJoinedAddress";
-        
+
+        /// <summary>
+        /// Configuration key containing the list of server identifiers that clients are not allowed to join.
+        /// Returned verbatim by the session server's <c>blockedservers</c> endpoint.
+        /// Example: [ "an-abusive-server.example.com" ]
+        /// </summary>
+        public const string YggdrasilBlockedServers = "Yggdrasil:BlockedServers";
+
+        /// <summary>
+        /// Configuration key that controls whether the Yggdrasil <c>authenticate</c> and <c>signout</c>
+        /// endpoints accept a Minecraft username in addition to an email address as the login identifier.
+        /// Also drives the <c>meta.feature.non_email_login</c> flag in the Yggdrasil metadata response.
+        /// Example: false
+        /// </summary>
+        public const string YggdrasilAllowProfileNameLogin = "Yggdrasil:AllowProfileNameLogin";
+
+        /// <summary>
+        /// Configuration key for the lifetime of a Yggdrasil access token, in hours.
+        /// Applies to sessions issued by the Yggdrasil <c>authenticate</c> and <c>refresh</c> endpoints.
+        /// Example: 24
+        /// </summary>
+        public const string YggdrasilTokenTtlHours = "Yggdrasil:TokenTtlHours";
+
+        /// <summary>
+        /// Configuration key for the maximum number of concurrently active Yggdrasil access tokens
+        /// retained per user. The oldest token is evicted when the limit is exceeded on
+        /// <c>authenticate</c>.
+        /// Example: 10
+        /// </summary>
+        public const string YggdrasilMaxActiveTokensPerUser = "Yggdrasil:MaxActiveTokensPerUser";
+
+        /// <summary>
+        /// Configuration key that controls whether the <c>player/certificates</c> endpoint under
+        /// <c>minecraftservices</c> is served. Also drives <c>meta.feature.enable_profile_key</c>.
+        /// Only enable this once the endpoint is implemented, since declaring the feature flag
+        /// promises clients that profile key support exists.
+        /// Example: false
+        /// </summary>
+        public const string YggdrasilEnableProfileKey = "Yggdrasil:EnableProfileKey";
+
+        /// <summary>
+        /// Configuration key that controls whether username validation is enforced on registration,
+        /// and whether authlib-injector is asked to enforce its own username character checks via
+        /// <c>meta.feature.username_check</c>.
+        /// Example: true
+        /// </summary>
+        public const string YggdrasilEnforceUsernameCheck = "Yggdrasil:EnforceUsernameCheck";
+
+        /// <summary>
+        /// Configuration key for the site homepage URL advertised as <c>meta.links.homepage</c>
+        /// in the Yggdrasil metadata response. Optional; omitted from the response when not set.
+        /// Example: "https://example.com"
+        /// </summary>
+        public const string YggdrasilHomepageUrl = "Yggdrasil:HomepageUrl";
+
+        /// <summary>
+        /// Configuration key for the registration page URL advertised as <c>meta.links.register</c>
+        /// in the Yggdrasil metadata response. Optional; omit or leave empty when account
+        /// registration is disabled.
+        /// Example: "https://example.com/register"
+        /// </summary>
+        public const string YggdrasilRegisterUrl = "Yggdrasil:RegisterUrl";
+
         /// <summary>
         /// Configuration key containing the allowed characters for usernames.
         /// Used to validate new usernames during registration.
