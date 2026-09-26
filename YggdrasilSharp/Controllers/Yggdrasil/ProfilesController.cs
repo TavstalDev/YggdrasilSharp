@@ -53,7 +53,7 @@ public class ProfilesController : CustomControllerBase
             // Retrieve users from the database whose usernames match the provided list.
             List<CustomUser> users = (await UserStore.QueryUserAsync(x => names.Contains(x.UserName))).ToList();
             if (users.Count == 0)
-                return CodeResult(HttpStatusCode.NotFound, "No users found with the provided usernames.");
+                return JsonResult("[]");
 
             // Prepare the response containing user IDs and usernames.
             List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();

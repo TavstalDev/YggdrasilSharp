@@ -31,7 +31,7 @@ public class SkinsControllerTests : ControllerTestBase
     public SkinsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new SkinsController(_loggerMock.Object, _userManager, _userStore, _fileDataRepo, AppConfiguration);
+        _controller = new SkinsController(_loggerMock.Object, _userManager, _userStore, _memoryCacheService, _fileDataRepo, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

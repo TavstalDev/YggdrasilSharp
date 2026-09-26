@@ -8,6 +8,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
@@ -20,6 +21,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class UserCapesController : CustomControllerBase
 {
+    private readonly MemoryCacheService _cacheService;
     private readonly CustomUserManager _userManager;
     
     /// <summary>
@@ -28,9 +30,12 @@ public class UserCapesController : CustomControllerBase
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="cacheService">The memory cache service for caching data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomUserStore userStore, MemoryCacheService cacheService,
+        AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
+        _cacheService = cacheService;
         _userManager = userManager;
     }
     
@@ -85,6 +90,10 @@ public class UserCapesController : CustomControllerBase
                 currentlySelectedCape.IsSelected = false;
                 await UserStore.UserCapes.UpdateAsync(currentlySelectedCape);
             }
+            
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{user.Id}:signed");
+            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
 
             cape.IsSelected = true;
             await UserStore.UserCapes.UpdateAsync(cape, true);
@@ -126,6 +135,10 @@ public class UserCapesController : CustomControllerBase
             if (currentlySelectedCape == null)
                 return CodeResult(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{user.Id}:signed");
+            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
+            
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return CodeResult(HttpStatusCode.OK, "Selected cape cleared successfully");
@@ -199,6 +212,10 @@ public class UserCapesController : CustomControllerBase
                 await UserStore.UserCapes.UpdateAsync(currentlySelectedCape);
             }
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
+            
             cape.IsSelected = true;
             await UserStore.UserCapes.UpdateAsync(cape, true);
             return CodeResult(HttpStatusCode.OK, "Cape selected successfully");
@@ -258,6 +275,10 @@ public class UserCapesController : CustomControllerBase
             if (currentlySelectedCape == null)
                 return CodeResult(HttpStatusCode.NotFound, "No cape is currently selected for the user");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
+            
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return CodeResult(HttpStatusCode.OK, "Selected cape cleared successfully");

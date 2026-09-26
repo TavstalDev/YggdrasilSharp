@@ -32,7 +32,7 @@ public class UserCapesControllerTests : ControllerTestBase
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
         _capeRepo = new Repository<Cape>(_dbContext);
-        _controller = new UserCapesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration);
+        _controller = new UserCapesController(_loggerMock.Object, _userManager, _userStore, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

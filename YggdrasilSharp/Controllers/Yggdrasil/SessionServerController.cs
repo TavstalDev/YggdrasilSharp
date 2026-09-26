@@ -68,10 +68,9 @@ public class SessionServerController : CustomControllerBase
     [HttpGet("/yggdrasil/sessionserver/blockedservers")]
     public IActionResult GetBlockedServers()
     {
-        // Until no actual blocked servers are implemented, it does not need to be cached or retrieved from the database, so we can just return an empty list with the correct structure.
         string finalJson = JsonConvert.SerializeObject(new
         {
-            blockedServers = Array.Empty<string>()
+            blockedServers = _appConfiguration.Yggdrasil.BlockedServers
         });
         string etag = ComputeETag(finalJson);
         if (HttpContext.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag))
@@ -185,9 +184,10 @@ public class SessionServerController : CustomControllerBase
             if (user == null)
                 return CodeResult(HttpStatusCode.NotFound, "User not found");
 
-            ServerJoin? join =
-                await _serverJoinRepo.FindAsync(x => x.ServerId == serverId && ((_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined && x.UserIp == ip) 
-                    || (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
+            ServerJoin? join = await _serverJoinRepo.FindAsync(x => x.UserId == user.Id && x.ServerId == serverId && 
+                                                                    ( x.UserIp == ip || 
+                                                                      !_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined || 
+                                                                      (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
             if (join == null)
                 return CodeResult(HttpStatusCode.NotFound,
                     "No matching server join found for the provided serverId and IP address");
@@ -195,10 +195,6 @@ public class SessionServerController : CustomControllerBase
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > join.ExpiresAt)
                 return CodeResult(HttpStatusCode.Unauthorized, "The server join has expired");
-
-            if (user.Id != join.UserId)
-                return CodeResult(HttpStatusCode.BadRequest,
-                    "The provided username does not match the user associated with the server join");
 
             string json = await GetProfileResponseJsonAsync(user);
             return JsonResult(json);
@@ -371,6 +367,7 @@ public class SessionServerController : CustomControllerBase
         finally
         {
             sem.Release();
+            _locks.Remove(key, out _);
         }
     }
 }

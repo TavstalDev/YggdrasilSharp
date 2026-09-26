@@ -11,6 +11,7 @@ using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -26,6 +27,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class SkinsController : CustomControllerBase
 {
+    private readonly MemoryCacheService _cacheService;
     private readonly CustomUserManager _userManager;
     private readonly IRepository<FileData> _fileDataRepository;
     
@@ -35,11 +37,13 @@ public class SkinsController : CustomControllerBase
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="memoryCacheService">The memory cache service for caching data.</param>
     /// <param name="fileDataRepository">Repository for managing file data (skins).</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomUserStore userStore,
+    public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomUserStore userStore, MemoryCacheService memoryCacheService,
         IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
+        _cacheService = memoryCacheService;
         _userManager = userManager;
         _fileDataRepository = fileDataRepository;
     }
@@ -143,6 +147,10 @@ public class SkinsController : CustomControllerBase
                 return CodeResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{user.Id}:signed");
+            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
+            
             FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
@@ -189,6 +197,10 @@ public class SkinsController : CustomControllerBase
             if (existingSkin == null)
                 return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{user.Id}:signed");
+            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
+            
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
             return CodeResult(HttpStatusCode.OK, "Skin deleted successfully");
@@ -254,6 +266,9 @@ public class SkinsController : CustomControllerBase
                 return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
             }
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
             return File(skin.GetFileStream(), skin.ContentType, skin.FileName);
         }
         catch (Exception ex)
@@ -331,6 +346,10 @@ public class SkinsController : CustomControllerBase
                 return CodeResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
+            
             FileData fd = await _fileDataRepository.AddAsync(new FileData
             {
                 Hash = fileHash,
@@ -395,6 +414,10 @@ public class SkinsController : CustomControllerBase
             if (existingSkin == null)
                 return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
 
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
+            
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
             return CodeResult(HttpStatusCode.OK, "Skin deleted successfully");

@@ -15,6 +15,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 /// Controller for handling Yggdrasil texture-related API requests.
 /// </summary>
 [ApiController]
+[Route("yggdrasil/texture")]
 [Route("yggdrasil/textures")]
 [Tags("Yggdrasil")]
 public class TexturesController : CustomControllerBase
