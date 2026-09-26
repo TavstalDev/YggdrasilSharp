@@ -1,10 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <RootNamespace>Tavstal.YggdrasilSharp</RootNamespace>
         <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <RootNamespace>Tavstal.YggdrasilSharp</RootNamespace>
+        <AssemblyName>YggdrasilSharp</AssemblyName>
+        <AssemblyTitle>YggdrasilSharp</AssemblyTitle>
+        <Product>YggdrasilSharp</Product>
+        <Description>Lightweight, self-hostable implementation of the Minecraft Yggdrasil authentication API built with ASP.NET Core.</Description>
+        <Company>Tavstal</Company>
+        <Authors>Tavstal</Authors>
+        <Copyright>Copyright © 2026 Tavstal</Copyright>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+        <Version>1.0.0</Version>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
