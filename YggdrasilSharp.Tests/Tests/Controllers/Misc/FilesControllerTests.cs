@@ -35,7 +35,7 @@ public class FilesControllerTests : ControllerTestBase
     public FilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new FilesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, _settings);
+        _controller = new FilesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

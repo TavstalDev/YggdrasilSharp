@@ -38,7 +38,7 @@ public class SessionServerControllerTests : ControllerTestBase
         _serverJoinRepo = new Repository<ServerJoin>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
         _capeRepo = new Repository<Cape>(_dbContext);
-        _controller = new SessionServerController(_loggerMock.Object, _userManager, _userStore, _serverJoinRepo, _fileDataRepo, _capeRepo, _memoryCacheService, _settings);
+        _controller = new SessionServerController(_loggerMock.Object, _userManager, _userStore, _serverJoinRepo, _fileDataRepo, _capeRepo, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

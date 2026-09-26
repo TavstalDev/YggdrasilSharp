@@ -26,7 +26,7 @@ public abstract class ControllerTestBase
     protected readonly DefaultHttpContext _controllerHttpContext;
     protected readonly MemoryCacheService _memoryCacheService;
     protected readonly FakeEmailService _fakeEmailService;
-    protected readonly Settings _settings;
+    protected readonly AppConfiguration AppConfiguration;
     protected readonly CustomUser _userMock;
     protected readonly CustomUser _userMock2;
     protected const string _passwordMock = "This%Valid_And#Pass%mock-2026";
@@ -44,7 +44,7 @@ public abstract class ControllerTestBase
         _passwordHasher = _testHelper.PasswordHasher;
         _memoryCacheService = _testHelper.MemoryCacheService;
         _fakeEmailService = _testHelper.FakeEmailService;
-        _settings = TestHelper.CreateTestSettings();
+        AppConfiguration = TestHelper.CreateTestSettings();
 
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>

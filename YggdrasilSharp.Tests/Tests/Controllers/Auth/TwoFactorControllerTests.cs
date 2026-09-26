@@ -29,7 +29,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
         {
             // Controller now expects (logger, userManager, userStore, settings)
-            _controller = new TwoFactorController(_loggerMock.Object, _userManager, _userStore, _settings);
+            _controller = new TwoFactorController(_loggerMock.Object, _userManager, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

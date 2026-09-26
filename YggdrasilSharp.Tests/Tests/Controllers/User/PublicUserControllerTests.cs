@@ -30,7 +30,7 @@ public class PublicUserControllerTests : ControllerTestBase
     public PublicUserControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new PublicUserController(_loggerMock.Object, _userStore, _fileDataRepo, _settings);
+        _controller = new PublicUserController(_loggerMock.Object, _userStore, _fileDataRepo, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

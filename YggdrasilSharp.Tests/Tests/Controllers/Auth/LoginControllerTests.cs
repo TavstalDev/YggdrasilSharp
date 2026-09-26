@@ -30,7 +30,7 @@ public class LoginControllerTests
     protected readonly CustomUserStore _userStore;
     protected readonly CustomUserManager _userManager;
     protected readonly CustomSignInManager _signInManager;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private readonly LoginController _controller;
     private readonly DefaultHttpContext _controllerHttpContext;
     private readonly CustomUser _userMock;
@@ -53,10 +53,10 @@ public class LoginControllerTests
         var dbContext = TestHelper.CreateInMemoryDbContext();
         _userStore = TestHelper.CreateCustomUserStore(dbContext);
         _userManager = _testHelper.CreateCustomUserManager(dbContext, _userStore);
-        _settings = TestHelper.CreateTestSettings();
+        _appConfiguration = TestHelper.CreateTestSettings();
         var memoryCache = _testHelper.MemoryCacheService;
-        _signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, _settings);
-        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, _settings);
+        _signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, _appConfiguration);
+        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, _appConfiguration);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
@@ -210,7 +210,7 @@ public class LoginControllerTests
             setCookie.Should().Contain("ysharp-userId=");
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_settings.Jwt.EncryptionKey));
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.EncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
@@ -389,7 +389,7 @@ public class LoginControllerTests
             sessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_settings.Jwt.EncryptionKey));
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.EncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
 

@@ -33,7 +33,7 @@ public class RecoveryControllerTests : ControllerTestBase
     {
         // Controller expects: (logger, dbContext, userStore, passwordHasher, emailService, memoryCacheService, settings)
         _controller = new RecoveryController(_loggerMock.Object, _dbContext, _userStore, _passwordHasher,
-            _fakeEmailService, _memoryCacheService, _settings);
+            _fakeEmailService, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -326,7 +326,7 @@ public class RecoveryControllerTests : ControllerTestBase
             await _userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedHash(backup, _settings.Jwt.EncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(backup, AppConfiguration.Jwt.EncryptionKey),
                 CreateAt =  DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);

@@ -21,7 +21,7 @@ public class ProfilesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base test class.</param>
     public ProfilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new ProfilesController(_loggerMock.Object, _userStore, _settings);
+        _controller = new ProfilesController(_loggerMock.Object, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

@@ -86,8 +86,8 @@ public class TestHelper
         return manager;
     }
 
-    public CustomSignInManager CreateSignInManager(CustomUserStore userStore, CustomUserManager userManager, Settings settings) =>
-        new(userStore, userManager, PasswordHasher, MemoryCacheService, settings);
+    public CustomSignInManager CreateSignInManager(CustomUserStore userStore, CustomUserManager userManager, AppConfiguration appConfiguration) =>
+        new(userStore, userManager, PasswordHasher, MemoryCacheService, appConfiguration);
 
     /// <summary>
     /// Create a <see cref="CustomUserStore"/> backed by the provided <see cref="CustomDbContext"/>.
@@ -123,11 +123,11 @@ public class TestHelper
         );
     }
 
-    public static Settings CreateTestSettings()
+    public static AppConfiguration CreateTestSettings()
     {
         var (pfxFilePath, password) = CreateSelfSignedPfxFile();
         
-        return new Settings(
+        return new AppConfiguration(
             "http://localhost",
             "http://localhost",
             "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6",

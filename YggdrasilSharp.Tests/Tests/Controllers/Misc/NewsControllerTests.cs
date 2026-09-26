@@ -34,7 +34,7 @@ public class NewsControllerTests : ControllerTestBase
     {
         _newsRepo = new Repository<News>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new NewsController(_loggerMock.Object, _userManager, _userStore, _newsRepo, _fileDataRepo, _memoryCacheService, _settings);
+        _controller = new NewsController(_loggerMock.Object, _userManager, _userStore, _newsRepo, _fileDataRepo, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

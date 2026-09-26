@@ -22,7 +22,7 @@ public class SessionsControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">xUnit test output helper used to capture test logs.</param>
     public SessionsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new SessionsController(_loggerMock.Object, _userManager, _dbContext, _userStore, _settings);
+        _controller = new SessionsController(_loggerMock.Object, _userManager, _dbContext, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
