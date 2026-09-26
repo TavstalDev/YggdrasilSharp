@@ -1,3 +1,4 @@
+using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Claims;
@@ -20,6 +21,7 @@ using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Authentication;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using IPNetwork = System.Net.IPNetwork;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
 namespace Tavstal.YggdrasilSharp;
@@ -48,7 +50,7 @@ public static class Program
     /// </summary>
     private static ILogger? _logger;
     
-    private static Settings? _settings;
+    private static AppConfiguration? _settings;
     
     /// <summary>
     /// Indicates whether the application is running in Development environment.
@@ -142,7 +144,7 @@ public static class Program
     {
         var services = builder.Services;
         var configuration = builder.Configuration;
-        _settings = new Settings(configuration);
+        _settings = new AppConfiguration(configuration);
         
         #region Database
         // Configure identity options
@@ -415,7 +417,7 @@ public static class Program
         // Database cleaner service
         services.AddHostedService<DatabaseCleanerService>();
         // JwtSettings
-        services.AddSingleton<Settings>();
+        services.AddSingleton<AppConfiguration>();
         // Email Service
         services.AddSingleton<IEmailService, EmailService>();
         #endregion
@@ -481,6 +483,39 @@ public static class Program
     /// <param name="app">The WebApplication instance to configure.</param>
     private static void ConfigureMiddleware(WebApplication app)
     {
+        if (_settings == null)
+        {
+            _logger?.LogCritical("The configuration was not ready at middleware setup.");
+            return;
+        }
+        
+        if (_settings.Proxy.Enabled)
+        {
+            ForwardedHeadersOptions options = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                ForwardLimit = _settings.Proxy.ForwardLimit,
+                RequireHeaderSymmetry = false
+            };
+
+            foreach (string proxy in _settings.Proxy.KnownProxies)
+                if (IPAddress.TryParse(proxy, out IPAddress? parsed))
+                    options.KnownProxies.Add(parsed);
+
+            foreach (string network in _settings.Proxy.KnownNetworks)
+                if (IPNetwork.TryParse(network, out IPNetwork parsedNetwork))
+                    options.KnownIPNetworks.Add(parsedNetwork);
+
+            foreach (string host in _settings.Proxy.AllowedHosts)
+                options.AllowedHosts.Add(host);
+
+            // Loopback is a safe default for local reverse proxies; do NOT add 0.0.0.0/0 here.
+            options.KnownProxies.Add(IPAddress.Loopback);
+            options.KnownProxies.Add(IPAddress.IPv6Loopback);
+
+            app.UseForwardedHeaders(options);
+        }
+        
         // Use developer exception page
         if (IsDevelopment)
             app.UseDeveloperExceptionPage();
@@ -491,6 +526,10 @@ public static class Program
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings?.Swagger.Name} v1");
             c.RoutePrefix = "docs";
+        });
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
 
         app.UseHttpsRedirection();
@@ -503,11 +542,6 @@ public static class Program
         {
             context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none';");
             await next();
-        });
-
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
-        {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
         
         app.UseRouting();
