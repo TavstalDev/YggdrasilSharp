@@ -1,5 +1,12 @@
 # YggdrasilSharp
 
+![Latest Version](https://img.shields.io/github/v/release/TavstalDev/YggdrasilSharp?style=plastic-square)
+![Workflow Status](https://img.shields.io/github/actions/workflow/status/TavstalDev/YggdrasilSharp/release.yml?branch=stable&label=build&style=plastic-square)
+![License](https://img.shields.io/github/license/TavstalDev/YggdrasilSharp?style=plastic-square)
+![Stars](https://img.shields.io/github/stars/TavstalDev/YggdrasilSharp?style=plastic-square)
+![Issues](https://img.shields.io/github/issues/TavstalDev/YggdrasilSharp?style=plastic-square)
+![Forks](https://img.shields.io/github/forks/TavstalDev/YggdrasilSharp?style=plastic-square)
+
 A lightweight, self-hostable implementation of the Minecraft [Yggdrasil](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg/Yggdrasil_protocol) authentication API built with ASP.NET Core. It is designed for offline testing, launcher development, and custom skin/session handling.
 
 ## Features
