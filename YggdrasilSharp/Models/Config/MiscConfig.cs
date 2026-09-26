@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Config;
 
 /// <summary>
@@ -8,11 +10,13 @@ public class MiscConfig
     /// <summary>
     /// Gets or sets the website URL.
     /// </summary>
+    [JsonPropertyName("WebsiteUrl")]
     public string WebsiteUrl { get; set; }
 
     /// <summary>
     /// Gets or sets the API URL.
     /// </summary>
+    [JsonPropertyName("ApiUrl")]
     public string ApiUrl { get; set; }
 
     /// <summary>

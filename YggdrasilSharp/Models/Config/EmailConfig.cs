@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Config;
 
 /// <summary>
@@ -8,21 +10,25 @@ public class EmailConfig
     /// <summary>
     /// Gets or sets the email provider.
     /// </summary>
+    [JsonPropertyName("Provider")]
     public string Provider { get; set; }
 
     /// <summary>
     /// Gets or sets the email port.
     /// </summary>
+    [JsonPropertyName("Port")]
     public int Port { get; set; }
 
     /// <summary>
     /// Gets or sets the email address.
     /// </summary>
+    [JsonPropertyName("Address")]
     public string Address { get; set; }
 
     /// <summary>
     /// Gets or sets the email password.
     /// </summary>
+    [JsonPropertyName("Password")]
     public string Password { get; set; }
 
     /// <summary>

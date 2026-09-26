@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Config;
 
 /// <summary>
@@ -9,17 +11,20 @@ public class DatabaseConfig
     /// Gets or sets the database provider type.
     /// Determines which Entity Framework Core database provider to use.
     /// </summary>
+    [JsonPropertyName("Provider")]
     public string Provider { get; set; }
     
     /// <summary>
     /// Gets or sets the database version.
     /// Used to configure database-specific behavior and compatibility options.
     /// </summary>
+    [JsonPropertyName("Version")]
     public string Version { get; set; }
     
     /// <summary>
     /// Gets or sets the database connection string.
     /// </summary>
+    [JsonPropertyName("ConnectionString")]
     public string ConnectionString { get; set; }
 
     /// <summary>

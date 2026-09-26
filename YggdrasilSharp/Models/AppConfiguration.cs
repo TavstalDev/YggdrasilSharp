@@ -120,7 +120,7 @@ public class AppConfiguration
         Database = new DatabaseConfig("", "", "");
         Jwt = new JwtConfig(encryptionKey, issuer, audience, clockSkew, lockoutMaxAttempts, lockoutDuration);
         Email = new EmailConfig(emailProvider, emailPort, emailAddress, emailPassword);
-        Yggdrasil = new YggdrasilConfig(true, true, true, skinDomains, serverName, implementationName,
+        Yggdrasil = new YggdrasilConfig(true, true, true, ["1.1.1.1", "2.2.2.2"], skinDomains, serverName, implementationName,
             implementationVersion);
         Swagger = new SwaggerConfig();
     }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Config;
 
 /// <summary>
@@ -8,31 +10,37 @@ public class JwtConfig
     /// <summary>
     /// Gets or sets the encryption key used for JWT.
     /// </summary>
+    [JsonPropertyName("EncryptionKey")]
     public string EncryptionKey { get; set; }
 
     /// <summary>
     /// Gets or sets the JWT issuer.
     /// </summary>
+    [JsonPropertyName("Issuer")]
     public string Issuer { get; set; }
 
     /// <summary>
     /// Gets or sets the JWT audience.
     /// </summary>
+    [JsonPropertyName("Audience")]
     public string Audience { get; set; }
     
     /// <summary>
     /// Gets or sets the clock skew tolerance for JWT token validation.
     /// </summary>
+    [JsonPropertyName("ClockSkew")]
     public TimeSpan ClockSkew { get; set; }
     
     /// <summary>
     /// Maximum number of failed authentication attempts allowed before a user is locked out.
     /// </summary>
+    [JsonPropertyName("LockoutMaxAttempts")]
     public int LockoutMaxAttempts { get; set; }
     
     /// <summary>
     /// Duration of the lockout applied when the user exceeds the allowed failed authentication attempts.
     /// </summary>
+    [JsonPropertyName("LockoutDuration")]
     public TimeSpan LockoutDuration { get; set; }
 
     /// <summary>

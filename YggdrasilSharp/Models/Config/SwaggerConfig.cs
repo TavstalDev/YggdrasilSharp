@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Config;
 
 /// <summary>
@@ -8,36 +10,43 @@ public class SwaggerConfig
     /// <summary>
     /// Gets or sets the name of the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("Name")]
     public string Name { get; set; } = "Yggdrasil.API";
     
     /// <summary>
     /// Gets or sets the description of the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("Description")]
     public string Description { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the version of the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("Version")]
     public string Version { get; set; } = "0.0.0";
     
     /// <summary>
     /// Gets or sets the contact name shown in the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("ContactName")]
     public string ContactName { get; set; } = "Issues";
 
     /// <summary>
     /// Gets or sets the contact link (URL) shown in the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("ContactLink")]
     public string ContactLink { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the license name shown in the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("LicenseName")]
     public string LicenseName { get; set; } = "MIT License";
     
     /// <summary>
     /// Gets or sets the license link (URL) shown in the Swagger/OpenAPI document.
     /// </summary>
+    [JsonPropertyName("LicenseLink")]
     public string LicenseLink { get; set; } = "";
 
     /// <summary>

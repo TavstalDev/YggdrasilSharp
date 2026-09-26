@@ -30,22 +30,81 @@ public class YggdrasilConfig
     /// <summary>
     /// Gets or sets the allowed skin domains.
     /// </summary>
+    [JsonPropertyName("SkinDomains")]
     public string[] SkinDomains { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the server identifiers that clients are not allowed to join.
+    /// Returned verbatim by the session server's <c>blockedservers</c> endpoint.
+    /// </summary>
+    [JsonPropertyName("BlockedServers")]
+    public string[] BlockedServers { get; set; }
 
     /// <summary>
     /// Gets or sets the server name.
     /// </summary>
+    [JsonPropertyName("ServerName")]
     public string ServerName { get; set; }
 
     /// <summary>
     /// Gets or sets the implementation name.
     /// </summary>
+    [JsonPropertyName("ImplementationName")]
     public string ImplementationName { get; set; }
 
     /// <summary>
     /// Gets or sets the implementation version.
     /// </summary>
+    [JsonPropertyName("ImplementationVersion")]
     public string ImplementationVersion { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Yggdrasil authentication endpoints accept a
+    /// Minecraft username in addition to an email address as the login identifier.
+    /// Exposed to clients as <c>meta.feature.non_email_login</c>.
+    /// </summary>
+    [JsonPropertyName("AllowProfileNameLogin")]
+    public bool AllowProfileNameLogin { get; set; }
+
+    /// <summary>
+    /// Gets or sets the lifetime of a Yggdrasil access token, in days.
+    /// </summary>
+    [JsonPropertyName("TokenTtlHours")]
+    public int TokenTtlHours { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum number of concurrently active Yggdrasil access tokens retained per user.
+    /// </summary>
+    [JsonPropertyName("MaxActiveTokensPerUser")]
+    public int MaxActiveTokensPerUser { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the <c>minecraftservices/player/certificates</c>
+    /// endpoint is served. Exposed to clients as <c>meta.feature.enable_profile_key</c>.
+    /// </summary>
+    [JsonPropertyName("EnableProfileKey")]
+    public bool EnableProfileKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether username validation is enforced on registration and
+    /// requested from authlib-injector via <c>meta.feature.username_check</c>.
+    /// </summary>
+    [JsonPropertyName("EnforceUsernameCheck")]
+    public bool EnforceUsernameCheck { get; set; }
+
+    /// <summary>
+    /// Gets or sets the site homepage URL advertised as <c>meta.links.homepage</c>.
+    /// Null when not configured, in which case the link is omitted from the metadata response.
+    /// </summary>
+    [JsonPropertyName("HomepageUrl")]
+    public string? HomepageUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the registration page URL advertised as <c>meta.links.register</c>.
+    /// Null or empty when account registration is disabled, in which case the link is omitted.
+    /// </summary>
+    [JsonPropertyName("RegisterUrl")]
+    public string? RegisterUrl { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="YggdrasilConfig"/> class with explicit values.
@@ -53,19 +112,37 @@ public class YggdrasilConfig
     /// <param name="enforceIpCheckInJoin">Whether the request IP is compared against the play session IP when joining a server.</param>
     /// <param name="enforceIpCheckInHasJoined">Whether the IP reported by the game server is compared against the stored join IP on hasJoined requests.</param>
     /// <param name="allowEmptyJoinedAddress">Whether hasJoined requests may omit the IP address.</param>
+    /// <param name="blockedServers">An array of server identifiers clients are not allowed to join.</param>
     /// <param name="skinDomains">An array of allowed domains for serving skins.</param>
     /// <param name="serverName">The server name presented by Yggdrasil-compatible endpoints.</param>
     /// <param name="implementationName">The name of the Yggdrasil implementation (metadata shown to clients).</param>
     /// <param name="implementationVersion">The version string of the Yggdrasil implementation.</param>
-    public YggdrasilConfig(bool enforceIpCheckInJoin, bool enforceIpCheckInHasJoined, bool allowEmptyJoinedAddress, string[] skinDomains, string serverName, string implementationName, string implementationVersion)
+    /// <param name="allowProfileNameLogin">Whether a username is accepted as the login identifier alongside an email address.</param>
+    /// <param name="tokenTtlHours">The lifetime of a Yggdrasil access token, in days.</param>
+    /// <param name="maxActiveTokensPerUser">The maximum number of active access tokens retained per user.</param>
+    /// <param name="enableProfileKey">Whether the minecraftservices player certificates endpoint is served.</param>
+    /// <param name="enforceUsernameCheck">Whether username validation is enforced and advertised to authlib-injector.</param>
+    /// <param name="homepageUrl">The site homepage URL advertised as meta.links.homepage.</param>
+    /// <param name="registerUrl">The registration page URL advertised as meta.links.register.</param>
+    public YggdrasilConfig(bool enforceIpCheckInJoin, bool enforceIpCheckInHasJoined, bool allowEmptyJoinedAddress, string[] blockedServers, string[] skinDomains, string serverName, 
+        string implementationName, string implementationVersion, bool allowProfileNameLogin = false, int tokenTtlHours = 30, int maxActiveTokensPerUser = 10,
+        bool enableProfileKey = false, bool enforceUsernameCheck = true, string? homepageUrl = null, string? registerUrl = null)
     {
         EnforceIpCheckInJoin = enforceIpCheckInJoin;
         EnforceIpCheckInHasJoined = enforceIpCheckInHasJoined;
         AllowEmptyJoinedAddress = allowEmptyJoinedAddress;
+        BlockedServers = blockedServers;
         SkinDomains = skinDomains;
         ServerName = serverName;
         ImplementationName = implementationName;
         ImplementationVersion = implementationVersion;
+        AllowProfileNameLogin = allowProfileNameLogin;
+        TokenTtlHours = tokenTtlHours;
+        MaxActiveTokensPerUser = maxActiveTokensPerUser;
+        EnableProfileKey = enableProfileKey;
+        EnforceUsernameCheck = enforceUsernameCheck;
+        HomepageUrl = homepageUrl;
+        RegisterUrl = registerUrl;
     }
 
     /// <summary>
@@ -78,9 +155,17 @@ public class YggdrasilConfig
         EnforceIpCheckInJoin = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceIpCheckInJoin, true);
         EnforceIpCheckInHasJoined = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceIpCheckInHasJoined, true);
         AllowEmptyJoinedAddress = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilAllowEmptyJoinedAddress, false);
+        BlockedServers = configuration.GetSection(Constants.ConfigurationKeys.YggdrasilBlockedServers).Get<string[]>() ?? [];
         SkinDomains = configuration.GetSection(Constants.ConfigurationKeys.YggdrasilSkinDomains).Get<string[]>() ?? throw new InvalidOperationException(Constants.ConfigurationKeys.YggdrasilSkinDomains);
         ServerName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilServerName);
         ImplementationName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilImplementationName);
         ImplementationVersion = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilImplementationVersion);
+        AllowProfileNameLogin = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilAllowProfileNameLogin, false);
+        TokenTtlHours = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilTokenTtlHours, 30);
+        MaxActiveTokensPerUser = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilMaxActiveTokensPerUser, 10);
+        EnableProfileKey = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnableProfileKey, false);
+        EnforceUsernameCheck = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceUsernameCheck, true);
+        HomepageUrl = configuration.GetValue<string>(Constants.ConfigurationKeys.YggdrasilHomepageUrl);
+        RegisterUrl = configuration.GetValue<string>(Constants.ConfigurationKeys.YggdrasilRegisterUrl);
     }
 }
