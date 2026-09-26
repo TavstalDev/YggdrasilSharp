@@ -26,6 +26,7 @@ public class HomeController : CustomControllerBase
     [Route("/"), ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult Index()
     {
+        Response.Headers.TryAdd("X-Authlib-Injector-API-Location", "/yggdrasil/");
         return CodeResult(HttpStatusCode.OK, "The API is running.");
     }
 }
