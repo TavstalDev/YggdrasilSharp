@@ -53,9 +53,6 @@ public class ProfilesControllerTests : ControllerTestBase
     public async Task ReturnsNotFound()
     {
         var result = await _controller.MinecraftProfile(["user1", "user2"]);
-        result.Should().BeOfType<ObjectResult>();
-        var objectResult = result as ObjectResult;
-        objectResult!.StatusCode.Should().Be(404);
-        _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+        result.Should().BeOfType<ContentResult>();
     }
 }

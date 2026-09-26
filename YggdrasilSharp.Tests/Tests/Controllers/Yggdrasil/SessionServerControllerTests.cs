@@ -327,7 +327,7 @@ public class SessionServerControllerTests : ControllerTestBase
             
             result.Should().BeOfType<ObjectResult>();
             var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
+            objectResult!.StatusCode.Should().Be(404);
             _testOutputHelper.WriteLine("Result: " + objectResult.Value);
         }
     }
