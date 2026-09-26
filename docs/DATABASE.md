@@ -42,8 +42,6 @@ Credentials are stored in `.env` and substituted at runtime via the `$DB_USER` /
 "ConnectionString": "Host=127.0.0.1;Port=5432;Database=yggdrasil;Username=$DB_USER;Password=$DB_PASSWORD;"
 ```
 
-PostgreSQL connections enable automatic retry on failure.
-
 ### SQLite
 
 ```json
@@ -87,4 +85,6 @@ dotnet ef migrations remove --project ./YggdrasilSharp/YggdrasilSharp.csproj --s
 ## Notes
 
 - The placeholder substitution happens in `Program.cs` before the provider is selected.
-- `Database:Version` is currently unused and kept for future compatibility tuning.
+- `Database:Version` is **required**. Startup throws if it is missing or not parseable, because the
+  value is passed to `MySqlServerVersion` for the MySQL provider. Example: `"8.0.31"`.
+- Retry-on-failure is enabled for both MySQL and PostgreSQL, but not for SQLite.

@@ -19,8 +19,6 @@ This guide walks through installing, configuring, and running YggdrasilSharp for
   - PostgreSQL
   - SQLite (zero setup, uses a local file)
 
-3. **Access the web UI**: Open `http://localhost:8025` to view sent emails
-
 ## 1. Clone & Restore
 
 ```bash

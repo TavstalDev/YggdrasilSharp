@@ -23,10 +23,15 @@ dotnet build YggdrasilSharp.sln --configuration Release
 ## Test
 
 ```bash
-dotnet test YggdrasilSharp.sln --configuration Release
+dotnet run --project ./YggdrasilSharp.Tests/YggdrasilSharp.Tests.csproj --configuration Release
 ```
 
-The test project (`YggdrasilSharp.Tests`) uses xUnit and ships in-memory/SQLite test databases, so no external services are required.
+> `dotnet test` does **not** work on the .NET 10 SDK for this project. The suite uses xUnit v3 on
+> Microsoft.Testing.Platform, which no longer supports the VSTest path that `dotnet test` drives, so
+> the test project is an executable that must be run directly. This is what CI does as well.
+
+The test project (`YggdrasilSharp.Tests`) uses xUnit v3 with FluentAssertions and Moq. It runs
+entirely on EF Core's in-memory provider, so no external database or service is required.
 
 ## Run Locally (Development)
 
@@ -34,7 +39,9 @@ The test project (`YggdrasilSharp.Tests`) uses xUnit and ships in-memory/SQLite 
 dotnet run --project YggdrasilSharp
 ```
 
-For a debug build the app runs in Development mode, which enables the developer exception page and allows the upload directory to be set dynamically.
+For a debug build the app runs in Development mode, which enables the developer exception page. Note
+that the upload directory is resolved from `Runtime:UploadDir` (relative to the web root) in every
+environment, not just Development.
 
 ## Publish
 
@@ -44,13 +51,22 @@ dotnet publish YggdrasilSharp/YggdrasilSharp.csproj --configuration Release --ou
 
 ## Continuous Integration
 
-GitHub Actions runs on every push/PR to `master`:
+`.github/workflows/ci.yml` runs on every push/PR to `master`:
 
 - Restores the solution
 - Builds in `Release`
 - Runs the full test suite
 
+`.github/workflows/release.yml` runs on pushes to `stable`. It performs the same restore, build, and
+test steps, then reads `<Version>` from `YggdrasilSharp.csproj` and creates a GitHub release tagged
+`v<Version>`. It refuses to run if that tag already exists on the remote, so the version must be
+bumped before pushing. Source code only is published — no packages or build artifacts are attached.
+
 ## Troubleshooting
 
 - **Build fails**: run `dotnet clean` followed by `dotnet restore` to clear stale artifacts.
-- **ImageSharp license warning**: the project uses [SkiaSharp](https://github.com/mono/SkiaSharp) (MIT) instead; the warning only appears if you re-add the `SixLabors.ImageSharp` package.
+- **`dotnet test` errors with "Testing with VSTest target is no longer supported"**: run the test
+  project directly with `dotnet run` as shown above.
+- **"Fluent Assertions is governed by the Xceed License Agreement" warning**: this is a license
+  notice printed on every test run, not a failure. Fluent Assertions 8 is free for non-commercial
+  use; a subscription is required for commercial use.

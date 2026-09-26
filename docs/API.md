@@ -143,8 +143,8 @@ These endpoints are compatible with the official Yggdrasil protocol and the Mine
 
 | Method | Route | Description | Auth |
 | --- | --- | --- | --- |
-| GET | `/yggdrasil` | Return trust/status metadata for this auth server. | Public |
-| GET | `/yggdrasil/status` | Service status including time and skins server URL. | Public |
+| GET | `/yggdrasil` | Root metadata: skin domains, public key signature, server/implementation name and version, feature flags, and homepage/register links. | Public |
+| GET | `/yggdrasil/status` | Service counters: user count, token count, and pending authentication count. | Public |
 | GET | `/yggdrasil/publickeys` | Public encryption keys. | Public |
 | GET | `/yggdrasil/minecraftservices/publickeys` | Public keys (Minecraft services alias). | Public |
 

@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Yggdrasil compatibility
-- Server root metadata and service status, including server time and the configured skins server URL.
+- Server root metadata (skin domains, public key signature, server and implementation name/version,
+  feature flags, homepage and register links) and a service status endpoint reporting user, token,
+  and pending-authentication counts.
 - Public encryption keys, exposed under both `/yggdrasil/publickeys` and the
   `/yggdrasil/minecraftservices/publickeys` alias.
 - Profile lookup by username or batch of usernames at `/yggdrasil/api/profiles/minecraft`.
