@@ -30,8 +30,8 @@ public class SessionsController : CustomControllerBase
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="dbContext">The database context.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="settings">Application settings.</param>
-    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _dbContext = dbContext;

@@ -17,7 +17,7 @@ public class CustomSignInManager
     private readonly CustomUserManager _userManager;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly MemoryCacheService _memoryCacheService;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private readonly TimeSpan _regularLogin = TimeSpan.FromHours(1);
     private readonly TimeSpan _rememberMeLogin = TimeSpan.FromDays(7);
     
@@ -28,14 +28,14 @@ public class CustomSignInManager
     /// <param name="userManager">Helper manager for user-specific operations.</param>
     /// <param name="passwordHasher">Password hasher used to verify and rehash passwords.</param>
     /// <param name="memoryCacheService">In-memory cache for temporary values (TFA tokens, attempts, etc).</param>
-    /// <param name="settings">Application settings (lockout thresholds, durations).</param>
-    public CustomSignInManager(CustomUserStore userStore, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, MemoryCacheService memoryCacheService, Settings settings)
+    /// <param name="appConfiguration">Application settings (lockout thresholds, durations).</param>
+    public CustomSignInManager(CustomUserStore userStore, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration)
     {
          _userStore = userStore; 
          _userManager = userManager;
          _passwordHasher = passwordHasher;
          _memoryCacheService = memoryCacheService;
-         _settings = settings;
+         _appConfiguration = appConfiguration;
     }
 
     /// <summary>
@@ -112,10 +112,10 @@ public class CustomSignInManager
         {
             case PasswordVerificationResult.Failed:
                 user.AccessFailedCount++;
-                if (user.AccessFailedCount > _settings.Jwt.LockoutMaxAttempts)
+                if (user.AccessFailedCount > _appConfiguration.Jwt.LockoutMaxAttempts)
                 {
                     user.LockoutEnabled = true;
-                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(_settings.Jwt.LockoutDuration);
+                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(_appConfiguration.Jwt.LockoutDuration);
                     user.LockoutReason = "Too many failed login attempts.";
                 }
                 await _userStore.UpdateUserAsync(user, true);
@@ -309,10 +309,10 @@ public class CustomSignInManager
         {
             case PasswordVerificationResult.Failed:
                 user.AccessFailedCount++;
-                if (user.AccessFailedCount > _settings.Jwt.LockoutMaxAttempts)
+                if (user.AccessFailedCount > _appConfiguration.Jwt.LockoutMaxAttempts)
                 {
                     user.LockoutEnabled = true;
-                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(_settings.Jwt.LockoutDuration);
+                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(_appConfiguration.Jwt.LockoutDuration);
                     user.LockoutReason = "Too many failed login attempts.";
                 }
                 await _userStore.UpdateUserAsync(user, true);
@@ -346,7 +346,7 @@ public class CustomSignInManager
             };
         }
         
-        string host = httpContext.Request.Host.Host;
+        string host = HttpHelper.GetClientIp(httpContext) ?? "";
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,
@@ -426,7 +426,7 @@ public class CustomSignInManager
         user.LockoutEnabled = false;
         await _userStore.UpdateUserAsync(user, true);
         
-        string host = httpContext.Request.Host.Host;
+        string host = HttpHelper.GetClientIp(httpContext) ?? "";
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,

@@ -34,7 +34,7 @@ public class RegisterController : CustomControllerBase
     private readonly IEmailService _emailService;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterController"/> class.
@@ -46,15 +46,15 @@ public class RegisterController : CustomControllerBase
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="fileDataRepo">Repository for managing file data, such as user avatars.</param>
-    /// <param name="settings">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _dbContext = dbContext;
         _userManager = userManager;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _fileDataRepo = fileDataRepo;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
     }
 
     /// <summary>
@@ -250,7 +250,7 @@ public class RegisterController : CustomControllerBase
             UserId = user.Id
         }, true);
         
-        var uriBuilder = new UriBuilder(new Uri(Settings.Misc.WebsiteUrl))
+        var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
         {
             Path = "/register/confirm",
             Query = $"userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(confirmationToken.Value!)}"

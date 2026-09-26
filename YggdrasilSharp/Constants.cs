@@ -63,6 +63,41 @@ public static class Constants
         public const string RateLimitingRules = "RateLimiting:Rules";
 
         /// <summary>
+        /// Configuration key indicating whether forwarded headers (X-Forwarded-For, X-Forwarded-Proto)
+        /// are processed. Must only be enabled when the application sits behind a trusted reverse proxy,
+        /// otherwise clients can spoof their own IP address.
+        /// Example: true
+        /// </summary>
+        public const string ProxyEnabled = "Proxy:Enabled";
+
+        /// <summary>
+        /// Configuration key for the number of proxy hops that are allowed to append to the
+        /// X-Forwarded-For header. Use 1 for a single reverse proxy, 2 for a CDN in front of a reverse proxy.
+        /// Example: 1
+        /// </summary>
+        public const string ProxyForwardLimit = "Proxy:ForwardLimit";
+
+        /// <summary>
+        /// Configuration key containing the exact IP addresses of proxies that are allowed
+        /// to send forwarded headers.
+        /// Example: [ "127.0.0.1", "::1" ]
+        /// </summary>
+        public const string ProxyKnownProxies = "Proxy:KnownProxies";
+
+        /// <summary>
+        /// Configuration key containing the CIDR ranges of proxies that are allowed to send forwarded headers.
+        /// Example: [ "172.18.0.0/16" ]
+        /// </summary>
+        public const string ProxyKnownNetworks = "Proxy:KnownNetworks";
+
+        /// <summary>
+        /// Configuration key containing the host names that are accepted in forwarded headers.
+        /// Leave empty to accept any host name sent by an already trusted proxy.
+        /// Example: [ "api.example.com" ]
+        /// </summary>
+        public const string ProxyAllowedHosts = "Proxy:AllowedHosts";
+
+        /// <summary>
         /// Configuration key for the database connection string.
         /// The connection string contains placeholders for $DB_USER and $DB_PASSWORD that are 
         /// replaced at runtime with values from the DatabaseUser and DatabasePassword configuration keys.
@@ -141,6 +176,29 @@ public static class Constants
         /// Configuration key for the Yggdrasil implementation version string (metadata returned to clients).
         /// </summary>
         public const string YggdrasilImplementationVersion = "Yggdrasil:ImplementationVersion";
+
+        /// <summary>
+        /// Configuration key that controls whether the IP address of the request is compared against
+        /// the IP address stored on the access token's play session when joining a game server.
+        /// Disable this when the API is behind a proxy that cannot report the real client IP,
+        /// or when players are expected to change networks (mobile, CGNAT, VPN).
+        /// Example: true
+        /// </summary>
+        public const string YggdrasilEnforceIpCheckInJoin = "Yggdrasil:EnforceIpCheckInJoin";
+
+        /// <summary>
+        /// Configuration key that controls whether the IP address reported by the game server
+        /// on <c>hasJoined</c> requests is compared against the IP address stored on the server join.
+        /// Example: true
+        /// </summary>
+        public const string YggdrasilEnforceIpCheckInHasJoined = "Yggdrasil:EnforceIpCheckInHasJoined";
+
+        /// <summary>
+        /// Configuration key that allows <c>hasJoined</c> requests to omit the <c>ip</c> query parameter,
+        /// in which case the most recent valid join for the given server and user is used.
+        /// Example: false
+        /// </summary>
+        public const string YggdrasilAllowEmptyJoinedAddress = "Yggdrasil:AllowEmptyJoinedAddress";
         
         /// <summary>
         /// Configuration key containing the allowed characters for usernames.

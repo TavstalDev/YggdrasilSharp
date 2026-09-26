@@ -42,8 +42,8 @@ public class DatabaseConfig
     /// <exception cref="InvalidOperationException">Thrown if a required database configuration value is missing.</exception>
     public DatabaseConfig(IConfiguration configuration)
     {
-        Provider = Settings.GetString(configuration, Constants.ConfigurationKeys.DatabaseProvider);
-        Version = Settings.GetString(configuration, Constants.ConfigurationKeys.DatabaseVersion);
-        ConnectionString = Settings.GetString(configuration, Constants.ConfigurationKeys.DatabaseConnectionString);
+        Provider = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseProvider);
+        Version = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseVersion);
+        ConnectionString = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseConnectionString);
     }
 }

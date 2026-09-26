@@ -36,9 +36,9 @@ public class SkinsController : CustomControllerBase
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="fileDataRepository">Repository for managing file data (skins).</param>
-    /// <param name="settings">Application settings.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomUserStore userStore,
-        IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
+        IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _fileDataRepository = fileDataRepository;

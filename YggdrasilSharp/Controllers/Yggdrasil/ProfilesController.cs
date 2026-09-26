@@ -21,8 +21,8 @@ public class ProfilesController : CustomControllerBase
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="settings">Application settings.</param>
-    public ProfilesController(ILogger<ProfilesController> logger, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings) {}
+    /// <param name="appConfiguration">Application settings.</param>
+    public ProfilesController(ILogger<ProfilesController> logger, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration) {}
 
     /// <summary>
     /// Retrieves Minecraft profiles for the specified list of usernames.

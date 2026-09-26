@@ -73,12 +73,12 @@ public class SwaggerConfig
     /// <exception cref="InvalidOperationException">Thrown if a required Swagger configuration value is missing.</exception>
     public SwaggerConfig(IConfiguration configuration)
     {
-        Name = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerName);
-        Description = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerDescription);
-        Version = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerVersion);
-        ContactName = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactName);
-        ContactLink = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactLink);
-        LicenseName = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseName);
-        LicenseLink = Settings.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseLink);
+        Name = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerName);
+        Description = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerDescription);
+        Version = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerVersion);
+        ContactName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactName);
+        ContactLink = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactLink);
+        LicenseName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseName);
+        LicenseLink = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseLink);
     }
 }

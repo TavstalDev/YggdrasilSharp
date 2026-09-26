@@ -30,9 +30,9 @@ public class TexturesController : CustomControllerBase
     /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
     /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
     /// <param name="memoryCache">The memory cache service for caching texture data.</param>
-    /// <param name="settings">Application settings.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     public TexturesController(ILogger<TexturesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo,
-        MemoryCacheService memoryCache, Settings settings) : base(logger, userStore, settings)
+        MemoryCacheService memoryCache, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;

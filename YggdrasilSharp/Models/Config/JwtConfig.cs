@@ -61,12 +61,12 @@ public class JwtConfig
     /// <exception cref="InvalidOperationException">Thrown if a required JWT configuration value is missing.</exception>
     public JwtConfig(IConfiguration configuration)
     {
-        EncryptionKey = Settings.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey);
+        EncryptionKey = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey);
         if (string.IsNullOrWhiteSpace(EncryptionKey) || EncryptionKey.Length < 32)
             throw new ArgumentException("Encryption key must be at least 32 characters.", nameof(EncryptionKey));
         
-        Issuer = Settings.GetString(configuration, Constants.ConfigurationKeys.JwtIssuer);
-        Audience = Settings.GetString(configuration, Constants.ConfigurationKeys.JwtAudience);
+        Issuer = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtIssuer);
+        Audience = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtAudience);
         ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 5));
         LockoutMaxAttempts = configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutMaxAttempts, 5);
         LockoutDuration = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutDuration, 900)); 

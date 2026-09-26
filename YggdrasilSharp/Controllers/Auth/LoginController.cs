@@ -33,8 +33,8 @@ public class LoginController : CustomControllerBase
     /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
-    /// <param name="settings">The application settings.</param>
-    public LoginController(ILogger<LoginController> logger, CustomSignInManager signInManager, CustomUserStore userStore, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">The application settings.</param>
+    public LoginController(ILogger<LoginController> logger, CustomSignInManager signInManager, CustomUserStore userStore, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _signInManager = signInManager;
         _memoryCacheService = memoryCacheService;
@@ -100,7 +100,7 @@ public class LoginController : CustomControllerBase
                     Expires = expiry
                 });
                 
-                var uriBuilder = new UriBuilder(new Uri(Settings.Misc.WebsiteUrl))
+                var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
                 {
                     Path = "/2fa",
                     Query = $"rememberMe={Uri.EscapeDataString(request.RememberMe.ToString())}"
@@ -264,7 +264,7 @@ public class LoginController : CustomControllerBase
                     message = "Redirect to 2FA",
                     userId = user.Id,
                     token = sessionToken,
-                    url = $"{Settings.Misc.ApiUrl}/login/launcher/2fa"
+                    url = $"{AppConfiguration.Misc.ApiUrl}/login/launcher/2fa"
                 });
             }
             

@@ -30,7 +30,7 @@ public class NewsController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly IRepository<News> _newsRepo;
     private readonly IRepository<FileData> _fileDataRepo;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private readonly MemoryCacheService _cacheService;
     private readonly TimeSpan CacheTTL = TimeSpan.FromMinutes(10);
 
@@ -43,14 +43,14 @@ public class NewsController : CustomControllerBase
     /// <param name="newsRepo">Repository for managing news entities.</param>
     /// <param name="fileDataRepo">Repository for managing file data (news banners).</param>
     /// <param name="cacheService">Service for caching news data.</param>
-    /// <param name="settings">Application settings.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomUserStore userStore,
-        IRepository<News> newsRepo, IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
+        IRepository<News> newsRepo, IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _newsRepo = newsRepo;
         _fileDataRepo = fileDataRepo;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
         _cacheService = cacheService;
     }
 
@@ -80,7 +80,7 @@ public class NewsController : CustomControllerBase
                 FileData? fd =
                     await _fileDataRepo.FindAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
                 if (fd != null)
-                    bannerUrl = fd.GetUrl(_settings.Misc.ApiUrl);
+                    bannerUrl = fd.GetUrl(_appConfiguration.Misc.ApiUrl);
                 newsResponse.Add(new NewsResponseBody
                 {
                     Title = n.Title,
@@ -138,7 +138,7 @@ public class NewsController : CustomControllerBase
                 FileData? fd =
                     await _fileDataRepo.FindAsync(x => x.Id == n.BannerId && x.Type == EFileDataType.NEWS_BANNER);
                 if (fd != null)
-                    bannerUrl = fd.GetUrl(_settings.Misc.ApiUrl);
+                    bannerUrl = fd.GetUrl(_appConfiguration.Misc.ApiUrl);
                 newsResponse.Add(new NewsResponseBody
                 {
                     Title = n.Title,
@@ -196,7 +196,7 @@ public class NewsController : CustomControllerBase
             FileData? fd =
                 await _fileDataRepo.FindAsync(x => x.Id == news.BannerId && x.Type == EFileDataType.NEWS_BANNER);
             if (fd != null)
-                bannerUrl = fd.GetUrl(_settings.Misc.ApiUrl);
+                bannerUrl = fd.GetUrl(_appConfiguration.Misc.ApiUrl);
 
             var responseBody = new NewsResponseBody
             {

@@ -13,7 +13,7 @@ public class EmailService : IEmailService
 {
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<EmailService> _logger;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private string _emailBlankDoc = string.Empty;
     private string _emailActionDoc = string.Empty;
     
@@ -22,12 +22,12 @@ public class EmailService : IEmailService
     /// </summary>
     /// <param name="environment">The web host environment used to access application-specific paths.</param>
     /// <param name="logger">The logger instance for logging messages.</param>
-    /// <param name="settings">The settings containing email configuration details.</param>
-    public EmailService(IWebHostEnvironment environment, ILogger<EmailService> logger, Settings settings)
+    /// <param name="appConfiguration">The settings containing email configuration details.</param>
+    public EmailService(IWebHostEnvironment environment, ILogger<EmailService> logger, AppConfiguration appConfiguration)
     {
         _environment = environment;
         _logger = logger;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
         // Load templates asynchronously in background. Email sending will use empty templates if loading fails.
         _ = InitAsync();
     }
@@ -81,18 +81,18 @@ public class EmailService : IEmailService
     public async Task SendEmailAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
     {
         var email = new MimeMessage();
-        email.From.Add(MailboxAddress.Parse(_settings.Email.Address));
+        email.From.Add(MailboxAddress.Parse(_appConfiguration.Email.Address));
         email.To.Add(MailboxAddress.Parse(to));
         email.Subject = subject;
         email.Body = new TextPart(TextFormat.Html) { Text = body };
 
         using var smtp = new SmtpClient();
-        await smtp.ConnectAsync(_settings.Email.Provider,  _settings.Email.Port, SecureSocketOptions.None, cancellationToken);
+        await smtp.ConnectAsync(_appConfiguration.Email.Provider,  _appConfiguration.Email.Port, SecureSocketOptions.None, cancellationToken);
         try
         {
             try
             {
-                await smtp.AuthenticateAsync(_settings.Email.Address, _settings.Email.Password, cancellationToken);
+                await smtp.AuthenticateAsync(_appConfiguration.Email.Address, _appConfiguration.Email.Password, cancellationToken);
             }
             catch (AuthenticationException ex)
             {

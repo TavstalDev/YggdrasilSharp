@@ -30,9 +30,9 @@ public class FilesController : CustomControllerBase
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="fileDataRepo">Repository for managing file data.</param>
     /// <param name="memoryCache">Service for caching file data.</param>
-    /// <param name="settings">Application settings.</param>
-    public FilesController(ILogger<FilesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache, Settings settings) :
-        base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public FilesController(ILogger<FilesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache, AppConfiguration appConfiguration) :
+        base(logger, userStore, appConfiguration)
     {
         _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;

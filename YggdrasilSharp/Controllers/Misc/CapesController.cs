@@ -38,9 +38,9 @@ public class CapesController : CustomControllerBase
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="capeRepo">Repository for <see cref="Cape"/> entities.</param>
     /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
-    /// <param name="settings">Application settings.</param>
-    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo, Settings settings) 
-        : base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo, AppConfiguration appConfiguration) 
+        : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _capeRepo = capeRepo;

@@ -15,8 +15,8 @@ public class HomeController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="settings">Application settings.</param>
-    public HomeController(ILogger<HomeController> logger, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings) { }
+    /// <param name="appConfiguration">Application settings.</param>
+    public HomeController(ILogger<HomeController> logger, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration) { }
     
     /// <summary>
     /// Handles the root endpoint ("/") and returns an HTTP 200 OK response.

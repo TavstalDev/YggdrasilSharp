@@ -12,7 +12,7 @@ namespace Tavstal.YggdrasilSharp.Models;
 /// Since this project will not hit production I am not implementing additional security measures to protect these values in memory,
 /// but in a production environment you should consider using secure vaults or encrypted configuration providers to safeguard sensitive settings.
 /// </remarks>
-public class Settings
+public class AppConfiguration
 {
     /// <summary>
     /// Gets or sets the characters allowed in usernames.
@@ -35,6 +35,11 @@ public class Settings
     /// Gets or sets the database configuration.
     /// </summary>
     public DatabaseConfig Database { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the proxy configuration.
+    /// </summary>
+    public ProxyConfig Proxy { get; set; }
     
     /// <summary>
     /// Gets or sets the Yggdrasil-compatible server configuration.
@@ -62,16 +67,17 @@ public class Settings
     public MiscConfig Misc { get; set; }
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="Settings"/> class and loads settings from the configuration.
+    /// Initializes a new instance of the <see cref="AppConfiguration"/> class and loads settings from the configuration.
     /// </summary>
     /// <param name="configuration">The configuration to load settings from.</param>
     /// <exception cref="ArgumentNullException">Thrown if a required configuration value is missing.</exception>
-    public Settings(IConfiguration configuration)
+    public AppConfiguration(IConfiguration configuration)
     {
         AllowedUsernameCharacters = configuration.GetValue<string>(Constants.ConfigurationKeys.AllowedUsernameCharacters) ?? throw new InvalidOperationException(Constants.ConfigurationKeys.AllowedUsernameCharacters);
         CertificateFingerprint = GetString(configuration, Constants.EnvironmentKeys.CertificateFingerprint);
         CertificatePassword = GetString(configuration, Constants.EnvironmentKeys.CertificatePassword);
-        
+
+        Proxy = new ProxyConfig(configuration);
         Database = new  DatabaseConfig(configuration);
         Yggdrasil = new  YggdrasilConfig(configuration);
         Jwt = new  JwtConfig(configuration);
@@ -81,7 +87,7 @@ public class Settings
     }
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="Settings"/> class with explicit values for all settings.
+    /// Initializes a new instance of the <see cref="AppConfiguration"/> class with explicit values for all settings.
     /// </summary>
     /// <param name="websiteUrl">The public website URL for the server (e.g., "https://example.com").</param>
     /// <param name="apiUrl">The base API URL that clients will use to access the API (e.g., "https://api.example.com").</param>
@@ -101,7 +107,7 @@ public class Settings
     /// <param name="serverName">The server name presented by Yggdrasil-compatible endpoints.</param>
     /// <param name="implementationName">The name of the Yggdrasil implementation (metadata shown to clients).</param>
     /// <param name="implementationVersion">The version string of the Yggdrasil implementation.</param>
-    internal Settings(string websiteUrl, string apiUrl, string encryptionKey, string issuer, 
+    internal AppConfiguration(string websiteUrl, string apiUrl, string encryptionKey, string issuer, 
         string audience, TimeSpan clockSkew, int lockoutMaxAttempts, TimeSpan lockoutDuration, string emailProvider, int emailPort, 
         string emailAddress, string emailPassword, string[] skinDomains, string certificateFingerprint, string certificatePassword,
         string serverName, string implementationName, string implementationVersion)
@@ -109,11 +115,12 @@ public class Settings
         AllowedUsernameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
         CertificateFingerprint = certificateFingerprint;
         CertificatePassword = certificatePassword;
+        Proxy = new ProxyConfig();
         Misc = new MiscConfig(websiteUrl, apiUrl);
         Database = new DatabaseConfig("", "", "");
         Jwt = new JwtConfig(encryptionKey, issuer, audience, clockSkew, lockoutMaxAttempts, lockoutDuration);
         Email = new EmailConfig(emailProvider, emailPort, emailAddress, emailPassword);
-        Yggdrasil = new YggdrasilConfig(skinDomains, serverName, implementationName,
+        Yggdrasil = new YggdrasilConfig(true, true, true, skinDomains, serverName, implementationName,
             implementationVersion);
         Swagger = new SwaggerConfig();
     }

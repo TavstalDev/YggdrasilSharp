@@ -47,9 +47,9 @@ public class EmailConfig
     /// <exception cref="InvalidOperationException">Thrown if a required email configuration value is missing.</exception>
     public EmailConfig(IConfiguration configuration)
     {
-        Provider = Settings.GetString(configuration, Constants.ConfigurationKeys.EmailProvider);
+        Provider = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.EmailProvider);
         Port = configuration.GetValue(Constants.ConfigurationKeys.EmailPort, 587); 
-        Address = Settings.GetString(configuration, Constants.EnvironmentKeys.EmailAddress); 
-        Password = Settings.GetString(configuration, Constants.EnvironmentKeys.EmailPassword);
+        Address = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailAddress); 
+        Password = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailPassword);
     }
 }

@@ -44,9 +44,9 @@ public class LauncherController : CustomControllerBase
     /// <param name="launcherVersionDataRepo">Repository for <see cref="LauncherVersionData"/> entities.</param>
     /// <param name="fileDataRepository">Repository for <see cref="FileData"/> entities.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
-    /// <param name="settings">Application settings.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<LauncherVersion> launcherVersionRepo, IRepository<LauncherVersionData> launcherVersionDataRepo,
-       IRepository<FileData> fileDataRepository, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
+       IRepository<FileData> fileDataRepository, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _launcherVersionRepo = launcherVersionRepo;

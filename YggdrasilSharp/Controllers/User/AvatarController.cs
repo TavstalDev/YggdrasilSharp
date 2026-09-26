@@ -40,9 +40,9 @@ public class AvatarController : CustomControllerBase
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="fileDataRepo">Repository for managing file data (avatars).</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
-    /// <param name="settings">Application settings.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomUserStore userStore,
-        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
+        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _fileDataRepo = fileDataRepo;

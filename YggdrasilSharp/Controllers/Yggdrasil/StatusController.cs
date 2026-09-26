@@ -17,7 +17,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 public class StatusController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusController"/> class.
@@ -25,11 +25,11 @@ public class StatusController : CustomControllerBase
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
-    /// <param name="settings">The application settings.</param>
-    public StatusController(ILogger<StatusController> logger, CustomUserStore userStore, MemoryCacheService cacheService, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">The application settings.</param>
+    public StatusController(ILogger<StatusController> logger, CustomUserStore userStore, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _cacheService = cacheService;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
     }
     
     /// <summary>
@@ -45,7 +45,7 @@ public class StatusController : CustomControllerBase
     {
         try
         {
-            var cert = Program.GetCertificate(_settings.CertificateFingerprint, _settings.CertificatePassword);
+            var cert = Program.GetCertificate(_appConfiguration.CertificateFingerprint, _appConfiguration.CertificatePassword);
             var rsa = cert.GetRSAPrivateKey();
             if (rsa == null)
                 return CodeResult(HttpStatusCode.InternalServerError,
@@ -54,14 +54,14 @@ public class StatusController : CustomControllerBase
             string signature = rsa.ExportSubjectPublicKeyInfoPem();
             return JsonResult(new
             {
-                skinDomains = _settings.Yggdrasil.SkinDomains,
+                skinDomains = _appConfiguration.Yggdrasil.SkinDomains,
                 signaturePublickey = signature,
                 meta = new Dictionary<string, object>
                 {
-                    { "serverName", _settings.Yggdrasil.ServerName },
-                    { "implementationVersion", _settings.Yggdrasil.ImplementationVersion },
+                    { "serverName", _appConfiguration.Yggdrasil.ServerName },
+                    { "implementationVersion", _appConfiguration.Yggdrasil.ImplementationVersion },
                     { "feature.non_email_login", true },
-                    { "implementationName", _settings.Yggdrasil.ImplementationName }
+                    { "implementationName", _appConfiguration.Yggdrasil.ImplementationName }
                 }
             });
         }

@@ -18,7 +18,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 [Route("/user")]
 public class PublicUserController : CustomControllerBase
 {
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     private readonly IRepository<FileData> _fileDataRepository;
     
     /// <summary>
@@ -27,10 +27,10 @@ public class PublicUserController : CustomControllerBase
     /// <param name="logger">The logger instance.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="fileDataRepository">Repository for managing file data.</param>
-    /// <param name="settings">The application settings.</param>
-    public PublicUserController(ILogger<PublicUserController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepository, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">The application settings.</param>
+    public PublicUserController(ILogger<PublicUserController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
-        _settings = settings;
+        _appConfiguration = appConfiguration;
         _fileDataRepository = fileDataRepository;
     }
 
@@ -62,8 +62,8 @@ public class PublicUserController : CustomControllerBase
                 return CodeResult(HttpStatusCode.NotFound, "User not found.");
 
             string avatarUrl = string.Empty;
-            if (user.Avatar != null && !string.IsNullOrEmpty(_settings.Misc.ApiUrl))
-                avatarUrl = user.Avatar.GetUrl(_settings.Misc.ApiUrl);
+            if (user.Avatar != null && !string.IsNullOrEmpty(_appConfiguration.Misc.ApiUrl))
+                avatarUrl = user.Avatar.GetUrl(_appConfiguration.Misc.ApiUrl);
             
             return JsonResult(new
             {

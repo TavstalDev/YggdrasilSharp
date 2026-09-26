@@ -33,7 +33,7 @@ public class MiscConfig
     /// <exception cref="InvalidOperationException">Thrown if a required runtime configuration value is missing.</exception>
     public MiscConfig(IConfiguration configuration)
     {
-        WebsiteUrl = Settings.GetString(configuration, Constants.ConfigurationKeys.RuntimeWebsiteUrl); 
-        ApiUrl = Settings.GetString(configuration, Constants.ConfigurationKeys.RuntimeApiUrl);
+        WebsiteUrl = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.RuntimeWebsiteUrl); 
+        ApiUrl = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.RuntimeApiUrl);
     }
 }

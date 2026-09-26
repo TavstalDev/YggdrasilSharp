@@ -23,23 +23,23 @@ public class CustomUserManager(
     ILogger<CustomUserManager> logger,
     CustomDbContext context,
     MemoryCacheService memoryCacheService,
-    Settings settings)
+    AppConfiguration appConfiguration)
 {
     private static readonly HttpClient _client = new();
     private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
     private readonly TokenValidationParameters _tokenValidationParameters = new()
     {
         ValidateIssuer = true,
-        ValidIssuer = settings.Jwt.Issuer,
+        ValidIssuer = appConfiguration.Jwt.Issuer,
         
         ValidateAudience = true,
-        ValidAudience = settings.Jwt.Audience,
+        ValidAudience = appConfiguration.Jwt.Audience,
         
         ValidateLifetime = true,
-        ClockSkew = settings.Jwt.ClockSkew,
+        ClockSkew = appConfiguration.Jwt.ClockSkew,
         
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Jwt.EncryptionKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfiguration.Jwt.EncryptionKey)),
     };
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
     
@@ -352,14 +352,14 @@ public class CustomUserManager(
     {
         var handler = new JwtSecurityTokenHandler();
         var token = handler.CreateJwtSecurityToken(
-            settings.Jwt.Issuer, 
-            settings.Jwt.Audience, 
+            appConfiguration.Jwt.Issuer, 
+            appConfiguration.Jwt.Audience, 
             claims, 
             DateTime.UtcNow, 
             DateTime.UtcNow.Add(duration), 
             DateTime.UtcNow,
             new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Jwt.EncryptionKey)),
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfiguration.Jwt.EncryptionKey)),
                 SecurityAlgorithms.HmacSha256)
             );
         return handler.WriteToken(token);
@@ -385,10 +385,10 @@ public class CustomUserManager(
         {
             case PasswordVerificationResult.Failed:
                 user.AccessFailedCount++;
-                if (user.AccessFailedCount > settings.Jwt.LockoutMaxAttempts)
+                if (user.AccessFailedCount > appConfiguration.Jwt.LockoutMaxAttempts)
                 {
                     user.LockoutEnabled = true;
-                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(settings.Jwt.LockoutDuration);
+                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(appConfiguration.Jwt.LockoutDuration);
                     user.LockoutReason = "Too many failed login attempts.";
                 }
                 await userStore.UpdateUserAsync(user, true);
@@ -461,7 +461,7 @@ public class CustomUserManager(
     
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
-        return StringChiper.GetEncryptedHash(rawData, settings.Jwt.EncryptionKey);
+        return StringChiper.GetEncryptedHash(rawData, appConfiguration.Jwt.EncryptionKey);
     }
     #endregion
 
@@ -477,7 +477,7 @@ public class CustomUserManager(
     {
         var key = KeyGeneration.GenerateRandomKey(20);
         string token = Encoding.UTF8.GetString(key);
-        user.TwoFactorSecret = token.EncryptSelf(settings.Jwt.EncryptionKey);
+        user.TwoFactorSecret = token.EncryptSelf(appConfiguration.Jwt.EncryptionKey);
         user.SecurityStamp  = Guid.NewGuid().ToString();
         await userStore.UpdateUserAsync(user, true);
         return token;
@@ -494,7 +494,7 @@ public class CustomUserManager(
         if (string.IsNullOrEmpty(user.TwoFactorSecret))
             return false;
         
-        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(settings.Jwt.EncryptionKey);
+        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.EncryptionKey);
         var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
         return totp.VerifyTotp(code, out _, new VerificationWindow(2, 2));
     }
@@ -519,7 +519,7 @@ public class CustomUserManager(
             await userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedHash(code, settings.Jwt.EncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(code, appConfiguration.Jwt.EncryptionKey),
                 CreateAt = DateTime.UtcNow
             });
         }

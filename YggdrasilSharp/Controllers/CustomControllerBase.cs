@@ -30,19 +30,19 @@ public abstract class CustomControllerBase : Controller
     /// <summary>
     /// Application settings instance available to derived controllers.
     /// </summary>
-    protected readonly Settings Settings;
+    protected readonly AppConfiguration AppConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomControllerBase"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to be used by the controller.</param>
     /// <param name="userStore">The <see cref="CustomUserStore"/> instance for accessing user data.</param>
-    /// <param name="settings">The <see cref="Settings"/> instance containing application configuration used by controllers.</param>
-    protected CustomControllerBase(ILogger logger, CustomUserStore userStore, Settings settings)
+    /// <param name="appConfiguration">The <see cref="AppConfiguration"/> instance containing application configuration used by controllers.</param>
+    protected CustomControllerBase(ILogger logger, CustomUserStore userStore, AppConfiguration appConfiguration)
     {
         Logger = logger;
         UserStore = userStore;
-        Settings = settings;
+        AppConfiguration = appConfiguration;
     }
     
     /// <summary>
@@ -137,6 +137,6 @@ public abstract class CustomControllerBase : Controller
     
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
-        return StringChiper.GetEncryptedHash(rawData, Settings.Jwt.EncryptionKey);
+        return StringChiper.GetEncryptedHash(rawData, AppConfiguration.Jwt.EncryptionKey);
     }
 }

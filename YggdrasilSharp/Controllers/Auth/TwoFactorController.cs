@@ -25,8 +25,8 @@ public class TwoFactorController : CustomControllerBase {
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="settings">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomUserStore userStore, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
     }

@@ -27,7 +27,7 @@ public class RecoveryController : CustomControllerBase
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly IEmailService _emailService;
     private readonly MemoryCacheService _memoryCacheService;
-    private readonly Settings _settings;
+    private readonly AppConfiguration _appConfiguration;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="RecoveryController"/> class.
@@ -38,14 +38,14 @@ public class RecoveryController : CustomControllerBase
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
-    /// <param name="settings">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, Settings settings) : base(logger, userStore, settings)
+    /// <param name="appConfiguration">Application settings.</param>
+    public RecoveryController(ILogger<RecoveryController> logger, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _emailService = emailService;
         _memoryCacheService = memoryCacheService;
-        _settings = settings;
+        _appConfiguration = appConfiguration;
     }
     
     
@@ -94,7 +94,7 @@ public class RecoveryController : CustomControllerBase
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
             
-            var uriBuilder = new UriBuilder(new Uri(Settings.Misc.WebsiteUrl))
+            var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
             {
                 Path = "/reset-password",
                 Query = $"recoveryToken={Uri.EscapeDataString(recoveryToken)}"
@@ -231,7 +231,7 @@ public class RecoveryController : CustomControllerBase
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue(recoveryAttemptKey, 0, TimeSpan.FromMinutes(15));
             
-            var uriBuilder = new UriBuilder(new Uri(Settings.Misc.WebsiteUrl))
+            var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
             {
                 Path = "/reset-tfa",
                 Query = $"recoveryToken={Uri.EscapeDataString(recoveryToken)}"
@@ -304,7 +304,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.TwoFactorEnabled)
                 return CodeResult(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
             
-            string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _settings.Jwt.EncryptionKey);
+            string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _appConfiguration.Jwt.EncryptionKey);
             var backupCode = await UserStore.UserBackupCodes.FindAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
             if (backupCode == null)
                 return CodeResult(HttpStatusCode.BadRequest, "Backup code is invalid.");
