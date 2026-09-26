@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -140,7 +141,7 @@ public class SessionServerControllerTests : ControllerTestBase
         public async Task ReturnsForbidden_WhenIpDoesNotMatch()
         {
             var user = await CreateUserAsync(_controller);
-            _controllerHttpContext.HttpContext.Request.Host = new HostString("192.168.0.1");
+            _controllerHttpContext.Connection.RemoteIpAddress = IPAddress.Parse("192.168.1.100");
             string token = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
             var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
