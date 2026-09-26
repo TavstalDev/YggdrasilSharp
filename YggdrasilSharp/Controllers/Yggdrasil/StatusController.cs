@@ -59,9 +59,14 @@ public class StatusController : CustomControllerBase
                 meta = new Dictionary<string, object>
                 {
                     { "serverName", _appConfiguration.Yggdrasil.ServerName },
+                    { "implementationName", _appConfiguration.Yggdrasil.ImplementationName },
                     { "implementationVersion", _appConfiguration.Yggdrasil.ImplementationVersion },
-                    { "feature.non_email_login", true },
-                    { "implementationName", _appConfiguration.Yggdrasil.ImplementationName }
+                    { "feature.non_email_login", _appConfiguration.Yggdrasil.AllowProfileNameLogin },
+                    { "feature.username_check", _appConfiguration.Yggdrasil.EnforceUsernameCheck },
+                    { "feature.enable_profile_key", _appConfiguration.Yggdrasil.EnableProfileKey},
+                    { "feature.legacy_skin_api", false },
+                    { "meta.links.homepage", _appConfiguration.Yggdrasil.HomepageUrl ?? "" },
+                    { "meta.links.register", _appConfiguration.Yggdrasil.RegisterUrl ?? "" }
                 }
             });
         }
