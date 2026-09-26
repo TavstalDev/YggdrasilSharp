@@ -133,7 +133,7 @@ public class CustomSignInManager
         if (user.TwoFactorEnabled)
         {
             string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
-            string fingerprint = _userManager.GetMachineFingerprint(httpContext.Request, user.Id);
+            string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
             TimeSpan tokenExpiry = TimeSpan.FromMinutes(5);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:token", sessionToken, tokenExpiry);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:attempts", 0, tokenExpiry);
@@ -207,7 +207,7 @@ public class CustomSignInManager
                 Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
             };
         
-        string fingerprint = _userManager.GetMachineFingerprint(httpContext.Request, user.Id);
+        string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa:token";
         string attemptKey = $"auth:{fingerprint}:tfa:attempts";
         if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
@@ -330,7 +330,7 @@ public class CustomSignInManager
         if (user.TwoFactorEnabled)
         {
             string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
-            string fingerprint = _userManager.GetMachineFingerprint(httpContext.Request, user.Id);
+            string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
             TimeSpan tokenExpiry = TimeSpan.FromMinutes(5);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:token", sessionToken, tokenExpiry);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:attempts", 0, tokenExpiry);
@@ -351,14 +351,16 @@ public class CustomSignInManager
         {
             UserId = user.Id,
             UserIp = host,
-            Token = _userManager.CreateJwtToken(TimeSpan.FromDays(1)),
+            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
             CreatedAt =  DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+            ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
         }, true);
 
         user.AccessFailedCount = 0;
         user.LockoutEnabled = false;
         await _userStore.UpdateUserAsync(user, true);
+        await CheckPlaySessionsAsync(user, _appConfiguration.Yggdrasil.MaxActiveTokensPerUser);
+        
         return new LauncherSignInResult
         {
             Succeeded = true,
@@ -392,7 +394,7 @@ public class CustomSignInManager
                 Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
             };
         
-        string fingerprint = _userManager.GetMachineFingerprint(httpContext.Request, user.Id);
+        string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
         string attemptKey = $"auth:{fingerprint}:tfa-launcher:attempts";
         if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
@@ -431,13 +433,15 @@ public class CustomSignInManager
         {
             UserId = user.Id,
             UserIp = host,
-            Token = _userManager.CreateJwtToken(TimeSpan.FromDays(1)),
+            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
             CreatedAt =  DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(1)
+            ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
         }, true);
         
         _memoryCacheService.RemoveValue(tokenKey);
         _memoryCacheService.RemoveValue(attemptKey);
+
+        await CheckPlaySessionsAsync(user, _appConfiguration.Yggdrasil.MaxActiveTokensPerUser);
         
         return new LauncherSignInResult
         {
@@ -479,5 +483,31 @@ public class CustomSignInManager
 
         await _userStore.UserPlaySessions.RemoveAsync(playSession);
         return true;
+    }
+
+    private async Task CheckPlaySessionsAsync(CustomUser user, int toKeep = 10)
+    {
+        var sessions = await _userStore.UserPlaySessions.QueryAsync(x => x.UserId == user.Id);
+        List<UserPlaySession> sessionsToRemove = [];
+        int shouldKeepCount = 0;
+        foreach (var session in sessions.OrderByDescending(x => x.CreatedAt))
+        {
+            if (session.ExpiresAt < DateTimeOffset.UtcNow)
+            {
+                sessionsToRemove.Add(session);
+                continue;
+            }
+
+            if (shouldKeepCount >= toKeep)
+            {
+                sessionsToRemove.Add(session);
+                continue;
+            }
+            
+            shouldKeepCount++;
+        }
+
+        if (sessionsToRemove.Count > 0)
+            await _userStore.UserPlaySessions.RemoveRangeAsync(sessionsToRemove, true);
     }
 }

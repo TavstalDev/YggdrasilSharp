@@ -449,13 +449,13 @@ public class CustomUserManager(
     /// <summary>
     /// Produce a machine-specific fingerprint for tying short-lived sessions (e.g. TFA flows) to a client.
     /// </summary>
-    /// <param name="httpRequest">The current <see cref="HttpRequest"/> to inspect client headers and connection info.</param>
+    /// <param name="httpContext">The current <see cref="HttpRequest"/> to inspect client headers and connection info.</param>
     /// <param name="userId">The user id used as part of the fingerprint seed.</param>
     /// <returns>A keyed hash of client traits that can be used as a fingerprint string.</returns>
-    public string GetMachineFingerprint(HttpRequest httpRequest, string userId)
+    public string GetMachineFingerprint(HttpContext httpContext, string userId)
     {
-        var userAgent = httpRequest.Headers.UserAgent.ToString();
-        var ipAddress = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+        var ipAddress = HttpHelper.GetClientIp(httpContext);
         if (string.IsNullOrEmpty(ipAddress))
             ipAddress = "unknown";
     
