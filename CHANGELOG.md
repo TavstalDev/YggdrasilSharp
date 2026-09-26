@@ -11,5 +11,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 </details>
 
-[unreleased]: https://github.com/TavstalDev/YggdrasilSharp/compare/v1.0.1...HEAD
+## [1.0.0] - 2026-09-26
+<details>
+<summary>Initial release</summary>
+
+### Added
+
+#### Yggdrasil compatibility
+- Server root metadata and service status, including server time and the configured skins server URL.
+- Public encryption keys, exposed under both `/yggdrasil/publickeys` and the
+  `/yggdrasil/minecraftservices/publickeys` alias.
+- Profile lookup by username or batch of usernames at `/yggdrasil/api/profiles/minecraft`.
+- Texture payload retrieval by hash at `/yggdrasil/textures/{hash}`.
+- Session server endpoints, served under both the client prefix
+  (`/yggdrasil/session/minecraft`) and the server prefix
+  (`/yggdrasil/sessionserver/session/minecraft`): blocked-server list, `join`, `hasJoined`, and
+  `profile/{uuid}` with signed session profiles.
+- Client-token and remote-IP validation on `join`, plus expiry enforcement for play sessions and
+  server-join records.
+- `ETag` / `If-None-Match` revalidation (`304 Not Modified`) on the blocked-server list and session
+  profile responses.
+
+#### Accounts and authentication
+- Account registration with an emailed confirmation token, login, and logout.
+- Password recovery through an emailed reset token.
+- TOTP two-factor authentication: secret and QR code generation, enable, disable, and backup-code
+  regeneration. Backup codes are stored hashed and consumed on use.
+- Two-factor recovery using a backup code, for users who lose their authenticator.
+- Dedicated launcher login flows at `/login/launcher` and `/login/launcher/2fa`.
+- Configurable account lockout (5 attempts per 15 minutes by default).
+- Three interchangeable authentication schemes — **Bearer**, **Basic**, and **Cookie** — all
+  JWT-based and selectable per endpoint, with Bearer as the default challenge scheme.
+- Public user profile and avatar lookups by user id.
+
+#### User assets
+- Skin upload, replacement, and deletion, with PNG dimension validation accepting 64x32, 64x64,
+  512x256, and 512x512 layouts, and a WIDE/SLIM model selection per user.
+- Avatar upload, replacement, and deletion.
+- Cape upload with validation and deletion, plus per-user equip and unequip.
+- Administrative skin, avatar, and cape management for other users by id, gated on elevated
+  permission claims.
+- Content-addressed file storage keyed by SHA-256 hash, with `ETag`/`304` support on retrieval.
+- SkiaSharp-based image decoding and validation for all uploads.
+
+#### Session management
+- List your own active sessions, revoke a single session, or revoke all of them.
+- Administrative session listing and revocation for other users by id.
+
+#### Extras
+- News feed: list all posts, fetch the most recent posts (`count`, default 5), retrieve a single post,
+  and create, update, or delete posts. Responses are cached with `max-age=3600`.
+- Launcher server: version listing, latest version, version details, archive download, full version
+  CRUD, and per-version data blobs.
+- Configurable skin-serving domains.
+
+#### Persistence
+- Entity Framework Core with selectable **MySQL**, **PostgreSQL**, or **SQLite** providers, including
+  MySQL connection resiliency with retry-on-failure.
+- EF Core migrations for schema management.
+- Automatic seeding of the `Default`, `Moderator`, and `Admin` roles with granular permission claims
+  on first startup.
+- A background service that cleans up expired logins, play sessions, and server joins hourly, and
+  disables itself after repeated failures to avoid thrashing.
+
+#### Security and operations
+- Configurable rate limiting supporting four strategies — fixed window, sliding window, concurrency,
+  and token bucket — with nine built-in policies: a global default plus register, login, reset,
+  upload, download, search, write, and admin categories.
+- A default rate limit policy applied to every endpoint, with a configurable rejection status.
+- Configuration-driven CORS policy, with a startup warning if origins and headers are wide open.
+- Distributed session state with `HttpOnly`, essential cookies and a configurable idle timeout.
+- HTTPS through Kestrel using a certificate-store thumbprint on Windows or a `.pfx` file on
+  Linux/macOS, with HTTPS redirection.
+- A restrictive `Content-Security-Policy` response header.
+- Forwarded-headers support for reverse-proxy deployments, and HTTP method override support.
+- Configurable request upload size limit (100 MB by default).
+- Secrets supplied through environment variables via a `.env` file, keeping credentials out of
+  `appsettings.json`.
+
+#### Email
+- SMTP email delivery for confirmation and recovery messages.
+
+#### API documentation
+- Swagger / OpenAPI documentation served at `/docs`, versioned as `v1` and generated from the
+  endpoint metadata and custom response attributes.
+
+#### Engineering
+- A 227-test xUnit v3 suite using FluentAssertions and Moq, covering the controllers and all three
+  authentication handlers.
+- Continuous integration and a release workflow that publishes source code only — no NuGet packages
+  or build artifacts are attached to releases.
+
+</details>
+
+[unreleased]: https://github.com/TavstalDev/YggdrasilSharp/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/TavstalDev/YggdrasilSharp/releases/tag/v1.0.0
