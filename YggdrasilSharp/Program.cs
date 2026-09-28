@@ -71,6 +71,7 @@ public static class Program
     /// Main entry point of the application.
     /// </summary>
     /// <param name="args">Command-line arguments passed to the application.</param>
+    /// <returns>A task that represents the asynchronous lifetime of the running web application.</returns>
     public static async Task Main(string[] args)
     {
         try

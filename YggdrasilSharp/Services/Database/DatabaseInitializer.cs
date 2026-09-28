@@ -15,6 +15,7 @@ public static class DatabaseInitializer
     /// <param name="context">The custom database context to initialize.</param>
     /// <param name="userStore">The custom user store used for managing user data.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous initialization operation.</returns>
     public static async Task InitializeAsync(CustomDbContext context, CustomUserStore userStore, CancellationToken cancellationToken = default)
     {
         // Ensures the database is created.

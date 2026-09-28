@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
@@ -60,6 +62,37 @@ public abstract class CustomControllerBase : Controller
             return null;
         return await UserStore.FindUserByIdAsync(UserId);
     }
+
+    /// <summary>
+    /// Returns a JSON response containing an <see cref="ErrorResponse"/> describing the failure.
+    /// </summary>
+    /// <param name="code">The HTTP status code to describe the failure with.</param>
+    /// <param name="message">The message describing why the request failed.</param>
+    /// <param name="details">Optional additional information about the failure.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="ErrorResponse"/>.</returns>
+    protected IActionResult ErrorResult(HttpStatusCode code, string message, string? details = null) 
+        => JsonResult(new ErrorResponse
+        {
+            StatusCode = code,
+            Message = message,
+            Details = details
+        });
+    
+    /// <summary>
+    /// Returns a JSON response containing a <see cref="YigErrorResponse"/> describing the failure,
+    /// using the error format expected by the Yggdrasil API.
+    /// </summary>
+    /// <param name="code">The HTTP status code to describe the failure with.</param>
+    /// <param name="message">The message describing why the request failed.</param>
+    /// <param name="details">Optional additional information about the failure.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="YigErrorResponse"/>.</returns>
+    protected IActionResult YigErrorResult(HttpStatusCode code, string message, string? details = null) 
+        => JsonResult(new YigErrorResponse
+        {
+            Error = code.ToString(),
+            ErrorMessage = message,
+            Cause = details
+        });
 
     /// <summary>
     /// Returns an HTTP response with the specified status code and message.

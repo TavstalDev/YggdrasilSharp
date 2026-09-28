@@ -148,6 +148,7 @@ public class CustomUserStore
     /// <param name="value">The <see cref="CustomUser"/> entity to update with new values.</param>
     /// <param name="shouldSave">If true, immediately persists changes to the database.</param>
     /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
+    /// <returns>A task that represents the asynchronous update operation. The task result contains the updated user.</returns>
     public async Task<CustomUser> UpdateUserAsync(CustomUser value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
         value.ConcurrencyStamp = Guid.NewGuid().ToString();
