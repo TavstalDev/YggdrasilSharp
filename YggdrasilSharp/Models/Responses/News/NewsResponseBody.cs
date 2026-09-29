@@ -1,4 +1,4 @@
-namespace Tavstal.YggdrasilSharp.Models.Bodies.News;
+namespace Tavstal.YggdrasilSharp.Models.Responses.News;
 
 /// <summary>
 /// Represents the response body for a news entry.

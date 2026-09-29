@@ -3,7 +3,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User.Claims;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
-namespace Tavstal.YggdrasilSharp.Models.Bodies.Auth;
+namespace Tavstal.YggdrasilSharp.Models.Responses.Auth;
 
 /// <summary>
 /// Represents the response body for a logged-in user.
