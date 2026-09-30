@@ -9,17 +9,52 @@ using Tavstal.YggdrasilSharp.Tests.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Tests.Models;
 
+/// <summary>
+/// Base class for tests that only need an in-memory database, a user store, a user manager and a
+/// request context, without a controller under test.
+/// </summary>
 public abstract class TestBase
 {
+    /// <summary>
+    /// The output helper used to write test diagnostics.
+    /// </summary>
     protected readonly ITestOutputHelper _testOutputHelper;
+
+    /// <summary>
+    /// The helper owning the test services shared by the test class.
+    /// </summary>
     protected readonly TestHelper _testHelper;
+
+    /// <summary>
+    /// The in-memory database holding the data of the test.
+    /// </summary>
     protected readonly CustomDbContext _dbContext;
+
+    /// <summary>
+    /// The user store backed by <see cref="_dbContext"/>.
+    /// </summary>
     protected readonly CustomUserStore _userStore;
+
+    /// <summary>
+    /// The user manager used to create users and password hashes.
+    /// </summary>
     protected readonly CustomUserManager _userManager;
+
+    /// <summary>
+    /// The hasher used to create and verify the password hashes of the mock users.
+    /// </summary>
     protected readonly IPasswordHasher<CustomUser> _passwordHasher;
+
+    /// <summary>
+    /// The memory cache service scoped to the test instance.
+    /// </summary>
     protected readonly MemoryCacheService _memoryCacheService;
 
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestBase"/> class with fresh, non-shared test services.
+    /// </summary>
+    /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
     protected TestBase(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
@@ -34,6 +69,10 @@ public abstract class TestBase
         _memoryCacheService = _testHelper.MemoryCacheService;
     }
 
+    /// <summary>
+    /// Creates a request context using the same user agent and loopback address as the other tests.
+    /// </summary>
+    /// <returns>A <see cref="DefaultHttpContext"/> ready to be passed to an authentication handler.</returns>
     protected DefaultHttpContext GetHttpContext()
     {
         var httpContext = new DefaultHttpContext
@@ -45,6 +84,10 @@ public abstract class TestBase
         return httpContext;
     }
 
+    /// <summary>
+    /// Creates a confirmed user with a known password and stores it in the in-memory database.
+    /// </summary>
+    /// <returns>The created and persisted user.</returns>
     protected async Task<CustomUser> AddMockUserAsync()
     {
         var userMock = new CustomUser

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using Tavstal.YggdrasilSharp.Controllers.Misc;
 using Tavstal.YggdrasilSharp.Models.Bodies.News;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
+using Tavstal.YggdrasilSharp.Models.Responses.News;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
@@ -26,8 +28,7 @@ public class NewsControllerTests : ControllerTestBase
     private readonly NewsController _controller;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="NewsControllerTests"/>.
-    /// Sets up controller with mocks / test services provided by the base test class.
+    /// Initializes a new instance of the class.
     /// </summary>
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base class.</param>
     public NewsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
@@ -46,6 +47,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class GetNewsTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -122,6 +127,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class GetLatestNewsTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetLatestNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -196,6 +205,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class GetNewsByIdTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetNewsByIdTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -257,10 +270,7 @@ public class NewsControllerTests : ControllerTestBase
             
             var result = await _controller.GetNewsById(5);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 
@@ -270,6 +280,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class CreateNewsTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public CreateNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -296,10 +310,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
             
             // Clean-up
             stream.Position = 0;
@@ -334,10 +345,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -363,10 +371,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
     
@@ -375,6 +380,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class UpdateNewsTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UpdateNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -413,10 +422,8 @@ public class NewsControllerTests : ControllerTestBase
                 {
                     Title = "Updated Title"
                 });
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
-                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+                
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
             }
             finally
             {
@@ -460,10 +467,8 @@ public class NewsControllerTests : ControllerTestBase
                 {
                     Title = "Updated Title"
                 });
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(403);
-                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+              
+                TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
             }
             finally
             {
@@ -484,10 +489,8 @@ public class NewsControllerTests : ControllerTestBase
             {
                 Title = "Updated Title"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -496,6 +499,10 @@ public class NewsControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteNewsTests : NewsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteNewsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -529,10 +536,8 @@ public class NewsControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             
             var result = await _controller.DeleteNews(news.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -568,10 +573,8 @@ public class NewsControllerTests : ControllerTestBase
                 }, true, TestContext.Current.CancellationToken);
 
                 var result = await _controller.DeleteNews(news.Id);
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(403);
-                _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+                
+                TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
             }
             finally
             {
@@ -589,10 +592,7 @@ public class NewsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             
             var result = await _controller.DeleteNews(1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine($"Result: {objectResult.Value}");
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 }

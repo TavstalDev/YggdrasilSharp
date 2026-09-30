@@ -12,11 +12,20 @@ using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Authentication;
 
+/// <summary>
+/// Unit tests for <see cref="BasicAuthenticationHandler"/> covering successful authentication
+/// and every malformed or unverifiable <c>Authorization</c> header it must reject.
+/// </summary>
 public class BasicAuthTests : TestBase
 {
     private readonly AuthenticationScheme _scheme;
     private readonly BasicAuthenticationHandler _handler;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BasicAuthTests"/> class with a mocked options monitor,
+    /// logger factory and URL encoder.
+    /// </summary>
+    /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
     public BasicAuthTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         var options = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
@@ -33,6 +42,9 @@ public class BasicAuthTests : TestBase
         _handler = new BasicAuthenticationHandler(options.Object, loggerFactory.Object, encoder.Object, _userManager, _userStore);
     }
     
+    /// <summary>
+    /// Success: valid base64 encoded credentials of an existing user complete the authentication.
+    /// </summary>
     [Fact(DisplayName = "Success: Authentication was completed.")]
     public async Task SuccessfulAuth()
     {
@@ -49,6 +61,9 @@ public class BasicAuthTests : TestBase
         result.Failure.Should().BeNull();
     }
     
+    /// <summary>
+    /// Failure: an empty authorization header results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided authentication header was empty.")]
     public async Task FailureEmptyAuthHeader()
     {
@@ -62,6 +77,9 @@ public class BasicAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: a header using another scheme results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided authentication header was not Basic.")]
     public async Task FailureHeaderNotBasic()
     {
@@ -75,6 +93,9 @@ public class BasicAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: a Basic header without credentials fails with an invalid header error.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided Basic header did not contain a token.")]
     public async Task FailureEmptyBasic()
     {
@@ -90,6 +111,9 @@ public class BasicAuthTests : TestBase
         result.Failure.Message.Should().Be("Invalid authentication header.");
     }
     
+    /// <summary>
+    /// Failure: credentials that are not base64 encoded fail with an encoding error.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided basic credentials were not encoded.")]
     public async Task FailureNotEncoded()
     {
@@ -105,6 +129,9 @@ public class BasicAuthTests : TestBase
         result.Failure.Message.Should().Be("The header parameter is not encoded correctly.");
     }
     
+    /// <summary>
+    /// Failure: well encoded credentials of an unknown user fail the authentication.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided basic credentials could not be verified.")]
     public async Task FailureCouldNotBeVerified()
     {

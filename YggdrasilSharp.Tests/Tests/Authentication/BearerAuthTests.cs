@@ -12,11 +12,20 @@ using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Authentication;
 
+/// <summary>
+/// Unit tests for <see cref="BearerAuthenticationHandler"/> covering successful authentication
+/// and every malformed or unverifiable bearer token it must reject.
+/// </summary>
 public class BearerAuthTests : TestBase
 {
     private readonly AuthenticationScheme _scheme;
     private readonly BearerAuthenticationHandler _handler;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BearerAuthTests"/> class with a mocked options monitor,
+    /// logger factory and URL encoder.
+    /// </summary>
+    /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
     public BearerAuthTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         var options = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
@@ -33,6 +42,9 @@ public class BearerAuthTests : TestBase
         _handler = new BearerAuthenticationHandler(options.Object, loggerFactory.Object, encoder.Object, _userManager, _userStore);
     }
     
+    /// <summary>
+    /// Success: a stored access token belonging to a login of an existing user completes the authentication.
+    /// </summary>
     [Fact(DisplayName = "Success: Authentication was completed.")]
     public async Task SuccessfulAuth()
     {
@@ -70,6 +82,9 @@ public class BearerAuthTests : TestBase
         result.Failure.Should().BeNull();
     }
     
+    /// <summary>
+    /// Failure: an empty authorization header results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided authentication header was empty.")]
     public async Task FailureEmptyAuthHeader()
     {
@@ -83,6 +98,9 @@ public class BearerAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: a header using another scheme results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided authentication header was not Bearer.")]
     public async Task FailureHeaderNotBearer()
     {
@@ -96,6 +114,9 @@ public class BearerAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: a Bearer header without a token fails with an invalid authentication information error.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided Bearer header did not contain a token.")]
     public async Task FailureEmptyBearer()
     {
@@ -111,6 +132,9 @@ public class BearerAuthTests : TestBase
         result.Failure.Message.Should().Be("Invalid authentication information provided in the request.");
     }
     
+    /// <summary>
+    /// Failure: an unknown bearer token fails the authentication.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided bearer token could not be verified.")]
     public async Task FailureTokenCouldNotBeVerified()
     {

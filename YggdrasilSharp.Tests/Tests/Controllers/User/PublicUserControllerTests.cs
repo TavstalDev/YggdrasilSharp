@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -42,6 +43,10 @@ public class PublicUserControllerTests : ControllerTestBase
     /// </summary>
     public class GetUserInfoTests : PublicUserControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetUserInfoTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -69,10 +74,8 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             IActionResult result = await _controller.GetUserInfo("nonexistent-id");
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -81,6 +84,10 @@ public class PublicUserControllerTests : ControllerTestBase
     /// </summary>
     public class GetAvatarTests : PublicUserControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetAvatarTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -129,10 +136,8 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenUserNotFound()
         {
             IActionResult result = await _controller.GetAvatar("no-such-user");
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -145,10 +150,8 @@ public class PublicUserControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller);
 
             IActionResult result = await _controller.GetAvatar(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 }

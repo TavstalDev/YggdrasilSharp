@@ -10,11 +10,20 @@ using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Authentication;
 
+/// <summary>
+/// Unit tests for <see cref="CookieAuthenticationHandler"/> covering successful authentication
+/// and every missing, empty or unverifiable authentication cookie it must reject.
+/// </summary>
 public class CookieAuthTests : TestBase
 {
     private readonly AuthenticationScheme _scheme;
     private readonly CookieAuthenticationHandler _handler;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CookieAuthTests"/> class with a mocked options monitor,
+    /// logger factory and URL encoder.
+    /// </summary>
+    /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
     public CookieAuthTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         var options = new Mock<IOptionsMonitor<AuthenticationSchemeOptions>>();
@@ -31,6 +40,9 @@ public class CookieAuthTests : TestBase
         _handler = new CookieAuthenticationHandler(options.Object, loggerFactory.Object, encoder.Object, _userManager, _userStore);
     }
     
+    /// <summary>
+    /// Success: a stored access token sent in the authentication cookie completes the authentication.
+    /// </summary>
     [Fact(DisplayName = "Success: Authentication was completed.")]
     public async Task SuccessfulAuth()
     {
@@ -45,7 +57,7 @@ public class CookieAuthTests : TestBase
             Value = _userManager.CreateJwtToken(TimeSpan.FromDays(1)),
             CreateDate = DateTimeOffset.UtcNow
         }, true, TestContext.Current.CancellationToken);
-        var login = await _userStore.UserLogins.AddAsync(new CustomUserLogin
+        await _userStore.UserLogins.AddAsync(new CustomUserLogin
         {
             Id = 1,
             UserId = user.Id,
@@ -68,6 +80,9 @@ public class CookieAuthTests : TestBase
         result.Failure.Should().BeNull();
     }
     
+    /// <summary>
+    /// Failure: a request without the authentication cookie results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: No cookie was provided.")]
     public async Task FailureEmptyAuthHeader()
     {
@@ -79,6 +94,9 @@ public class CookieAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: an empty authentication cookie results in no authentication result.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided cookie was empty.")]
     public async Task FailureHeaderNotBasic()
     {
@@ -91,6 +109,9 @@ public class CookieAuthTests : TestBase
         result.None.Should().BeTrue();
     }
     
+    /// <summary>
+    /// Failure: an unverifiable authentication cookie fails the authentication.
+    /// </summary>
     [Fact(DisplayName = "Fail: The provided cookie could not be verified.")]
     public async Task FailureCouldNotBeVerified()
     {

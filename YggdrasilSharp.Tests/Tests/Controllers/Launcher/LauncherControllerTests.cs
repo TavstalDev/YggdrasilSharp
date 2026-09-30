@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Launcher;
@@ -46,6 +48,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class GetLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -77,10 +83,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLauncherVersions();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 
@@ -89,6 +92,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class GetLatestLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetLatestLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -120,10 +127,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLatestLauncherVersion();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 
@@ -132,6 +136,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class GetLauncherVersionDetailsTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetLauncherVersionDetailsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -187,10 +195,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLauncherVersionDetails(1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 
@@ -199,6 +204,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class DownloadLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DownloadLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -265,10 +274,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenVersionDoesNotExist()
         {
             var result = await _controller.DownloadLauncherVersion(999, ELauncherOs.WINDOWS);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -287,10 +293,7 @@ public class LauncherControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             
             var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 
@@ -299,6 +302,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class CreateLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public CreateLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -314,10 +321,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Release 1.0"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -343,10 +347,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Duplicate"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -361,10 +362,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Initial"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -380,10 +378,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Initial"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -392,6 +387,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class UpdateLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UpdateLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -416,10 +415,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Version = "1.0.1",
                 Changelog = "Patch"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -435,10 +431,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Version = "1.0.1",
                 Changelog = "Patch"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -471,10 +464,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -496,10 +486,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -523,10 +510,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -535,6 +519,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteLauncherVersionTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -555,10 +543,7 @@ public class LauncherControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
 
             var result = await _controller.DeleteLauncherVersion(version.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -570,10 +555,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
 
             var result = await _controller.DeleteLauncherVersion(1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -585,10 +567,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
 
             var result = await _controller.DeleteLauncherVersion(1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -597,6 +576,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class AddLauncherVersionDataTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public AddLauncherVersionDataTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -631,10 +614,7 @@ public class LauncherControllerTests : ControllerTestBase
             };
 
             var result = await _controller.AddLauncherVersionData(version.Id, request);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -660,10 +640,7 @@ public class LauncherControllerTests : ControllerTestBase
             };
 
             var result = await _controller.AddLauncherVersionData(1, request);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -685,10 +662,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Os = ELauncherOs.WINDOWS,
                 File = formFile
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -712,10 +686,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Os = ELauncherOs.WINDOWS,
                 File = formFile
             });
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -724,6 +695,10 @@ public class LauncherControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteLauncherVersionDataTests : LauncherControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteLauncherVersionDataTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -771,10 +746,7 @@ public class LauncherControllerTests : ControllerTestBase
                 }, true, TestContext.Current.CancellationToken);
 
                 var result = await _controller.DeleteLauncherVersionData(version.Id, versionData.Id);
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
             }
             finally
             {
@@ -791,10 +763,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
 
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -804,10 +773,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_WhenNoUser()
         {
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -819,10 +785,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
 
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 }

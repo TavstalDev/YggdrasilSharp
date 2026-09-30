@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OtpNet;
 using Tavstal.YggdrasilSharp.Controllers.Auth;
@@ -11,6 +12,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses.Auth;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -27,8 +29,19 @@ public class LoginControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly TestHelper _testHelper;
+    /// <summary>
+    /// The user store used to create the users of the login flows.
+    /// </summary>
     protected readonly CustomUserStore _userStore;
+
+    /// <summary>
+    /// The user manager wired to the two-factor flows.
+    /// </summary>
     protected readonly CustomUserManager _userManager;
+
+    /// <summary>
+    /// The sign-in manager wired to the login flows.
+    /// </summary>
     protected readonly CustomSignInManager _signInManager;
     private readonly AppConfiguration _appConfiguration;
     private readonly LoginController _controller;
@@ -97,6 +110,10 @@ public class LoginControllerTests
     /// </summary>
     public class LoginTests : LoginControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -137,11 +154,7 @@ public class LoginControllerTests
                 Password = _passwordMock
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? contentResult = result as ObjectResult;
-            contentResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + contentResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -157,10 +170,7 @@ public class LoginControllerTests
                 Password = "This%Valid_And#Pass%mock-2027"
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            ObjectResult? contentResult = result as ObjectResult;
-            contentResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + contentResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -181,11 +191,7 @@ public class LoginControllerTests
                 Password = _passwordMock
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? contentResult = result as ObjectResult;
-            contentResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + contentResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
 
@@ -195,6 +201,10 @@ public class LoginControllerTests
     /// </summary>
     public class LoginTwoFactorTests : LoginControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -239,11 +249,7 @@ public class LoginControllerTests
                 TwoFactorCode = "000000"
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
         /// <summary>
@@ -259,10 +265,7 @@ public class LoginControllerTests
                 TwoFactorCode = "000000"
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -288,10 +291,7 @@ public class LoginControllerTests
                 TwoFactorCode = "000000"
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -301,6 +301,10 @@ public class LoginControllerTests
     /// </summary>
     public class LoginLauncherTests : LoginControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -358,10 +362,7 @@ public class LoginControllerTests
                 Password = "wrong-password"
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
 
@@ -371,6 +372,10 @@ public class LoginControllerTests
     /// </summary>
     public class LoginTwoFactorLauncherTests : LoginControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginTwoFactorLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -384,8 +389,9 @@ public class LoginControllerTests
             var loginResult = await AddMockUserAndLoginLauncherAsync(true);
             var content = loginResult.content;
             content.Should().NotBeNullOrEmpty();
-            JObject json = JObject.Parse(content);
-            string sessionToken = json["token"]?.ToString()!;
+            var redirect = JsonConvert.DeserializeObject<LoginLauncherRedirectResponse>(content);
+            redirect.Should().NotBeNull();
+            string sessionToken = redirect.Token!;
             sessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
@@ -422,10 +428,7 @@ public class LoginControllerTests
                 TwoFactorCode = "000000"
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
         /// <summary>
@@ -437,8 +440,9 @@ public class LoginControllerTests
             var loginResult = await AddMockUserAndLoginLauncherAsync(true);
             var content = loginResult.content;
             content.Should().NotBeNullOrEmpty();
-            JObject json = JObject.Parse(content);
-            string sessionToken = json["token"]?.ToString()!;
+            var redirect = JsonConvert.DeserializeObject<LoginLauncherRedirectResponse>(content);
+            redirect.Should().NotBeNull();
+            string sessionToken = redirect.Token!;
 
             IActionResult secondResult = await _controller.LoginLauncherTwoFactorAsync(
                 new LauncherLoginTFASessionRequestBody
@@ -448,10 +452,7 @@ public class LoginControllerTests
                     TwoFactorCode = "000000"
                 });
 
-            secondResult.Should().BeOfType<ObjectResult>();
-            var objectResult = secondResult as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(secondResult, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -481,10 +482,7 @@ public class LoginControllerTests
                     TwoFactorCode = "000000"
                 });
 
-            secondResult.Should().BeOfType<ObjectResult>();
-            var objectResult = secondResult as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(secondResult, HttpStatusCode.Unauthorized);
         }
     }
 
@@ -493,6 +491,10 @@ public class LoginControllerTests
     /// </summary>
     public class LogoutTests : LoginControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LogoutTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -531,10 +533,7 @@ public class LoginControllerTests
         public async Task ReturnsBadRequest_ForInvalidToken()
         {
             IActionResult result = await _controller.LogoutAsync("invalid-token");
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
     

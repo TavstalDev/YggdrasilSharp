@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,7 @@ namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Misc;
 /// <summary>
 /// Unit tests for the <see cref="CapesController"/> controller.
 /// This test fixture sets up an in-memory <see cref="CustomDbContext"/>, a test <see cref="CustomUserManager"/>,
-/// and configures an application <see cref="Startup"/> instance to provide the upload directory used by <see cref="FileData"/>.
+/// and configures an application Startup instance to provide the upload directory used by <see cref="FileData"/>.
 /// </summary>
 public class CapesControllerTests : ControllerTestBase
 {
@@ -27,7 +28,7 @@ public class CapesControllerTests : ControllerTestBase
 
     /// <summary>
     /// Initializes the test fixture. Creates an in-memory database, custom user manager,
-    /// controller instance and initializes <see cref="Startup"/> with a temporary upload directory
+    /// controller instance and initializes Startup with a temporary upload directory
     /// so that <see cref="FileData.SaveFile"/> can write files during tests.
     /// </summary>
     /// <param name="testOutputHelper">xUnit output helper injected by the test runner.</param>
@@ -35,7 +36,7 @@ public class CapesControllerTests : ControllerTestBase
     {
         _capeRepo = new Repository<Cape>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new CapesController(_loggerMock.Object, (CustomUserManager)_userManager, _dbContext, _userStore, _capeRepo, _fileDataRepo, AppConfiguration);
+        _controller = new CapesController(_loggerMock.Object, _userManager, _dbContext, _userStore, _capeRepo, _fileDataRepo, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -47,6 +48,10 @@ public class CapesControllerTests : ControllerTestBase
     /// </summary>
     public class UploadCapeTests : CapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UploadCapeTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -74,10 +79,7 @@ public class CapesControllerTests : ControllerTestBase
                 fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
             }
             finally
             {
@@ -103,10 +105,7 @@ public class CapesControllerTests : ControllerTestBase
             };
             
             var result = await _controller.UploadCape(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -125,10 +124,7 @@ public class CapesControllerTests : ControllerTestBase
             };
 
             var result = await _controller.UploadCape(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -147,10 +143,7 @@ public class CapesControllerTests : ControllerTestBase
             };
             
             var result = await _controller.UploadCape(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -178,16 +171,11 @@ public class CapesControllerTests : ControllerTestBase
                 fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
                 
                 
                 result = await _controller.UploadCape(file);
-                result.Should().BeOfType<ObjectResult>();
-                objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(400);
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
             }
             finally
             {
@@ -215,10 +203,7 @@ public class CapesControllerTests : ControllerTestBase
             };
 
             var result = await _controller.UploadCape(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -227,6 +212,10 @@ public class CapesControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteCapeTests : CapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteCapeTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -261,10 +250,8 @@ public class CapesControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             
             var result = await _controller.DeleteCape(cape.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -276,10 +263,8 @@ public class CapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             
             var result = await _controller.DeleteCape(123);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -291,10 +276,8 @@ public class CapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             
             var result = await _controller.DeleteCape(123);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 }

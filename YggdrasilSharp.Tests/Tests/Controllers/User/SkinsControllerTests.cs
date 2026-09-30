@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class GetSkinTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -90,10 +95,7 @@ public class SkinsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             var result = await _controller.GetSkin();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -104,10 +106,8 @@ public class SkinsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
             var result = await _controller.GetSkin();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -116,6 +116,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class UploadSkinTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UploadSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -134,10 +138,7 @@ public class SkinsControllerTests : ControllerTestBase
             
             var result = await _controller.UploadSkin(file);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
 
             stream.Position = 0;
             using var sha256 = SHA256.Create();
@@ -161,10 +162,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkin(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -181,10 +180,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkin(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -202,10 +199,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkin(file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
     
@@ -214,6 +209,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteSkinTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -241,10 +240,7 @@ public class SkinsControllerTests : ControllerTestBase
             {
                 var result = await _controller.DeleteSkin();
 
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
             }
             finally
             {
@@ -259,10 +255,8 @@ public class SkinsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             var result = await _controller.DeleteSkin();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
         /// <summary>
@@ -273,10 +267,8 @@ public class SkinsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
             var result = await _controller.DeleteSkin();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -285,6 +277,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class GetSkinAdminTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -334,10 +330,8 @@ public class SkinsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.GetSkinAdmin(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
         
         /// <summary>
@@ -349,10 +343,8 @@ public class SkinsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             var result = await _controller.GetSkinAdmin(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -361,6 +353,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class UploadSkinAdminTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UploadSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -380,10 +376,7 @@ public class SkinsControllerTests : ControllerTestBase
             
             var result = await _controller.UploadSkinAdmin(user.Id, file);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
 
             stream.Position = 0;
             using var sha256 = SHA256.Create();
@@ -409,10 +402,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
         
         /// <summary>
@@ -430,10 +421,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -451,10 +440,8 @@ public class SkinsControllerTests : ControllerTestBase
                 ContentType = "image/png"
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
     
@@ -463,6 +450,10 @@ public class SkinsControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteSkinAdminTests : SkinsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -492,10 +483,7 @@ public class SkinsControllerTests : ControllerTestBase
             {
                 var result = await _controller.DeleteSkinAdmin(user.Id);
 
-                result.Should().BeOfType<ObjectResult>();
-                var objectResult = result as ObjectResult;
-                objectResult!.StatusCode.Should().Be(200);
-                _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+                TestHelper.TestResponse(result, HttpStatusCode.OK);
             }
             finally
             {
@@ -512,10 +500,8 @@ public class SkinsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.DeleteSkinAdmin(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+           
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -527,10 +513,8 @@ public class SkinsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, givePermissions: false);
             await CreateUserAsync(_controller);
             var result = await _controller.DeleteSkinAdmin(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 }

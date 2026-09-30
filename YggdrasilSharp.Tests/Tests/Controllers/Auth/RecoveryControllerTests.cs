@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -46,11 +47,15 @@ public class RecoveryControllerTests : ControllerTestBase
     /// </summary>
     public class RequestRecoveryTests : RecoveryControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RequestRecoveryTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
         /// Success case: when the user exists and email is confirmed, a recovery email should be enqueued/sent.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 201 Created.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 201 Created.
         /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
         public async Task ReturnsOk()
@@ -59,29 +64,24 @@ public class RecoveryControllerTests : ControllerTestBase
             await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
         }
 
         /// <summary>
         /// Failure case: requesting recovery for a non-existent email returns NotFound.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 404 Not Found.
         /// </summary>
         [Fact(DisplayName = "Failure: User not found")]
         public async Task ReturnsNotFound_WhenUserMissing()
         {
             IActionResult result = await _controller.RequestRecoveryAsync("noone@example.com");
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
 
         /// <summary>
         /// Failure case: the user exists but their email is not confirmed — recovery should be forbidden.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 403 Forbidden.
         /// </summary>
         [Fact(DisplayName = "Failure: Email not confirmed")]
         public async Task ReturnsForbidden_WhenEmailNotConfirmed()
@@ -90,16 +90,14 @@ public class RecoveryControllerTests : ControllerTestBase
              await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
 
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
         /// Failure case: user has requested recovery recently and is rate-limited.
         /// The memory cache is prepopulated to simulate a recent request, which should cause a 403.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 403 Forbidden.
         /// </summary>
         [Fact(DisplayName = "Failure: Already requested recovery recently")]
         public async Task ReturnsForbidden_WhenRequestTooFrequent()
@@ -111,10 +109,8 @@ public class RecoveryControllerTests : ControllerTestBase
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -124,11 +120,15 @@ public class RecoveryControllerTests : ControllerTestBase
     /// </summary>
     public class RecoverPasswordTests : RecoveryControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RecoverPasswordTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
         /// Success case: valid recovery token present in cache and attempts under limit should reset the password.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 200 OK.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 200 OK.
         /// </summary>
         [Fact(DisplayName = "Success: Reset password")]
         public async Task ReturnsOk()
@@ -147,15 +147,14 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = true
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
         /// Failure case: provided recovery token is invalid for the user.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found (token/user mismatch).
+        /// No attempt counter is seeded for the fingerprint, so the endpoint short-circuits
+        /// with an "invalid or expired token" error before comparing the token itself.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 400 Bad Request.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid recovery token")]
         public async Task ReturnsUnauthorized_ForInvalidToken()
@@ -169,15 +168,12 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
         /// Failure case: recovery token has expired (not present in cache or expired).
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 400 Bad Request.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 400 Bad Request.
         /// </summary>
         [Fact(DisplayName = "Failure: Expired recovery token")]
         public async Task ReturnsBadRequest_WhenTokenExpired()
@@ -193,16 +189,13 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
         /// Failure case: too many recovery attempts were made for this fingerprint; the endpoint should return forbidden.
         /// The test pre-populates the attempts counter in the cache to simulate this.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 403 Forbidden.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 403 Forbidden.
         /// </summary>
         [Fact(DisplayName = "Failure: Too many attempts")]
         public async Task ReturnsForbidden_WhenTooManyAttempts()
@@ -221,10 +214,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -234,11 +224,15 @@ public class RecoveryControllerTests : ControllerTestBase
     /// </summary>
     public class RequestTwoFactorTests : RecoveryControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RequestTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) {}
         
         /// <summary>
         /// Success case: when user exists and email is confirmed, a TFA recovery email should be sent.
-        /// Expected: <see cref="ObjectResult"/> with HTTP 201 Created.
+        /// Expected: <see cref="ContentResult"/> with HTTP 201 Created.
         /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
         public async Task ReturnsOk()
@@ -247,10 +241,7 @@ public class RecoveryControllerTests : ControllerTestBase
              await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
         }
         
         /// <summary>
@@ -260,10 +251,8 @@ public class RecoveryControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenUserMissing()
         {
             IActionResult result = await _controller.RequestTFARecoveryAsync("noone@example.com");
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -277,10 +266,8 @@ public class RecoveryControllerTests : ControllerTestBase
              await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
 
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -297,20 +284,24 @@ public class RecoveryControllerTests : ControllerTestBase
             memoryService.SetValue(cacheKey, "existing-token", TimeSpan.FromMinutes(15));
 
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
-    
+
     /// <summary>
     /// Tests covering performing two-factor recovery (using backup codes or token-based flows).
     /// Verifies valid backup code flow, invalid code, too many attempts and user-not-found.
     /// </summary>
     public class RecoverTwoFactorTests : RecoveryControllerTests
     {
-        public RecoverTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
+        public RecoverTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
 
         /// <summary>
         /// Success case: user has 2FA enabled and a valid backup code stored in DB.
@@ -327,7 +318,7 @@ public class RecoveryControllerTests : ControllerTestBase
             {
                 UserId = user.Id,
                 HashedCode = StringChiper.GetEncryptedHash(backup, AppConfiguration.Jwt.EncryptionKey),
-                CreateAt =  DateTime.UtcNow,
+                CreateAt = DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
@@ -342,10 +333,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = true
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -371,10 +359,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -387,7 +372,7 @@ public class RecoveryControllerTests : ControllerTestBase
             _userMock.TwoFactorEnabled = true;
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             await _userManager.GenerateTwoFactorTokenAsync(user);
-            
+
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
             string token = TokenHelper.GenerateRecoverySessionToken();
             _memoryCacheService.SetValue($"recovery:{fingerprint}:tfa:token", token, TimeSpan.FromMinutes(15));
@@ -401,15 +386,12 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
         /// Failure case: attempting TFA recovery for a non-existing user results in NotFound.
-        /// Expected result: <see cref="ObjectResult"/> with HTTP status 404 Not Found.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 404 Not Found.
         /// </summary>
         [Fact(DisplayName = "Failure: User not found")]
         public async Task ReturnsNotFound_WhenUserMissing()
@@ -422,11 +404,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
 }
-

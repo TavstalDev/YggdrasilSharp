@@ -1,17 +1,16 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.Auth;
 using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Database;
-using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 using Tavstal.YggdrasilSharp.Tests.Services;
+// ReSharper disable NotAccessedField.Local
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 
@@ -21,11 +20,8 @@ namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Auth;
 public class RegisterControllerTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly TestHelper _testHelper;
     private readonly FakeEmailService _emailService;
-    private readonly IPasswordHasher<CustomUser> _passwordHasher;
     private readonly RegisterController _controller;
-    private readonly DefaultHttpContext _controllerHttpContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterControllerTests"/> class and prepares
@@ -35,29 +31,29 @@ public class RegisterControllerTests
     public RegisterControllerTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        _testHelper = new TestHelper();
+        var testHelper = new TestHelper();
         var loggerMock = new Mock<ILogger<RegisterController>>();
         var dbContext = TestHelper.CreateInMemoryDbContext();
         var userStore = TestHelper.CreateCustomUserStore(dbContext);
-        var userManager = _testHelper.CreateCustomUserManager(dbContext, userStore);
-        _passwordHasher = _testHelper.PasswordHasher;
-        _emailService = _testHelper.FakeEmailService;
+        var userManager = testHelper.CreateCustomUserManager(dbContext, userStore);
+        var passwordHasher = testHelper.PasswordHasher;
+        _emailService = testHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         var fileDataRepo = new Repository<FileData>(dbContext);
-        _controller = new RegisterController(loggerMock.Object, userManager, dbContext, userStore, _passwordHasher, _emailService, fileDataRepo, settings);
+        _controller = new RegisterController(loggerMock.Object, userManager, dbContext, userStore, passwordHasher, _emailService, fileDataRepo, settings);
         
-        _controllerHttpContext = new DefaultHttpContext
+        var controllerHttpContext = new DefaultHttpContext
         {
             Connection =
             {
                 RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress)
             }
         };
-        _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
-        _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
+        controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
+        controllerHttpContext.Request.Host = new HostString("localhost", 5000);
         _controller.ControllerContext = new ControllerContext
         {
-            HttpContext = _controllerHttpContext
+            HttpContext = controllerHttpContext
         };
     }
 
@@ -66,6 +62,10 @@ public class RegisterControllerTests
     /// </summary>
     public class RegisterFormTests : RegisterControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RegisterFormTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -82,11 +82,7 @@ public class RegisterControllerTests
                 Password = "This%Valid_And#Pass%mock-2026",
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
         }
 
         /// <summary>
@@ -103,18 +99,12 @@ public class RegisterControllerTests
             };
 
             IActionResult result = await _controller.RegisterForm(request);
-            result.Should().BeOfType<ObjectResult>();
 
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
 
             result = await _controller.RegisterForm(request);
-            result.Should().BeOfType<ObjectResult>();
-
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(409);
-            _testOutputHelper.WriteLine("Second Registration Result (should fail): " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Conflict);
         }
 
         /// <summary>
@@ -131,11 +121,8 @@ public class RegisterControllerTests
             };
 
             IActionResult result = await _controller.RegisterForm(request);
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Registration Result with invalid email: " + objectResult.Value);
+           
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -152,19 +139,13 @@ public class RegisterControllerTests
             };
 
             IActionResult result = await _controller.RegisterForm(request);
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Registration Result with weak password: " + objectResult.Value);
+           
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
         /// Failure case: missing required fields should produce HTTP 400 Bad Request.
         /// </summary>
-        /// <remarks>
-        /// This test manually adds a model state error to simulate model validation failures.
-        /// </remarks>
         [Fact(DisplayName = "Failure: Returns 400 Bad Request for missing required fields")]
         public async Task ReturnsBadRequest_ForMissingFields()
         {
@@ -177,11 +158,8 @@ public class RegisterControllerTests
 
             _controller.ModelState.AddModelError("Password", "The Password field is required.");
             IActionResult result = await _controller.RegisterForm(request);
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Registration Result with missing fields: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
 
@@ -190,6 +168,10 @@ public class RegisterControllerTests
     /// </summary>
     public class ConfirmRegistrationTests : RegisterControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public ConfirmRegistrationTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -206,11 +188,7 @@ public class RegisterControllerTests
                 Password = "This%Valid_And#Pass%mock-2026",
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
 
             _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
@@ -238,10 +216,7 @@ public class RegisterControllerTests
                 ConfirmationToken = token
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Confirmation Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -257,11 +232,7 @@ public class RegisterControllerTests
                 Password = "This%Valid_And#Pass%mock-2026",
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
 
             _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
@@ -288,10 +259,7 @@ public class RegisterControllerTests
                 ConfirmationToken = token
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("First confirmation result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
 
             result = await _controller.ConfirmRegistration(new ConfirmRegisterRequestBody
             {
@@ -299,10 +267,7 @@ public class RegisterControllerTests
                 ConfirmationToken = token
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Second confirmation result (should be invalid): " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -318,11 +283,7 @@ public class RegisterControllerTests
                 Password = "This%Valid_And#Pass%mock-2026",
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
 
             _emailService.SentEmails.Should().HaveCountGreaterThanOrEqualTo(1);
             SentEmail sentEmail = _emailService.SentEmails.First();
@@ -337,10 +298,7 @@ public class RegisterControllerTests
                 ConfirmationToken = "invalid-token"
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Confirmation Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -355,12 +313,8 @@ public class RegisterControllerTests
                 EmailAddress = "testuser5@gmail.com",
                 Password = "This%Valid_And#Pass%mock-2026",
             });
-
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(201);
-            _testOutputHelper.WriteLine("Registration Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Created);
 
 
             result = await _controller.ConfirmRegistration(new ConfirmRegisterRequestBody
@@ -369,10 +323,7 @@ public class RegisterControllerTests
                 ConfirmationToken = "invalid-token" // We can use any token here since the user doesn't exist
             });
 
-            result.Should().BeOfType<ObjectResult>();
-            objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Confirmation Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -388,11 +339,7 @@ public class RegisterControllerTests
                 ConfirmationToken = null!
             });
 
-            result.Should().BeOfType<ObjectResult>();
-
-            ObjectResult? objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Confirmation Result with missing fields: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
     }
 }

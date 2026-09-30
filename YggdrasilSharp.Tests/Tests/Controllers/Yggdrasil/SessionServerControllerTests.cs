@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 using Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 using Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Server;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
@@ -22,8 +24,6 @@ namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Yggdrasil;
 public class SessionServerControllerTests : ControllerTestBase
 {
     private readonly IRepository<ServerJoin> _serverJoinRepo;
-    private readonly IRepository<FileData> _fileDataRepo;
-    private readonly IRepository<Cape> _capeRepo;
     private readonly Mock<ILogger<SessionServerController>> _loggerMock = new();
     private readonly SessionServerController _controller;
     
@@ -37,9 +37,9 @@ public class SessionServerControllerTests : ControllerTestBase
     public SessionServerControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _serverJoinRepo = new Repository<ServerJoin>(_dbContext);
-        _fileDataRepo = new Repository<FileData>(_dbContext);
-        _capeRepo = new Repository<Cape>(_dbContext);
-        _controller = new SessionServerController(_loggerMock.Object, _userManager, _userStore, _serverJoinRepo, _fileDataRepo, _capeRepo, _memoryCacheService, AppConfiguration);
+        IRepository<FileData> fileDataRepo = new Repository<FileData>(_dbContext);
+        IRepository<Cape> capeRepo = new Repository<Cape>(_dbContext);
+        _controller = new SessionServerController(_loggerMock.Object, _userManager, _userStore, _serverJoinRepo, fileDataRepo, capeRepo, _memoryCacheService, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -51,6 +51,10 @@ public class SessionServerControllerTests : ControllerTestBase
     /// </summary>
     public class BlockedServersTests : SessionServerControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public BlockedServersTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -72,6 +76,10 @@ public class SessionServerControllerTests : ControllerTestBase
     /// </summary>
     public class JoinTests : SessionServerControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public JoinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -127,10 +135,13 @@ public class SessionServerControllerTests : ControllerTestBase
                 serverId = Guid.NewGuid().ToString()
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
         
         /// <summary>
@@ -158,10 +169,13 @@ public class SessionServerControllerTests : ControllerTestBase
                 serverId = Guid.NewGuid().ToString()
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
         
         /// <summary>
@@ -187,10 +201,13 @@ public class SessionServerControllerTests : ControllerTestBase
                 serverId = Guid.NewGuid().ToString()
             });
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
     }
     
@@ -199,6 +216,10 @@ public class SessionServerControllerTests : ControllerTestBase
     /// </summary>
     public class HasJoinedTests : SessionServerControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public HasJoinedTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -209,7 +230,7 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+            await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -243,7 +264,7 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user =  await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+            await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -255,10 +276,13 @@ public class SessionServerControllerTests : ControllerTestBase
             
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
         
         /// <summary>
@@ -269,7 +293,7 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+            await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -289,10 +313,13 @@ public class SessionServerControllerTests : ControllerTestBase
             
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
         
         /// <summary>
@@ -305,7 +332,7 @@ public class SessionServerControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, false);
             var admin = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+            await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
@@ -325,10 +352,13 @@ public class SessionServerControllerTests : ControllerTestBase
             
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
     }
     
@@ -337,6 +367,10 @@ public class SessionServerControllerTests : ControllerTestBase
     /// </summary>
     public class GetProfileTests : SessionServerControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetProfileTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -363,10 +397,13 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var result = await _controller.GetProfile(Guid.NewGuid().ToString());
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            result.Should().BeOfType<ContentResult>();
+            var contentResult = result as ContentResult;
+            contentResult.Should().NotBeNull();
+            contentResult.Content.Should().NotBeNullOrEmpty();
+            var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+            errorResponse.Should().NotBeNull();
+            _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
     }
 }

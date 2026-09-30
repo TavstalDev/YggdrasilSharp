@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -6,6 +7,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.Misc;
@@ -104,10 +106,7 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(null!);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(400);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
     }
 
     /// <summary>
@@ -121,10 +120,7 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(hash);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(404);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        TestHelper.TestResponse(result, HttpStatusCode.NotFound);
     }
 
     /// <summary>
@@ -148,9 +144,6 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(hash);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(500);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        TestHelper.TestResponse(result, HttpStatusCode.InternalServerError);
     }
 }

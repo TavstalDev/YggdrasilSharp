@@ -15,22 +15,82 @@ using Tavstal.YggdrasilSharp.Tests.Services;
 
 namespace Tavstal.YggdrasilSharp.Tests.Models;
 
+/// <summary>
+/// Base class for controller tests: builds an in-memory database, a user store, a user manager, a
+/// request context and two mock users, and exposes helpers to authenticate a controller request.
+/// </summary>
 public abstract class ControllerTestBase
 {
+    /// <summary>
+    /// The output helper used to write test diagnostics.
+    /// </summary>
     protected readonly ITestOutputHelper _testOutputHelper;
+
+    /// <summary>
+    /// The helper owning the test services shared by the test class.
+    /// </summary>
     protected readonly TestHelper _testHelper;
+
+    /// <summary>
+    /// The in-memory database holding the data of the test.
+    /// </summary>
     protected readonly CustomDbContext _dbContext;
+
+    /// <summary>
+    /// The user store backed by <see cref="_dbContext"/>.
+    /// </summary>
     protected readonly CustomUserStore _userStore;
+
+    /// <summary>
+    /// The user manager used to create users and password hashes.
+    /// </summary>
     protected readonly CustomUserManager _userManager;
+
+    /// <summary>
+    /// The hasher used to create and verify the password hashes of the mock users.
+    /// </summary>
     protected readonly IPasswordHasher<CustomUser> _passwordHasher;
+
+    /// <summary>
+    /// The request context given to the controller under test.
+    /// </summary>
     protected readonly DefaultHttpContext _controllerHttpContext;
+
+    /// <summary>
+    /// The memory cache service scoped to the test instance.
+    /// </summary>
     protected readonly MemoryCacheService _memoryCacheService;
+
+    /// <summary>
+    /// The email service capturing the emails produced by the test.
+    /// </summary>
     protected readonly FakeEmailService _fakeEmailService;
+
+    /// <summary>
+    /// The test configuration given to the controller and services under test.
+    /// </summary>
     protected readonly AppConfiguration AppConfiguration;
+
+    /// <summary>
+    /// The default mock user, confirmed and with a known password hash.
+    /// </summary>
     protected readonly CustomUser _userMock;
+
+    /// <summary>
+    /// The second mock user, kept unconfirmed to test the confirmation flows.
+    /// </summary>
     protected readonly CustomUser _userMock2;
+
+    /// <summary>
+    /// The plain password matching the password hashes of the mock users.
+    /// </summary>
     protected const string _passwordMock = "This%Valid_And#Pass%mock-2026";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ControllerTestBase"/> class with fresh,
+    /// non-shared test services so parallel test classes cannot interfere with each other.
+    /// </summary>
+    /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
     protected ControllerTestBase(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
@@ -47,7 +107,7 @@ public abstract class ControllerTestBase
         AppConfiguration = TestHelper.CreateTestSettings();
 
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["UploadDirectory"] = uploadTempDir
         }).Build();
@@ -92,6 +152,14 @@ public abstract class ControllerTestBase
         _userMock2.PasswordHash = _passwordHasher.HashPassword(_userMock2, _passwordMock);
     }
     
+    /// <summary>
+    /// Persists a user together with the default and, optionally, the admin role, then authenticates
+    /// the given controller with the created user.
+    /// </summary>
+    /// <param name="controller">The controller whose <see cref="ControllerContext"/> receives the authenticated request.</param>
+    /// <param name="user">The user to create, or <c>null</c> to use the default mock user.</param>
+    /// <param name="givePermissions">Whether the user also receives the admin role and its claims.</param>
+    /// <returns>The created and persisted user.</returns>
     protected async Task<CustomUser> CreateUserAsync(Controller controller, CustomUser? user = null, bool givePermissions = true)
     {
         user = await _userStore.AddUserAsync(user ?? _userMock, true);

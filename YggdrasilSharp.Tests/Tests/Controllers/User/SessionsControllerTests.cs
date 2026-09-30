@@ -1,8 +1,10 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tavstal.YggdrasilSharp.Controllers.User;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Models;
 
 namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers.User;
@@ -34,6 +36,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class GetSessionsTests : SessionsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetSessionsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -58,10 +64,7 @@ public class SessionsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             IActionResult result = await _controller.GetSessions();
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -70,6 +73,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class RevokeSessionTests : SessionsControllerTests
     {
+        /// <summary>
+        ///  Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RevokeSessionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -95,10 +102,8 @@ public class SessionsControllerTests : ControllerTestBase
             
             
             IActionResult result = await _controller.RevokeSession(session.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -111,10 +116,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSession(0);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -124,10 +126,8 @@ public class SessionsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             IActionResult result = await _controller.RevokeSession(1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -138,10 +138,8 @@ public class SessionsControllerTests : ControllerTestBase
         {
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeSession(9999);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -150,6 +148,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class RevokeAllSessionsTests : SessionsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RevokeAllSessionsTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -161,10 +163,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeAllSessions();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -175,10 +174,7 @@ public class SessionsControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.RevokeAllSessions();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -187,6 +183,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class GetSessionAdmin : SessionsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetSessionAdmin(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -213,10 +213,8 @@ public class SessionsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.GetSessionsAdmin(user.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
     
@@ -225,6 +223,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class RevokeSessionAdmin : SessionsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RevokeSessionAdmin(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -251,10 +253,8 @@ public class SessionsControllerTests : ControllerTestBase
             
             
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, session.Id);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -269,10 +269,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 0);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -284,10 +281,8 @@ public class SessionsControllerTests : ControllerTestBase
             var user =  await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 1);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
@@ -299,10 +294,8 @@ public class SessionsControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 9999);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -311,6 +304,10 @@ public class SessionsControllerTests : ControllerTestBase
     /// </summary>
     public class RevokeAllSessionsAdmin : SessionsControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RevokeAllSessionsAdmin(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -323,10 +320,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -339,10 +333,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 }

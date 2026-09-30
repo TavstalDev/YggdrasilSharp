@@ -34,6 +34,10 @@ public class StatusControllerTests : ControllerTestBase
     /// </summary>
     public class RootTests : StatusControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RootTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -55,6 +59,10 @@ public class StatusControllerTests : ControllerTestBase
     /// </summary>
     public class StatusTests : StatusControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public StatusTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -76,6 +84,10 @@ public class StatusControllerTests : ControllerTestBase
     /// </summary>
     public class PublicKeysTests : StatusControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public PublicKeysTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>

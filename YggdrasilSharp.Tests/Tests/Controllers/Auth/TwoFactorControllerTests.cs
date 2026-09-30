@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// Initializes a new instance of the <see cref="TwoFactorControllerTests"/> test class.
     /// </summary>
     /// <param name="testOutputHelper">
-    /// xUnit's <see cref="Xunit.Abstractions.ITestOutputHelper"/> provided by the test runner.
+    /// xUnit's <see cref="ITestOutputHelper"/> provided by the test runner.
     /// This is forwarded to the base test class (via <c>base(testOutputHelper)</c>) to enable logging in the shared fixture.
     /// </param>
         public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
@@ -41,6 +42,10 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// </summary>
     public class EnableTwoFactorTests : TwoFactorControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public EnableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -59,10 +64,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.EnableTwoFactorAuthAsync(code);
             
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -76,10 +78,7 @@ public class TwoFactorControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
         /// <summary>
@@ -90,10 +89,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -108,10 +104,7 @@ public class TwoFactorControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -120,6 +113,10 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// </summary>
     public class DisableTwoFactorTests : TwoFactorControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DisableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -138,10 +135,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync(code);
             
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -156,10 +150,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -169,10 +160,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -187,10 +175,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
     
@@ -199,6 +184,10 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// </summary>
     public class GenerateCodeTests : TwoFactorControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GenerateCodeTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -224,10 +213,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             IActionResult result = await _controller.GenerateCodeAsync();
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
         
         /// <summary>
@@ -241,10 +227,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             await _userManager.GenerateTwoFactorTokenAsync(user);
             
             IActionResult result = await _controller.GenerateCodeAsync();
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
@@ -253,6 +236,10 @@ public class TwoFactorControllerTests : ControllerTestBase
     /// </summary>
     public class RegenerateRecoveryCodesTests : TwoFactorControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RegenerateRecoveryCodesTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -279,10 +266,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.RegenerateRecoveryCodesAsync();
             
-            result.Should().BeOfType<ObjectResult>();
-            var obj = result as ObjectResult;
-            obj!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + obj.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
 }

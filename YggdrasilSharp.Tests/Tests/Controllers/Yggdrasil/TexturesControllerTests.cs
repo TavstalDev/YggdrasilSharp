@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 using Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Tests.Models;
@@ -93,10 +95,13 @@ public class TexturesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetTexture(null!);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(400);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        result.Should().BeOfType<ContentResult>();
+        var contentResult = result as ContentResult;
+        contentResult.Should().NotBeNull();
+        contentResult.Content.Should().NotBeNullOrEmpty();
+        var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+        errorResponse.Should().NotBeNull();
+        _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
     }
     
     /// <summary>
@@ -110,10 +115,13 @@ public class TexturesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetTexture(hash);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(404);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        result.Should().BeOfType<ContentResult>();
+        var contentResult = result as ContentResult;
+        contentResult.Should().NotBeNull();
+        contentResult.Content.Should().NotBeNullOrEmpty();
+        var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+        errorResponse.Should().NotBeNull();
+        _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
     }
     
     /// <summary>
@@ -136,9 +144,12 @@ public class TexturesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetTexture(hash);
 
-        result.Should().BeOfType<ObjectResult>();
-        var obj = result as ObjectResult;
-        obj!.StatusCode.Should().Be(500);
-        _testOutputHelper.WriteLine("Result: " + obj.Value);
+        result.Should().BeOfType<ContentResult>();
+        var contentResult = result as ContentResult;
+        contentResult.Should().NotBeNull();
+        contentResult.Content.Should().NotBeNullOrEmpty();
+        var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(contentResult.Content);
+        errorResponse.Should().NotBeNull();
+        _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
     }
 }

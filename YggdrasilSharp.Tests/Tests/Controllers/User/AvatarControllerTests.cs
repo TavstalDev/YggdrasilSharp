@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -44,6 +45,10 @@ public class AvatarControllerTests : ControllerTestBase
     /// </summary>
     public class GetAvatarTests : AvatarControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetAvatarTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -78,10 +83,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.GetAvatar();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
         /// <summary>
@@ -95,10 +97,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.GetAvatar();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
     }
     
@@ -107,6 +106,10 @@ public class AvatarControllerTests : ControllerTestBase
     /// </summary>
     public class UploadAvatarTests : AvatarControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UploadAvatarTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -130,10 +133,7 @@ public class AvatarControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatar(file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
 
             var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
@@ -149,10 +149,8 @@ public class AvatarControllerTests : ControllerTestBase
         {
             _controller.ModelState.AddModelError("file", "File is required.");
             IActionResult result = await _controller.UploadAvatar(null!);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -172,10 +170,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -195,10 +190,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -217,10 +209,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -229,6 +218,10 @@ public class AvatarControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteAvatarTests : AvatarControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteAvatarTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -256,10 +249,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DeleteAvatar();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -271,10 +261,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.DeleteAvatar();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -285,10 +272,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.DeleteAvatar();
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -297,6 +281,10 @@ public class AvatarControllerTests : ControllerTestBase
     /// </summary>
     public class UploadAvatarAdminTests : AvatarControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public UploadAvatarAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -320,10 +308,7 @@ public class AvatarControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
 
             var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
@@ -340,10 +325,8 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             _controller.ModelState.AddModelError("file", "File is required.");
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, null!);
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
 
         /// <summary>
@@ -363,10 +346,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -386,10 +366,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -409,10 +386,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
     
@@ -421,6 +395,10 @@ public class AvatarControllerTests : ControllerTestBase
     /// </summary>
     public class DeleteAvatarAdminTests : AvatarControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DeleteAvatarAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -448,10 +426,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -464,10 +439,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -480,10 +452,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 }

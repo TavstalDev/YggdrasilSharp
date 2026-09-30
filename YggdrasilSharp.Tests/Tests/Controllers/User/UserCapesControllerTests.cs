@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,10 @@ public class UserCapesControllerTests : ControllerTestBase
     /// </summary>
     public class SelectSkinTests : UserCapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public SelectSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
@@ -57,10 +62,7 @@ public class UserCapesControllerTests : ControllerTestBase
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCape(db.cape.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -74,10 +76,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _controller.SelectCape(db.cape.Id);
             var result = await _controller.SelectCape(db.cape.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -89,10 +88,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.SelectCape(1);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -103,10 +99,7 @@ public class UserCapesControllerTests : ControllerTestBase
         {
             var result = await _controller.SelectCape(1);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -115,6 +108,10 @@ public class UserCapesControllerTests : ControllerTestBase
     /// </summary>
     public class ClearSelectedSkinTests : UserCapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public ClearSelectedSkinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -129,10 +126,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _userStore.UserCapes.UpdateAsync(db.userCape, true, TestContext.Current.CancellationToken);
             var result = await _controller.ClearSelectedCape();
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -142,13 +136,10 @@ public class UserCapesControllerTests : ControllerTestBase
         public async Task ReturnsBadRequest()
         {
             var user =  await CreateUserAsync(_controller);
-            var db = await FillDatabase(user.Id);
+            await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCape();
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -159,10 +150,7 @@ public class UserCapesControllerTests : ControllerTestBase
         {
             var result = await _controller.ClearSelectedCape();
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(401);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
     
@@ -171,6 +159,10 @@ public class UserCapesControllerTests : ControllerTestBase
     /// </summary>
     public class SelectSkinAdminTests : UserCapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public SelectSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
@@ -184,10 +176,7 @@ public class UserCapesControllerTests : ControllerTestBase
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -202,10 +191,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             var result = await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(400);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
         
         /// <summary>
@@ -218,10 +204,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -234,10 +217,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
     
@@ -246,6 +226,10 @@ public class UserCapesControllerTests : ControllerTestBase
     /// </summary>
     public class ClearSelectedSkinAdminTests : UserCapesControllerTests
     {
+        /// <summary>
+        /// Initializes a new instance of the class.
+        /// </summary>
+        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public ClearSelectedSkinAdminTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
       
         /// <summary>
@@ -261,10 +245,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _userStore.UserCapes.UpdateAsync(db.userCape, true, TestContext.Current.CancellationToken);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(200);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
         
         /// <summary>
@@ -275,13 +256,10 @@ public class UserCapesControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
-            var db = await FillDatabase(user.Id);
+            await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(404);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
         
         /// <summary>
@@ -294,10 +272,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(403);
-            _testOutputHelper.WriteLine("Result: " + objectResult.Value);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
 
