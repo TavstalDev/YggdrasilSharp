@@ -56,4 +56,7 @@
             <NoWarn>NU1701</NoWarn>
         </PackageReference>
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Models\Responses\Launcher\" />
+    </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@ public class DatabaseCleanerService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger _logger;
     private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(1);
-    private int _cleanupFails = 0;
+    private int _cleanupFails;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseCleanerService"/> class.

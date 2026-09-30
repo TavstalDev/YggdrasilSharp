@@ -525,7 +525,7 @@ public static class Program
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings?.Swagger.Name} v1");
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings.Swagger.Name} v1");
             c.RoutePrefix = "docs";
         });
         app.UseForwardedHeaders(new ForwardedHeadersOptions

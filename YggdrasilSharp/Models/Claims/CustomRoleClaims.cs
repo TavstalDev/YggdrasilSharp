@@ -1,10 +1,14 @@
 ﻿using Tavstal.YggdrasilSharp.Models.Database.User.Claims;
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Tavstal.YggdrasilSharp.Models.Claims;
 
-// The default role claims, this class is used to generate the claims during database creation.
+/// <summary>
+/// The default role claims, this class is used to generate the claims during database creation.
+/// </summary>
+/// <remarks>
+/// The dictionary is keyed by role name and maps to the <see cref="RoleClaim"/> instances granted by that role.
+/// A role absent from the dictionary is granted no role claims.
+/// </remarks>
 public static class CustomRoleClaims
 {
     private static readonly Dictionary<string, List<RoleClaim>> _claims = new()
@@ -55,5 +59,8 @@ public static class CustomRoleClaims
         ] },
     };
 
+    /// <summary>
+    /// Gets the default role claims keyed by role name.
+    /// </summary>
     public static Dictionary<string, List<RoleClaim>> Claims => _claims;
 }

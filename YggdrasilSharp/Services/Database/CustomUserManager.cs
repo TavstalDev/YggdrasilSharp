@@ -8,6 +8,7 @@ using OtpNet;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
+// ReSharper disable UnusedMember.Local
 
 #pragma warning disable CS9113 // Parameter is unread.
 
