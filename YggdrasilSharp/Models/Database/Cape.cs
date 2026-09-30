@@ -19,6 +19,7 @@ public class Cape
     /// <summary>
     /// Gets or sets the name of the cape.
     /// </summary>
+    [StringLength(64)]
     public required string Name { get; set; }
     
     /// <summary>

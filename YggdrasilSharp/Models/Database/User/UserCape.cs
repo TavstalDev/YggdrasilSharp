@@ -36,6 +36,7 @@ public class UserCape
     /// <summary>
     /// Gets or sets the reason for the cape's association, if any.
     /// </summary>
+    [StringLength(1024)]
     public string? Reason { get; set; }
     
     /// <summary>

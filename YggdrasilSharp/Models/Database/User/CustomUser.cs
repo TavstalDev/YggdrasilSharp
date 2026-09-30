@@ -293,7 +293,7 @@ public sealed class CustomUser : IdentityUser<string>
     /// This property is ignored during JSON serialization.
     /// </summary>
     [JsonIgnore] 
-    public FileData? Avatar => Files?.FirstOrDefault(x => x.Type == EFileDataType.PROFILE_PICTURE);
+    public FileData? Avatar => Files.FirstOrDefault(x => x.Type == EFileDataType.PROFILE_PICTURE);
     
     /// <summary>
     /// Gets a value indicating whether the user has an avatar.
