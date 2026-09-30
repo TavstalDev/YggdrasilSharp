@@ -82,20 +82,20 @@ public class RegisterController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
-                return CodeResult(HttpStatusCode.Forbidden, "Password is compromised.");
+                return JsonResult(HttpStatusCode.Forbidden, "Password is compromised.");
             
             if (!request.EmailAddress.IsValidEmail())
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid email address.");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid email address.");
                 
             var normalizedEmail = request.EmailAddress.Normalize();
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
-                return CodeResult(HttpStatusCode.Conflict, "User already exists.");
+                return JsonResult(HttpStatusCode.Conflict, "User already exists.");
             
             FileData? avatarData = null;
             if (request.Avatar is { Length: > 0 })
@@ -107,7 +107,7 @@ public class RegisterController : CustomControllerBase
                 stream.Position = 0;
                 
                 if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
-                    return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                    return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
                 
                 avatarData = await _fileDataRepo.AddAsync(new FileData
                 {
@@ -155,12 +155,12 @@ public class RegisterController : CustomControllerBase
                 Logger.LogCritical("Failed to send confirmation email: {Message}", eex);
             }
 
-            return CodeResult(HttpStatusCode.Created, "User registered successfully");
+            return JsonResult(HttpStatusCode.Created, "User registered successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical("Error during registration: {Message}", ex);
-            return CodeResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            return JsonResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
     
@@ -189,25 +189,25 @@ public class RegisterController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             // Find the user by ID
             CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
-                return CodeResult(HttpStatusCode.BadRequest, "User does not exist.");
+                return JsonResult(HttpStatusCode.BadRequest, "User does not exist.");
 
             // Check if the user's email is already confirmed
             if (user.EmailConfirmed)
-                return CodeResult(HttpStatusCode.Forbidden, "The user is already confirmed.");
+                return JsonResult(HttpStatusCode.Forbidden, "The user is already confirmed.");
 
             // Validate the confirmation token
             var confirmationToken = await UserStore.UserTokens.FindAsync(x => x.UserId == user.Id && x.Name == "EmailConfirmationToken");
             if (confirmationToken == null)
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
 
             if (confirmationToken.Value != request.ConfirmationToken)
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
             
             await UserStore.UserTokens.RemoveAsync(confirmationToken);
             user.EmailConfirmed = true;
@@ -218,13 +218,13 @@ public class RegisterController : CustomControllerBase
             await _emailService.SendEmailAsync(user.Email, user.UserName, "Account Confirmation",
                 "Your account has been confirmed<br/>Thank you for confirming your account. You can now log in.");
 
-            return CodeResult(HttpStatusCode.OK, "User confirmed successfully");
+            return JsonResult(HttpStatusCode.OK, "User confirmed successfully");
         }
         catch (Exception ex)
         {
             // Log critical errors and return an internal server error response
             Logger.LogCritical("Error during email confirmation: {Message}", ex);
-            return CodeResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
+            return JsonResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
 

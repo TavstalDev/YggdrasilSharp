@@ -7,6 +7,7 @@ using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses.User;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 
@@ -53,35 +54,35 @@ public class PublicUserController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
 
             string avatarUrl = string.Empty;
             if (user.Avatar != null && !string.IsNullOrEmpty(_appConfiguration.Misc.ApiUrl))
                 avatarUrl = user.Avatar.GetUrl(_appConfiguration.Misc.ApiUrl);
             
-            return JsonResult(new
+            return JsonResult(new UserInfoResponse()
             {
-                user.Id,
+                UserId = user.Id,
                 AvatarUrl = avatarUrl,
-                user.DiscordId,
-                user.UserName,
-                user.CreateDate,
-                user.LastUpdate,
-                user.LockoutEnabled,
-                user.LockoutEnd,
-                user.LockoutReason
+                DiscordId = user.DiscordId,
+                UserName = user.UserName,
+                CreateDate = user.CreateDate,
+                LastUpdate = user.LastUpdate,
+                LockoutEnabled = user.LockoutEnabled,
+                LockoutEnd = user.LockoutEnd,
+                LockoutReason = user.LockoutReason
             });
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving user information.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -105,18 +106,18 @@ public class PublicUserController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userId);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
 
             FileData? existingAvatar =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
-                return CodeResult(HttpStatusCode.NotFound, "No avatar found.");
+                return JsonResult(HttpStatusCode.NotFound, "No avatar found.");
 
             string etag = $"\"{existingAvatar.Hash}\"";
             if (Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) &&
@@ -133,7 +134,7 @@ public class PublicUserController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

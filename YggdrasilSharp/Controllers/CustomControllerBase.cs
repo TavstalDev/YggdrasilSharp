@@ -62,21 +62,6 @@ public abstract class CustomControllerBase : Controller
             return null;
         return await UserStore.FindUserByIdAsync(UserId);
     }
-
-    /// <summary>
-    /// Returns a JSON response containing an <see cref="ErrorResponse"/> describing the failure.
-    /// </summary>
-    /// <param name="code">The HTTP status code to describe the failure with.</param>
-    /// <param name="message">The message describing why the request failed.</param>
-    /// <param name="details">Optional additional information about the failure.</param>
-    /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="ErrorResponse"/>.</returns>
-    protected IActionResult ErrorResult(HttpStatusCode code, string message, string? details = null) 
-        => JsonResult(new ErrorResponse
-        {
-            StatusCode = code,
-            Message = message,
-            Details = details
-        });
     
     /// <summary>
     /// Returns a JSON response containing a <see cref="YigErrorResponse"/> describing the failure,
@@ -106,6 +91,21 @@ public abstract class CustomControllerBase : Controller
             return StatusCode((int)status);
         return StatusCode((int)status, message);
     }
+    
+    /// <summary>
+    /// Returns a JSON response containing an <see cref="ErrorResponse"/> describing the failure.
+    /// </summary>
+    /// <param name="code">The HTTP status code to describe the failure with.</param>
+    /// <param name="message">The message describing why the request failed.</param>
+    /// <param name="details">Optional additional information about the failure.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="ErrorResponse"/>.</returns>
+    protected IActionResult JsonResult(HttpStatusCode code, string message, string? details = null) 
+        => JsonResult(new ErrorResponse
+        {
+            StatusCode = code,
+            Message = message,
+            Details = details
+        });
     
     /// <summary>
     /// Returns a JSON response with the specified object serialized to JSON.

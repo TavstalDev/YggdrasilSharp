@@ -68,14 +68,13 @@ public class LauncherController : CustomControllerBase
         {
             var versions = (await _launcherVersionRepo.QueryAsync(null)).ToList();
             if (versions.Count == 0)
-                return CodeResult(HttpStatusCode.NotFound, "No launcher versions found.");
-
+                return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
             return JsonResult(versions);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving launcher versions.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -92,18 +91,18 @@ public class LauncherController : CustomControllerBase
         {
             var versions = (await _launcherVersionRepo.QueryAsync(null)).ToList();
             if (versions.Count == 0)
-                return CodeResult(HttpStatusCode.NotFound, "No launcher versions found.");
+                return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
 
             var version = versions.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
             
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "No launcher versions found.");
+                return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
             return JsonResult(version);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the latest launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -126,13 +125,13 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             var version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
             
             var versionDetails = await _launcherVersionDataRepo.QueryAsync(x => x.VersionId == version.Id);
             return JsonResult(versionDetails);
@@ -140,7 +139,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving launcher version details.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -165,7 +164,7 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -175,20 +174,20 @@ public class LauncherController : CustomControllerBase
 
             var version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
 
             var versionData =
                 await _launcherVersionDataRepo.FindAsync(x => x.Os == os && x.VersionId == version.Id);
             if (versionData == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version data not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version data not found.");
 
             var fileData = await _fileDataRepository.FindAsync(x => x.Id == versionData.FileId);
             if (fileData == null || !fileData.Exists())
-                return CodeResult(HttpStatusCode.NotFound, "File data not found.");
+                return JsonResult(HttpStatusCode.NotFound, "File data not found.");
 
             byte[]? bytes = fileData.GetFileData();
             if (bytes == null)
-                return CodeResult(HttpStatusCode.InternalServerError, "Failed to retrieve the file.");
+                return JsonResult(HttpStatusCode.InternalServerError, "Failed to retrieve the file.");
 
             _memoryCacheService.SetValue(cacheKey, (bytes, fileData.ContentType), CacheTTL);
             return File(bytes, fileData.ContentType);
@@ -196,7 +195,7 @@ public class LauncherController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving the launcher version download link.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -225,20 +224,20 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? existingVersion = await _launcherVersionRepo.FindAsync(x => x.Version == request.Version);
             if (existingVersion != null)
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     "A launcher version with the same version number already exists.");
 
             await _launcherVersionRepo.AddAsync(new LauncherVersion
@@ -250,12 +249,12 @@ public class LauncherController : CustomControllerBase
                 UpdatedAt = DateTimeOffset.UtcNow,
             }, true);
 
-            return CodeResult(HttpStatusCode.OK, "Launcher version created successfully.");
+            return JsonResult(HttpStatusCode.OK, "Launcher version created successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while creating a new launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -284,27 +283,27 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
 
             if (!string.IsNullOrEmpty(request.Version))
             {
                 LauncherVersion? existingVersion =
                     await _launcherVersionRepo.FindAsync(x => x.Version == request.Version && x.Id != version.Id);
                 if (existingVersion != null)
-                    return CodeResult(HttpStatusCode.BadRequest,
+                    return JsonResult(HttpStatusCode.BadRequest,
                         "A launcher version with the same version number already exists.");
 
                 version.Version = request.Version;
@@ -317,12 +316,12 @@ public class LauncherController : CustomControllerBase
                 version.VersionType = request.VersionType.Value;
 
             await _launcherVersionRepo.UpdateAsync(version, true);
-            return CodeResult(HttpStatusCode.OK, "Launcher version updated successfully.");
+            return JsonResult(HttpStatusCode.OK, "Launcher version updated successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while updating the launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -348,20 +347,20 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
 
             var versions = await _launcherVersionDataRepo.QueryAsync(x => x.VersionId == version.Id);
             foreach (var ver in versions)
@@ -376,12 +375,12 @@ public class LauncherController : CustomControllerBase
             }
             
             await _launcherVersionRepo.RemoveAsync(version, true);
-            return CodeResult(HttpStatusCode.OK, "Launcher version deleted successfully.");
+            return JsonResult(HttpStatusCode.OK, "Launcher version deleted successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while deleting the launcher version.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -410,33 +409,33 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
 
             LauncherVersionData? versionData =
                 await _launcherVersionDataRepo.FindAsync(x => x.VersionId == version.Id && x.Os == request.Os);
             if (versionData != null)
-                return CodeResult(HttpStatusCode.NotFound,
+                return JsonResult(HttpStatusCode.NotFound,
                     "Launcher version data for the specified OS already exists.");
 
             if (request.File.Length > 1024 * 1024 * 512) // 512 MB limit
-                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 512 MB limit.");
+                return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 512 MB limit.");
 
             if (!(request.File.FileName.EndsWith(".zip") || request.File.FileName.EndsWith(".tar.gz") ||
                   request.File.FileName.EndsWith(".tar")))
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid file type. Only .zip, .tar.gz, and .tar files are allowed.");
 
             await using var stream = request.File.OpenReadStream();
@@ -462,12 +461,12 @@ public class LauncherController : CustomControllerBase
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow,
             }, true);
-            return CodeResult(HttpStatusCode.OK, "Launcher version data added successfully.");
+            return JsonResult(HttpStatusCode.OK, "Launcher version data added successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while adding launcher version data.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -494,21 +493,21 @@ public class LauncherController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersionData? versionData =
                 await _launcherVersionDataRepo.FindAsync(x => x.Id == dataId && x.VersionId == versionId);
             if (versionData == null)
-                return CodeResult(HttpStatusCode.NotFound, "Launcher version data not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Launcher version data not found.");
 
             FileData? fileData = await _fileDataRepository.FindByIdAsync(versionData.FileId);
             if (fileData != null)
@@ -518,12 +517,12 @@ public class LauncherController : CustomControllerBase
             }
 
             await _launcherVersionDataRepo.RemoveAsync(versionData, true);
-            return CodeResult(HttpStatusCode.OK, "Launcher version data added successfully.");
+            return JsonResult(HttpStatusCode.OK, "Launcher version data added successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while deleting launcher version data.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

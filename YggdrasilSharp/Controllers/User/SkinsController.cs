@@ -63,20 +63,20 @@ public class SkinsController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (skin == null)
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
 
             if (!skin.Exists())
             {
                 await _fileDataRepository.RemoveAsync(skin, true);
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
             }
 
             return File(skin.GetFileStream(), skin.ContentType, skin.FileName);
@@ -84,7 +84,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -112,22 +112,22 @@ public class SkinsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
-                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
-                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
@@ -144,7 +144,7 @@ public class SkinsController : CustomControllerBase
             stream.Position = 0;
 
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
             // Remove profile cache
@@ -160,12 +160,12 @@ public class SkinsController : CustomControllerBase
                 Type = EFileDataType.SKIN,
             }, true);
             fd.SaveFile(stream);
-            return CodeResult(HttpStatusCode.OK, "Skin uploaded successfully");
+            return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -187,15 +187,15 @@ public class SkinsController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin == null)
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
 
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{user.Id}:signed");
@@ -203,12 +203,12 @@ public class SkinsController : CustomControllerBase
             
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
-            return CodeResult(HttpStatusCode.OK, "Skin deleted successfully");
+            return JsonResult(HttpStatusCode.OK, "Skin deleted successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -237,33 +237,33 @@ public class SkinsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? skin =
                 await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (skin == null)
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
 
             if (!skin.Exists())
             {
                 await _fileDataRepository.RemoveAsync(skin, true);
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
             }
 
             // Remove profile cache
@@ -274,7 +274,7 @@ public class SkinsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -304,29 +304,29 @@ public class SkinsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
-                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
-                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
@@ -343,7 +343,7 @@ public class SkinsController : CustomControllerBase
             stream.Position = 0;
 
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
             // Remove profile cache
@@ -359,12 +359,12 @@ public class SkinsController : CustomControllerBase
                 Type = EFileDataType.SKIN,
             }, true);
             fd.SaveFile(stream);
-            return CodeResult(HttpStatusCode.OK, "Skin uploaded successfully");
+            return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -391,28 +391,28 @@ public class SkinsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin == null)
-                return CodeResult(HttpStatusCode.NotFound, "No skin found for the user");
+                return JsonResult(HttpStatusCode.NotFound, "No skin found for the user");
 
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
@@ -420,12 +420,12 @@ public class SkinsController : CustomControllerBase
             
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
-            return CodeResult(HttpStatusCode.OK, "Skin deleted successfully");
+            return JsonResult(HttpStatusCode.OK, "Skin deleted successfully");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the skin.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 

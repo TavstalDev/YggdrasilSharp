@@ -71,23 +71,23 @@ public class RecoveryController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             string normalizedEmail = email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
             
             if (!user.EmailConfirmed)
-                return CodeResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
+                return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
             string fingerprint = GetMachineFingerprint(user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
             if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
-                return CodeResult(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
+                return JsonResult(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
 
             string recoveryToken = TokenHelper.GenerateRecoverySessionToken();
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
@@ -107,12 +107,12 @@ public class RecoveryController : CustomControllerBase
                 recoveryLink, 
                 "Recover Account");
             
-            return CodeResult(HttpStatusCode.Created, "Recovery email sent successfully.");
+            return JsonResult(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -139,32 +139,32 @@ public class RecoveryController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             string normalizedEmail = request.Email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
             
             if (!user.EmailConfirmed)
-                return CodeResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
+                return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
             
             string fingerprint = GetMachineFingerprint(user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
             
             if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
             
             if (attempts > 3) 
-                return CodeResult(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
+                return JsonResult(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
 
             if (!_memoryCacheService.TryGetValue(recoveryTokenKey, out string? cachedToken) ||
                 string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
                 _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
-                return CodeResult(HttpStatusCode.NotFound, "Invalid or expired token.");
+                return JsonResult(HttpStatusCode.NotFound, "Invalid or expired token.");
             }
             
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
@@ -178,12 +178,12 @@ public class RecoveryController : CustomControllerBase
                 await _dbContext.ClearUserLoginsAsync(user.Id);
             
             await _dbContext.SaveChangesAsync();
-            return CodeResult(HttpStatusCode.OK, "Password reset successful.");
+            return JsonResult(HttpStatusCode.OK, "Password reset successful.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -209,23 +209,23 @@ public class RecoveryController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             string normalizedEmail = email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
             
             if (!user.EmailConfirmed)
-                return CodeResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
+                return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
             string fingerprint = GetMachineFingerprint(user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
             
             if (_memoryCacheService.TryGetValue<string>(recoveryTokenKey, out _))
-                return CodeResult(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
+                return JsonResult(HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
             
             string recoveryToken = TokenHelper.GenerateRecoverySessionToken();
             _memoryCacheService.SetValue(recoveryTokenKey, recoveryToken, TimeSpan.FromMinutes(15));
@@ -244,12 +244,12 @@ public class RecoveryController : CustomControllerBase
                 recoveryLink, 
                 "Recover Account");
             
-            return CodeResult(HttpStatusCode.Created, "Recovery email sent successfully.");
+            return JsonResult(HttpStatusCode.Created, "Recovery email sent successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -276,41 +276,41 @@ public class RecoveryController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
             string normalizedEmail = request.Email.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "User not found.");
             
             string fingerprint = GetMachineFingerprint(user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
             
             if (!_memoryCacheService.TryGetValue(recoveryAttemptKey, out int attempts))
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
             
             if (attempts > 3) 
-                return CodeResult(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
+                return JsonResult(HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
 
             if (!_memoryCacheService.TryGetValue(recoveryTokenKey, out string? cachedToken) ||
                 string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
                 _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid or expired token.");
             }
             
             if (!user.TwoFactorEnabled)
-                return CodeResult(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
+                return JsonResult(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
             
             string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _appConfiguration.Jwt.EncryptionKey);
             var backupCode = await UserStore.UserBackupCodes.FindAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
             if (backupCode == null)
-                return CodeResult(HttpStatusCode.BadRequest, "Backup code is invalid.");
+                return JsonResult(HttpStatusCode.BadRequest, "Backup code is invalid.");
             
             if (backupCode.UsedAt != null)
-                return CodeResult(HttpStatusCode.BadRequest, "Backup code has already been used.");
+                return JsonResult(HttpStatusCode.BadRequest, "Backup code has already been used.");
 
             user.TwoFactorEnabled = false;
             user.TwoFactorSecret = null;
@@ -326,12 +326,12 @@ public class RecoveryController : CustomControllerBase
             _memoryCacheService.RemoveValue(recoveryTokenKey);
             _memoryCacheService.RemoveValue(recoveryAttemptKey);
             
-            return CodeResult(HttpStatusCode.OK, "2FA reset successful.");
+            return JsonResult(HttpStatusCode.OK, "2FA reset successful.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, ex.Message);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

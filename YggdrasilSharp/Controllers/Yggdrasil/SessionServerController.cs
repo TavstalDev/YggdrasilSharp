@@ -37,7 +37,7 @@ public class SessionServerController : CustomControllerBase
     private readonly MemoryCacheService _cacheService;
     private static readonly TimeSpan SignedTtl = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan UnsignedTtl = TimeSpan.FromHours(1);
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+    private static readonly ConcurrentDictionary<string, (SemaphoreSlim @lock, int waits)> _locks = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionServerController"/> class.
@@ -108,31 +108,34 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return YigErrorResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            string dashedUuid = Guid.Parse(request.selectedProfile).ToString("D");
+            if (!Guid.TryParse(request.selectedProfile, out Guid uuid))
+                return YigErrorResult(HttpStatusCode.BadRequest, "Invalid uuid was provided.");
+            
+            string dashedUuid = uuid.ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound,
+                return YigErrorResult(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
 
             if (!await _userManager.VerifyJwtTokenAsync(request.accessToken))
-                return CodeResult(HttpStatusCode.Unauthorized, "Invalid access token");
+                return YigErrorResult(HttpStatusCode.Unauthorized, "Invalid access token");
             
             UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.accessToken);
             if (session == null)
-                return CodeResult(HttpStatusCode.NotFound,
+                return YigErrorResult(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > session.ExpiresAt)
-                return CodeResult(HttpStatusCode.Unauthorized, "The access token has expired");
+                return YigErrorResult(HttpStatusCode.Unauthorized, "The access token has expired");
 
             string host = HttpHelper.GetClientIp(HttpContext) ?? "";
             if (_appConfiguration.Yggdrasil.EnforceIpCheckInJoin && session.UserIp != host)
-                return CodeResult(HttpStatusCode.Forbidden,
+                return YigErrorResult(HttpStatusCode.Forbidden,
                     "The IP address associated with the access token does not match the IP address of the request");
 
             await _serverJoinRepo.AddAsync(new ServerJoin
@@ -148,7 +151,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.selectedProfile, request.serverId);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -176,25 +179,25 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return YigErrorResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await UserStore.FindUserAsync(x => x.UserName == username);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found");
+                return YigErrorResult(HttpStatusCode.NotFound, "User not found");
 
             ServerJoin? join = await _serverJoinRepo.FindAsync(x => x.UserId == user.Id && x.ServerId == serverId && 
                                                                     ( x.UserIp == ip || 
                                                                       !_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined || 
                                                                       (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
             if (join == null)
-                return CodeResult(HttpStatusCode.NotFound,
+                return YigErrorResult(HttpStatusCode.NotFound,
                     "No matching server join found for the provided serverId and IP address");
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > join.ExpiresAt)
-                return CodeResult(HttpStatusCode.Unauthorized, "The server join has expired");
+                return YigErrorResult(HttpStatusCode.Unauthorized, "The server join has expired");
 
             string json = await GetProfileResponseJsonAsync(user);
             return JsonResult(json);
@@ -202,7 +205,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Unknown error while processing hasJoined request for serverId: {ServerId}, username: {Username}.", serverId, username);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -228,13 +231,16 @@ public class SessionServerController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
+                return YigErrorResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
             
-            string dashedUuid = Guid.Parse(uuid).ToString("D");
+            if (!Guid.TryParse(uuid, out Guid guid))
+                return YigErrorResult(HttpStatusCode.BadRequest, "Invalid uuid was provided.");
+            
+            string dashedUuid = guid.ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
-                return CodeResult(HttpStatusCode.NotFound, "User not found");
+                return YigErrorResult(HttpStatusCode.NotFound, "User not found");
 
             string json = await GetProfileResponseJsonAsync(user, unsigned);
             string etag = ComputeETag(json);
@@ -253,7 +259,7 @@ public class SessionServerController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical("Unknown error while processing profile request for uuid: {Uuid}, unsigned: {Unsigned}. Error: {ErrorMessage}", uuid, unsigned, ex);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -276,8 +282,9 @@ public class SessionServerController : CustomControllerBase
         if (_cacheService.TryGetValue<string>(key, out var cached))
             return cached!;
 
-        var sem = _locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
-        await sem.WaitAsync();
+        var sem = _locks.GetOrAdd(key, _ => (new SemaphoreSlim(1, 1), 1));
+        sem.waits++;
+        await sem.@lock.WaitAsync();
         try
         {
             // double-check after acquiring lock
@@ -365,9 +372,11 @@ public class SessionServerController : CustomControllerBase
             return finalJson;
         }
         finally
-        {
-            sem.Release();
-            _locks.Remove(key, out _);
+        {  
+            sem.@lock.Release();
+            sem.waits--;
+            if (sem.waits <= 0)
+                _locks.Remove(key, out _);
         }
     }
 }

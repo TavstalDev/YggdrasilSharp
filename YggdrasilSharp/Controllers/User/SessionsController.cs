@@ -52,10 +52,10 @@ public class SessionsController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == user.Id);
             return JsonResult(userLogins);
@@ -63,7 +63,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving user sessions.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -89,28 +89,28 @@ public class SessionsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == user.Id);
             if (userLogin == null)
-                return CodeResult(HttpStatusCode.NotFound, "Session not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Session not found.");
 
             await UserStore.UserLogins.RemoveAsync(userLogin, true);
-            return CodeResult(HttpStatusCode.OK, "Session revoked successfully.");
+            return JsonResult(HttpStatusCode.OK, "Session revoked successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking the user session.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -130,18 +130,18 @@ public class SessionsController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Sessions))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             await _dbContext.ClearUserLoginsAsync(user.Id, true);
-            return CodeResult(HttpStatusCode.OK, "All sessions revoked successfully.");
+            return JsonResult(HttpStatusCode.OK, "All sessions revoked successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking all user sessions.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     
@@ -168,23 +168,23 @@ public class SessionsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == targetUser.Id);
             return JsonResult(userLogins);
@@ -192,7 +192,7 @@ public class SessionsController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while retrieving sessions for user with ID {UserId}.", userId);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -219,35 +219,35 @@ public class SessionsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == targetUser.Id);
             if (userLogin == null)
-                return CodeResult(HttpStatusCode.NotFound, "Session not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Session not found.");
 
             await UserStore.UserLogins.RemoveAsync(userLogin, true);
-            return CodeResult(HttpStatusCode.OK, "Session revoked successfully.");
+            return JsonResult(HttpStatusCode.OK, "Session revoked successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking session.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -273,31 +273,31 @@ public class SessionsController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             await _dbContext.ClearUserLoginsAsync(targetUser.Id, true);
-            return CodeResult(HttpStatusCode.OK, "All sessions revoked successfully.");
+            return JsonResult(HttpStatusCode.OK, "All sessions revoked successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while revoking all sessions of the target user.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

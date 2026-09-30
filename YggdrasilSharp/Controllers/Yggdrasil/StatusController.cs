@@ -48,7 +48,7 @@ public class StatusController : CustomControllerBase
             var cert = Program.GetCertificate(_appConfiguration.CertificateFingerprint, _appConfiguration.CertificatePassword);
             var rsa = cert.GetRSAPrivateKey();
             if (rsa == null)
-                return CodeResult(HttpStatusCode.InternalServerError,
+                return YigErrorResult(HttpStatusCode.InternalServerError,
                     "Failed to load RSA private key from certificate");
 
             string signature = rsa.ExportSubjectPublicKeyInfoPem();
@@ -73,7 +73,7 @@ public class StatusController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving yggdrasil status");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -106,7 +106,7 @@ public class StatusController : CustomControllerBase
         catch (Exception ex)
         {
            Logger.LogCritical(ex, "Error retrieving yggdrasil status counts");
-           return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+           return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     

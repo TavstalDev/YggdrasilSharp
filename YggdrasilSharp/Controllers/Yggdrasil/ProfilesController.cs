@@ -46,7 +46,7 @@ public class ProfilesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return YigErrorResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -73,7 +73,7 @@ public class ProfilesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error retrieving Minecraft profiles for usernames: {Usernames}", string.Join(", ", names));
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }

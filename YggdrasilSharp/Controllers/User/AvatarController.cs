@@ -70,10 +70,10 @@ public class AvatarController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Avatar))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             string cacheKey = $"avatar:{user.Id}";
             if (!_memoryCache.TryGetValue(cacheKey, out (byte[], string, string) cachedAvatar))
@@ -82,10 +82,10 @@ public class AvatarController : CustomControllerBase
                     await _fileDataRepo.FindAsync(x =>
                         x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
                 if (existingAvatar == null)
-                    return CodeResult(HttpStatusCode.NotFound, "No avatar found.");
+                    return JsonResult(HttpStatusCode.NotFound, "No avatar found.");
                 byte[]? bytes = existingAvatar.GetFileData();
                 if (bytes == null)
-                    return CodeResult(HttpStatusCode.InternalServerError, "Failed to retrieve avatar data.");
+                    return JsonResult(HttpStatusCode.InternalServerError, "Failed to retrieve avatar data.");
 
                 _memoryCache.SetValue(cacheKey, (bytes, existingAvatar.ContentType, existingAvatar.Hash), CacheTtl);
                 Response.Headers.ETag = $"\"{existingAvatar.Hash}\"";
@@ -103,7 +103,7 @@ public class AvatarController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while retrieving the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -135,22 +135,22 @@ public class AvatarController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
-                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
-                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -159,7 +159,7 @@ public class AvatarController : CustomControllerBase
             stream.Position = 0;
 
             if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             FileData? existingAvatar =
                 await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
@@ -179,12 +179,12 @@ public class AvatarController : CustomControllerBase
                 UserId = user.Id
             }, true);
             fd.SaveFile(stream);
-            return CodeResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
+            return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -210,25 +210,25 @@ public class AvatarController : CustomControllerBase
         {
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Avatar))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
                 await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
-                return CodeResult(HttpStatusCode.NotFound, "No avatar found to delete.");
+                return JsonResult(HttpStatusCode.NotFound, "No avatar found to delete.");
 
             existingAvatar.DeleteFile();
             await _fileDataRepo.RemoveAsync(existingAvatar, true);
             _memoryCache.RemoveValue($"avatar:{user.Id}");
-            return CodeResult(HttpStatusCode.OK, "Avatar deleted successfully.");
+            return JsonResult(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting the user's avatar.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -266,29 +266,29 @@ public class AvatarController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500) // 500 KB limit
-                return CodeResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
+                return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
-                return CodeResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+                return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -297,7 +297,7 @@ public class AvatarController : CustomControllerBase
             stream.Position = 0;
 
             if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
-                return CodeResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
@@ -317,12 +317,12 @@ public class AvatarController : CustomControllerBase
                 UserId = targetUser.Id
             }, true);
             fd.SaveFile(stream);
-            return CodeResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
+            return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while uploading an avatar for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 
@@ -353,38 +353,38 @@ public class AvatarController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
-                return CodeResult(HttpStatusCode.Unauthorized, "User not authenticated");
+                return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
-                return CodeResult(HttpStatusCode.Forbidden, "Permission denied.");
+                return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
-                return CodeResult(HttpStatusCode.NotFound, "Target user not found");
+                return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
-                return CodeResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
+                return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar == null)
-                return CodeResult(HttpStatusCode.NotFound, "No avatar found to delete.");
+                return JsonResult(HttpStatusCode.NotFound, "No avatar found to delete.");
 
             existingAvatar.DeleteFile();
             await _fileDataRepo.RemoveAsync(existingAvatar, true);
             _memoryCache.RemoveValue($"avatar:{user.Id}");
-            return CodeResult(HttpStatusCode.OK, "Avatar deleted successfully.");
+            return JsonResult(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         catch (Exception ex)
         {
             Logger.LogCritical(ex, "An error occurred while deleting an avatar for another user.");
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
     #endregion

@@ -61,7 +61,7 @@ public class TexturesController : CustomControllerBase
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
 
-                return CodeResult(HttpStatusCode.BadRequest,
+                return YigErrorResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
@@ -73,10 +73,10 @@ public class TexturesController : CustomControllerBase
                 var fileData = await _fileDataRepo.FindAsync(x =>
                     x.Hash == hash && (x.Type == EFileDataType.SKIN || x.Type == EFileDataType.CAPE));
                 if (fileData == null)
-                    return CodeResult(HttpStatusCode.NotFound, "Texture not found.");
+                    return YigErrorResult(HttpStatusCode.NotFound, "Texture not found.");
                 bytes = fileData.GetFileData();
                 if (bytes == null)
-                    return CodeResult(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
+                    return YigErrorResult(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
                 contentType = fileData.ContentType;
                 _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
             }
@@ -104,7 +104,7 @@ public class TexturesController : CustomControllerBase
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving texture with hash {Hash}", hash);
-            return CodeResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
+            return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
 }
