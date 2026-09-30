@@ -8,9 +8,15 @@ namespace Tavstal.YggdrasilSharp.Models.Responses.Auth;
 /// </summary>
 public class LoginRedirectResponse : ResponseBase
 {
+    /// <summary>
+    /// Gets or sets the email address of the user that must complete the additional step.
+    /// </summary>
     [JsonPropertyName("Email")]
-    public string Email { get; set; }
+    public string Email { get; set; } = string.Empty;
     
+    /// <summary>
+    /// Gets or sets the URL the user must be redirected to in order to continue the login.
+    /// </summary>
     [JsonPropertyName("Url")]
-    public string Url { get; set; }
+    public string Url { get; set; } = string.Empty;
 }
