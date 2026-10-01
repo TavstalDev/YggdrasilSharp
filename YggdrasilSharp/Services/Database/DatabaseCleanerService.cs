@@ -37,6 +37,7 @@ public class DatabaseCleanerService : BackgroundService
             // If cleanup fails too many times, stop the service to prevent further issues.
             if (_cleanupFails > 3)
             {
+                // TODO: Send email to admin accounts.
                 _logger.LogWarning("Cleanup has failed more than 3 times. Stopping the DatabaseCleanerService to prevent further issues.");
                 break;
             }
