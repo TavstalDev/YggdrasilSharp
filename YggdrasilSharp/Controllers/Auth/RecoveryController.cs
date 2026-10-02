@@ -304,7 +304,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.TwoFactorEnabled)
                 return JsonResult(HttpStatusCode.BadRequest, "Two-factor authentication is not enabled.");
             
-            string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _appConfiguration.Jwt.EncryptionKey);
+            string hashedCode = StringChiper.GetEncryptedHash(request.BackupCode, _appConfiguration.Jwt.TwoFactorEncryptionKey);
             var backupCode = await UserStore.UserBackupCodes.FindAsync(x => x.UserId == user.Id && x.HashedCode == hashedCode);
             if (backupCode == null)
                 return JsonResult(HttpStatusCode.BadRequest, "Backup code is invalid.");

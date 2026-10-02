@@ -24,7 +24,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// Controller for managing user avatars, including retrieving, uploading, and deleting avatars.
 /// </summary>
 [Route("/user")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class AvatarController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;

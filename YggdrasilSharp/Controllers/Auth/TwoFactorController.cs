@@ -19,7 +19,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 [ApiController]
 [Route("/2fa")]
 [Tags("Authentication: 2FA")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
 [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
 public class TwoFactorController : CustomControllerBase {
     

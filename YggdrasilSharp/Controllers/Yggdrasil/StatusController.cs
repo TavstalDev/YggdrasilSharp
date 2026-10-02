@@ -1,7 +1,6 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;

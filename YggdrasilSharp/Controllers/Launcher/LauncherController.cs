@@ -210,7 +210,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="401">User not authenticated.</response>
     /// <response code="403">Insufficient permissions.</response>
     [HttpPost("version")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
@@ -269,7 +269,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="403">Insufficient permissions.</response>
     /// <response code="404">Launcher version not found.</response>
     [HttpPut("version/{id}")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("application/json")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
@@ -334,7 +334,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="403">Insufficient permissions.</response>
     /// <response code="404">Launcher version not found.</response>
     [HttpDelete("version/{id}")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersion([BindRequired, FromRoute] ulong id)
@@ -395,7 +395,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="403">Insufficient permissions.</response>
     /// <response code="404">Launcher version not found.</response>
     [HttpPost("version/{id}/data")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
@@ -480,7 +480,7 @@ public class LauncherController : CustomControllerBase
     /// <response code="403">Insufficient permissions.</response>
     /// <response code="404">Launcher version data not found.</response>
     [HttpDelete("version/{versionId}/data/{dataId}")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLauncherVersionData([BindRequired, FromRoute] ulong versionId, [BindRequired, FromRoute] ulong dataId)

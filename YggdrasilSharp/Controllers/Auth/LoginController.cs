@@ -121,14 +121,6 @@ public class LoginController : CustomControllerBase
 
             var userToken = result.UserToken!;
             var userLogin = result.UserLogin!;
-            
-            Response.Cookies.Append("auth-token", userToken.Value ?? string.Empty, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // only over HTTPS
-                SameSite = SameSiteMode.None, // required for cross-origin
-                Expires = userLogin.ExpireDate
-            });
 
             return JsonResult(new LoginResponse
             {
@@ -196,14 +188,6 @@ public class LoginController : CustomControllerBase
             
             var userToken = result.UserToken!;
             var userLogin = result.UserLogin!;
-            
-            Response.Cookies.Append("auth-token", userToken.Value ?? string.Empty, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // only over HTTPS
-                SameSite = SameSiteMode.None, // required for cross-origin
-                Expires = userLogin.ExpireDate
-            });
             
             return JsonResult(new LoginResponse
             {
@@ -354,7 +338,7 @@ public class LoginController : CustomControllerBase
     /// </summary>
     /// <param name="token">
     /// The session token to be invalidated. If not provided, the method attempts to retrieve it 
-    /// from the "Authorization" header or the "auth-token" cookie.
+    /// from the "Authorization" header.
     /// </param>
     /// <response code="200">Logout successful. The user session is terminated.</response>
     /// <response code="400">Bad request. The provided token is invalid or missing.</response>
@@ -368,9 +352,7 @@ public class LoginController : CustomControllerBase
         {
             if (string.IsNullOrEmpty(token))
             {
-                if (Request.Cookies.TryGetValue("auth-token", out var authCookie))
-                    token = authCookie;
-                else if (Request.Headers.TryGetValue("Authorization", out var authHeader))
+                if (Request.Headers.TryGetValue("Authorization", out var authHeader))
                 {
                     string headerValue = authHeader.ToString();
                     var authenticationHeader = AuthenticationHeaderValue.Parse(headerValue);

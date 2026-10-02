@@ -170,6 +170,6 @@ public abstract class CustomControllerBase : Controller
     
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
-        return StringChiper.GetEncryptedHash(rawData, AppConfiguration.Jwt.EncryptionKey);
+        return StringChiper.GetEncryptedHash(rawData, AppConfiguration.Jwt.FingerprintKey);
     }
 }

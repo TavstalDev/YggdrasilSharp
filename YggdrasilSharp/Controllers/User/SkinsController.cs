@@ -24,7 +24,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// </summary>
 [ApiController]
 [Route("/user")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class SkinsController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;

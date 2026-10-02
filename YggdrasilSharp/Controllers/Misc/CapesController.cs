@@ -21,7 +21,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 /// Controller for managing capes, including uploading and deleting capes.
 /// </summary>
 [Route("/capes")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class CapesController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;

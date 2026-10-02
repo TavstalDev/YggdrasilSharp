@@ -18,7 +18,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// Controller for managing user capes.
 /// </summary>
 [Route("/user")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class UserCapesController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
