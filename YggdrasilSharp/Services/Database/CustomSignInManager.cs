@@ -100,6 +100,13 @@ public class CustomSignInManager
     /// <returns>A <see cref="SignInResult"/> describing the outcome.</returns>
     private async Task<SignInResult> SignInAsync(CustomUser user, string password, bool rememberMe, HttpContext httpContext)
     {
+        if (!user.EmailConfirmed)
+            return new SignInResult
+            {
+                Succeeded = false,
+                Message = "Email address is not confirmed."
+            };
+        
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
             return new SignInResult
             {
@@ -200,6 +207,13 @@ public class CustomSignInManager
                 Message = "Two-factor authentication is not enabled for this account."
             };
         
+        if (!user.EmailConfirmed)
+            return new SignInResult
+            {
+                Succeeded = false,
+                Message = "Email address is not confirmed."
+            };
+        
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
             return new SignInResult
             {
@@ -295,6 +309,13 @@ public class CustomSignInManager
             {
                 Succeeded = false,
                 Message = "Invalid credentials."
+            };
+        
+        if (!user.EmailConfirmed)
+            return new LauncherSignInResult
+            {
+                Succeeded = false,
+                Message = "Email address is not confirmed."
             };
         
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
