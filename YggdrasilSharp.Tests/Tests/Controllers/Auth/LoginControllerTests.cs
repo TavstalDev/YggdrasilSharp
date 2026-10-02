@@ -220,7 +220,7 @@ public class LoginControllerTests
             setCookie.Should().Contain("ysharp-userId=");
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.EncryptionKey));
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
@@ -395,7 +395,7 @@ public class LoginControllerTests
             sessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
-            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.EncryptionKey));
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
             var totpGenerator = new Totp(secretBytes);
             string expectedCode = totpGenerator.ComputeTotp();
 
@@ -498,32 +498,39 @@ public class LoginControllerTests
         public LogoutTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
         
         /// <summary>
-        /// Success case: Logout without explicit token parameter returns a SignOutResult.
+        /// Success case: Logout without an explicit token parameter. The controller falls back to the
+        /// "Authorization: Bearer" header, so the test seeds that header with the token issued at login.
         /// </summary>
         [Fact(DisplayName = "Success: Returns sign-out result")]
         public async Task ReturnsSignOut()
         {
-            await AddMockUserAndLoginAsync();
+            var loginResult = await AddMockUserAndLoginAsync();
+            string token = await GetAccessTokenAsync(loginResult.userId);
+            _controllerHttpContext.Request.Headers.Authorization = $"Bearer {token}";
+
             IActionResult logoutResult = await _controller.LogoutAsync(null);
             logoutResult.Should().BeOfType<SignOutResult>();
             _testOutputHelper.WriteLine("Result: " + logoutResult.GetType().Name);
+
+            (await _userStore.UserTokens.FindAsync(x => x.Value == token))
+                .Should().BeNull("logout should revoke the access token");
         }
         
         /// <summary>
-        /// Success case: Logout with token parameter present in query should also return SignOutResult.
-        /// The test extracts the token from cookies set during login and passes it to the Logout endpoint.
+        /// Success case: Logout with the token passed explicitly as a query parameter.
+        /// The token is the access token issued by the preceding login, read back from the token store.
         /// </summary>
         [Fact(DisplayName = "Success: Logout when token provided as parameter")]
         public async Task ReturnsSignOut_WhenTokenProvided()
         {
-            await AddMockUserAndLoginAsync();
-            var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookie.Should().Contain("auth-token=");
-            var cookiePair = setCookie.Split(';', 2)[0].Trim();
-            var token = cookiePair.Split('=', 2)[1];
-            
+            var loginResult = await AddMockUserAndLoginAsync();
+            string token = await GetAccessTokenAsync(loginResult.userId);
+
             IActionResult logoutResult = await _controller.LogoutAsync(token);
             logoutResult.Should().BeOfType<SignOutResult>();
+
+            (await _userStore.UserTokens.FindAsync(x => x.Value == token))
+                .Should().BeNull("logout should revoke the access token");
         }
 
         /// <summary>
@@ -571,6 +578,9 @@ public class LoginControllerTests
                 .Select(c => c?.Split(';')[0].Trim());
             _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
+        
+        var authHeader = _controllerHttpContext.Response.Headers.Authorization;
+        _controllerHttpContext.Request.Headers.Authorization = authHeader;
         return (user.Id, contentResult.Content);
     }
     
@@ -608,6 +618,23 @@ public class LoginControllerTests
                 .Select(c => c?.Split(';')[0].Trim());
             _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
+        
+        var authHeader = _controllerHttpContext.Response.Headers.Authorization;
+        _controllerHttpContext.Request.Headers.Authorization = authHeader;
         return (user.Id, contentResult.Content);
+    }
+    
+    /// <summary>
+    /// Reads back the access token that login issued for the given user. The login response body
+    /// carries no token and no auth cookie is set on the non-2FA path, so the store is the source of truth.
+    /// </summary>
+    /// <param name="userId">The id of the user that logged in.</param>
+    /// <returns>The stored access token value.</returns>
+    private async Task<string> GetAccessTokenAsync(string userId)
+    {
+        var tokens = await _userStore.UserTokens.QueryAsync(x => x.UserId == userId && x.Name == "AccessToken");
+        var token = tokens.FirstOrDefault();
+        token.Should().NotBeNull("login should have issued an access token for the user");
+        return token!.Value;
     }
 }

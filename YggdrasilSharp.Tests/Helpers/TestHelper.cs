@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -82,7 +83,7 @@ public class TestHelper
     public static string GetFingerprint(string userId)
     {
         var rawData = $"{userId}-{UserAgent}-{IpAddress}";
-        return StringChiper.GetEncryptedHash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6");
+        return StringChiper.GetEncryptedHash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6"u8.ToArray());
     }
     
     /// <summary>

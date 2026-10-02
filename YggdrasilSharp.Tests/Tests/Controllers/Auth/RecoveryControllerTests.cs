@@ -317,7 +317,7 @@ public class RecoveryControllerTests : ControllerTestBase
             await _userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedHash(backup, AppConfiguration.Jwt.EncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(backup, AppConfiguration.Jwt.TwoFactorEncryptionKey),
                 CreateAt = DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
             string fingerprint = TestHelper.GetFingerprint(_userMock.Id);
