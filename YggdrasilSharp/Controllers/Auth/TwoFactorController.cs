@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.RateLimiting.Constants;
 using Tavstal.YggdrasilSharp.Models.Responses.Auth;
 using Tavstal.YggdrasilSharp.Services.Database;
 
@@ -16,6 +19,8 @@ namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 [ApiController]
 [Route("/2fa")]
 [Tags("Authentication: 2FA")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
+[EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
 public class TwoFactorController : CustomControllerBase {
     
     private readonly CustomUserManager _userManager;

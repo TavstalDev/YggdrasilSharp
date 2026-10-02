@@ -21,7 +21,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 /// Controller for managing capes, including uploading and deleting capes.
 /// </summary>
 [Route("/capes")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
 public class CapesController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;
@@ -115,7 +115,7 @@ public class CapesController : CustomControllerBase
             {
                 Name = file.FileName.Split('.')[0],
                 FileId = fd.Id,
-                IsPublic = true
+                IsPublic = false
             }, true);
             await UserStore.UserCapes.AddAsync(new UserCape
             {

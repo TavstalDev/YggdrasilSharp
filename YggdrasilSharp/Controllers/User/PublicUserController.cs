@@ -73,10 +73,7 @@ public class PublicUserController : CustomControllerBase
                 DiscordId = user.DiscordId,
                 UserName = user.UserName,
                 CreateDate = user.CreateDate,
-                LastUpdate = user.LastUpdate,
-                LockoutEnabled = user.LockoutEnabled,
-                LockoutEnd = user.LockoutEnd,
-                LockoutReason = user.LockoutReason
+                LastUpdate = user.LastUpdate
             });
         }
         catch (Exception ex)

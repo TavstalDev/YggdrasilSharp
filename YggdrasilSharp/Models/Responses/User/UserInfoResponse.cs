@@ -32,24 +32,6 @@ public class UserInfoResponse
     public ulong? DiscordId { get; set; }
     
     /// <summary>
-    /// Gets or sets a value indicating whether the user account is locked out.
-    /// </summary>
-    [JsonPropertyName("LockoutEnabled")]
-    public bool LockoutEnabled { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the reason why the user account is locked out.
-    /// </summary>
-    [JsonPropertyName("LockoutReason")]
-    public string? LockoutReason { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the date and time until which the user account stays locked out.
-    /// </summary>
-    [JsonPropertyName("LockoutEnd")]
-    public DateTimeOffset? LockoutEnd { get; set; }
-    
-    /// <summary>
     /// Gets or sets the date and time at which the user account was created.
     /// </summary>
     [JsonPropertyName("CreateDate")]

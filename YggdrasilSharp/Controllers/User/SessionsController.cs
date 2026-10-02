@@ -17,7 +17,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// Controller for managing user sessions.
 /// </summary>
 [Route("/user")]
-[Authorize(AuthenticationSchemes = "Bearer,Basic")]
+[Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
 public class SessionsController : CustomControllerBase
 {
     private readonly CustomUserManager _userManager;

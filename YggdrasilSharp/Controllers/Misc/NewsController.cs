@@ -227,7 +227,7 @@ public class NewsController : CustomControllerBase
     /// <response code="401">Unauthorized. User is not authenticated.</response>
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     [HttpPost]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
@@ -304,7 +304,7 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     /// <response code="404">News article not found.</response>
     [HttpPut("{id}")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
@@ -395,7 +395,7 @@ public class NewsController : CustomControllerBase
     /// <response code="403">Forbidden. Insufficient permissions.</response>
     /// <response code="404">News article not found.</response>
     [HttpDelete("{id}")]
-    [Authorize(AuthenticationSchemes = "Bearer,Basic")]
+    [Authorize(AuthenticationSchemes = "Bearer,Basic,Cookie")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNews([BindRequired, FromRoute] ulong id)
