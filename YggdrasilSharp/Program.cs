@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading.RateLimiting;
 using System.Text.Json.Serialization;
 using DotEnv.Core;
 using Microsoft.AspNetCore.Authentication;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Tavstal.YggdrasilSharp.Models;
@@ -133,7 +133,7 @@ public static class Program
     /// <summary>
     /// Registers and configures all application services including:
     /// <br/>- Database context and repositories
-    /// <br/>- Authentication (JWT Bearer, Basic, Cookie)
+    /// <br/>- Authentication (JWT Bearer, Basic)
     /// <br/>- Authorization and identity services
     /// <br/>- Swagger/OpenAPI documentation
     /// <br/>- CORS policies and session management
@@ -242,20 +242,11 @@ public static class Program
                 BearerFormat = "JWT",
                 Scheme = "basic",
             });
-            // Add security definition for Cookie authentication
-            config.AddSecurityDefinition("Cookie", new OpenApiSecurityScheme
-            {
-                In = ParameterLocation.Cookie,
-                Description = "JWT Authorization cookie. \r\n\r\nExample: \"auth-token=12345abcdef\"",
-                Name = "auth-token",
-                Type = SecuritySchemeType.ApiKey
-            });
-            // Add security requirements for Bearer, Basic and cookie authentication
+            // Add security requirements for Bearer and Basic authentication
             config.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
             {
                 { new OpenApiSecuritySchemeReference("Bearer", doc), [] },
-                { new OpenApiSecuritySchemeReference("Basic", doc), [] },
-                { new OpenApiSecuritySchemeReference("Cookie", doc), [] }
+                { new OpenApiSecuritySchemeReference("Basic", doc), [] }
             });
         });
         #endregion
@@ -281,9 +272,7 @@ public static class Program
             // Add JWT Bearer authentication  scheme
             .AddScheme<AuthenticationSchemeOptions, BearerAuthenticationHandler>("Bearer", null)
             // Add Basic authentication scheme
-            .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", null)
-            // Add cookie authentication  scheme
-            .AddScheme<AuthenticationSchemeOptions, CookieAuthenticationHandler>("Cookie", null);
+            .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("Basic", null);
         #endregion
 
         // Configure form options
@@ -340,8 +329,6 @@ public static class Program
         #region Services
         // Configure identity options for claims
         services.Configure<IdentityOptions>(options => options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
-        // Configure antiforgery options to use a custom header name for CSRF tokens
-        services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
         // Add HTTP client factory for making HTTP requests
         services.AddHttpClient();
         // Add memory caching services
@@ -358,60 +345,78 @@ public static class Program
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = configuration.GetValue(Constants.ConfigurationKeys.RateLimitingStatusCode, 429);
+
+            // Partitions every policy by the authenticated user, falling back to the client IP
+            // address. The Add*Limiter overloads register a single global limiter, so a single
+            // noisy actor would otherwise consume the whole endpoint budget for every user.
+            // RemoteIpAddress is resolved through UseForwardedHeaders, so this is the real client
+            // address when running behind a configured trusted proxy.
+            static string GetPartitionKey(HttpContext httpContext)
+            {
+                string? userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                    return $"user:{userId}";
+                return $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+            }
+            
             // Fixed Window
             foreach (var ruleEntry in rules.FixedWindow)
             {
                 var rule = ruleEntry.Value;
-                options.AddFixedWindowLimiter(ruleEntry.Key, config =>
-                {
-                    config.AutoReplenishment = true;
-                    config.PermitLimit = rule.PermitLimit;
-                    config.Window = TimeSpan.FromSeconds(rule.WindowSeconds);
-                    config.QueueLimit = rule.QueueLimit;
-                    config.QueueProcessingOrder = rule.ProcessingOrder;
-                });
+                options.AddPolicy(ruleEntry.Key, httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(GetPartitionKey(httpContext), _ => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = rule.PermitLimit,
+                        Window = TimeSpan.FromSeconds(rule.WindowSeconds),
+                        QueueLimit = rule.QueueLimit,
+                        QueueProcessingOrder = rule.ProcessingOrder,
+                    }));
             }
             
             // Sliding Window
             foreach (var ruleEntry in rules.SlidingWindow)
             {
                 var rule = ruleEntry.Value;
-                options.AddSlidingWindowLimiter(ruleEntry.Key, config =>
-                {
-                    config.AutoReplenishment = true;
-                    config.PermitLimit = rule.PermitLimit;
-                    config.Window = TimeSpan.FromSeconds(rule.WindowSeconds);
-                    config.QueueLimit = rule.QueueLimit;
-                    config.QueueProcessingOrder = rule.ProcessingOrder;
-                    config.SegmentsPerWindow = rule.SegmentsPerWindow;
-                });
+                options.AddPolicy(ruleEntry.Key, httpContext =>
+                    RateLimitPartition.GetSlidingWindowLimiter(GetPartitionKey(httpContext), _ => new SlidingWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = rule.PermitLimit,
+                        Window = TimeSpan.FromSeconds(rule.WindowSeconds),
+                        QueueLimit = rule.QueueLimit,
+                        QueueProcessingOrder = rule.ProcessingOrder,
+                        SegmentsPerWindow = rule.SegmentsPerWindow,
+                    }));
             }
             
             // Concurrent
             foreach (var ruleEntry in rules.Concurrent)
             {
                 var rule = ruleEntry.Value;
-                options.AddConcurrencyLimiter(ruleEntry.Key, config =>
-                {
-                    config.PermitLimit = rule.PermitLimit;
-                    config.QueueLimit = rule.QueueLimit;
-                    config.QueueProcessingOrder = rule.ProcessingOrder;
-                });
+                options.AddPolicy(ruleEntry.Key, httpContext =>
+                    RateLimitPartition.GetConcurrencyLimiter(GetPartitionKey(httpContext), _ => new ConcurrencyLimiterOptions
+                    {
+                        PermitLimit = rule.PermitLimit,
+                        QueueLimit = rule.QueueLimit,
+                        QueueProcessingOrder = rule.ProcessingOrder,
+                    }));
             }
             
             // Token Bucket
             foreach (var ruleEntry in rules.TokenBucket)
             {
                 var rule = ruleEntry.Value;
-                options.AddTokenBucketLimiter(ruleEntry.Key, config =>
-                {
-                    config.AutoReplenishment = true;
-                    config.QueueLimit = rule.QueueLimit;
-                    config.QueueProcessingOrder = rule.ProcessingOrder;
-                    config.ReplenishmentPeriod = TimeSpan.FromSeconds(rule.ReplenishmentSeconds);
-                    config.TokenLimit = rule.TokenLimit;
-                    config.TokensPerPeriod = rule.TokensPerPeriod;
-                });
+                options.AddPolicy(ruleEntry.Key, httpContext =>
+                    RateLimitPartition.GetTokenBucketLimiter(GetPartitionKey(httpContext), _ => new TokenBucketRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        QueueLimit = rule.QueueLimit,
+                        QueueProcessingOrder = rule.ProcessingOrder,
+                        ReplenishmentPeriod = TimeSpan.FromSeconds(rule.ReplenishmentSeconds),
+                        TokenLimit = rule.TokenLimit,
+                        TokensPerPeriod = rule.TokensPerPeriod,
+                    }));
             }
         });
         #endregion
@@ -534,7 +539,6 @@ public static class Program
         });
 
         app.UseHttpsRedirection();
-        app.UseHttpMethodOverride();
         app.UseStaticFiles();
             
         // Configure CORS.
