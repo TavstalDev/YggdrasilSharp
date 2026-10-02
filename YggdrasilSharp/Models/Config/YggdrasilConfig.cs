@@ -8,6 +8,13 @@ namespace Tavstal.YggdrasilSharp.Models.Config;
 public class YggdrasilConfig
 {
     /// <summary>
+    /// Gets or sets a value indicating whether the legacy Yggdrasil authentication flow
+    /// is enabled alongside the JWT-based flow.
+    /// </summary>
+    [JsonPropertyName("EnableLegacyAuth")]
+    public bool EnableLegacyAuth { get; set; }
+    
+    /// <summary>
     /// Gets or sets a value indicating whether the request IP is compared against the
     /// play session IP when a client joins a game server.
     /// </summary>
@@ -152,6 +159,7 @@ public class YggdrasilConfig
     /// <exception cref="InvalidOperationException">Thrown if a required Yggdrasil configuration value is missing.</exception>
     public YggdrasilConfig(IConfiguration configuration)
     {
+        EnableLegacyAuth = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnableLegacyAuth, false);
         EnforceIpCheckInJoin = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceIpCheckInJoin, true);
         EnforceIpCheckInHasJoined = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceIpCheckInHasJoined, true);
         AllowEmptyJoinedAddress = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilAllowEmptyJoinedAddress, false);

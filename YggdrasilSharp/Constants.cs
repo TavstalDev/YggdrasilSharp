@@ -157,6 +157,14 @@ public static class Constants
         public const string EmailPort = "Email:Port";
 
         /// <summary>
+        /// Configuration key that controls whether the legacy Yggdrasil authentication flow
+        /// is enabled alongside the JWT-based flow. Leave disabled unless clients in your
+        /// environment still depend on the older authentication endpoints.
+        /// Example: false
+        /// </summary>
+        public const string YggdrasilEnableLegacyAuth = "Yggdrasil:EnableLegacyAuth";
+
+        /// <summary>
         /// Configuration key containing an array/list of allowed skin domains for Yggdrasil
         /// (used when validating or serving player skins).
         /// </summary>
