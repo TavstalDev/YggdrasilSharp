@@ -497,7 +497,7 @@ public class CustomUserManager(
         
         string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.EncryptionKey);
         var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
-        return totp.VerifyTotp(code, out _, new VerificationWindow(2, 2));
+        return totp.VerifyTotp(code, out _, new VerificationWindow(1, 1));
     }
     
     /// <summary>
