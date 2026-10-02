@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using Tavstal.YggdrasilSharp.Utils.Extensions;
 
 namespace Tavstal.YggdrasilSharp.Utils.Helpers;
 
@@ -18,7 +17,7 @@ public static class TokenHelper
     {
         string key = "";
         for (int i = 0; i < length; i++)
-            key += charSet.ElementAt(MathExtensions.Next(0, charSet.Length - 1));
+            key += charSet.ElementAt(RandomNumberGenerator.GetInt32(0, charSet.Length - 1));
 
         return key;
     }
