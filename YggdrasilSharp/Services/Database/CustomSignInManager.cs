@@ -106,14 +106,21 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Email address is not confirmed."
             };
-        
-        if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
-            return new SignInResult
-            {
-                Succeeded = false,
-                Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
-            };
-        
+
+        if (user.LockoutEnabled)
+        {
+            if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                return new SignInResult
+                {
+                    Succeeded = false,
+                    Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
+                };
+
+            user.LockoutEnabled = false;
+            user.AccessFailedCount = 0;
+            await _userStore.UpdateUserAsync(user, true);
+        }
+
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         switch (result)
         {
@@ -143,7 +150,8 @@ public class CustomSignInManager
             string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
             TimeSpan tokenExpiry = TimeSpan.FromMinutes(5);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:token", sessionToken, tokenExpiry);
-            _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:attempts", 0, tokenExpiry);
+            user.AccessFailedCount = 0;
+            await _userStore.UpdateUserAsync(user, true);
             
             return new SignInResult
             {
@@ -223,26 +231,24 @@ public class CustomSignInManager
         
         string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa:token";
-        string attemptKey = $"auth:{fingerprint}:tfa:attempts";
-        if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
+        if (!_memoryCacheService.TryGetValue<string>(tokenKey, out _))
             return new SignInResult
             {
                 Succeeded = false,
                 RequiresTwoFactor = false,
                 Message = "Session token expired."
             };
-        
-        if (cachedAttempts > 3)
-            return new SignInResult
-            {
-                Succeeded = false,
-                RequiresTwoFactor = false,
-                Message = "Too many invalid attempts. Please request a new code."
-            };
             
         if (!_userManager.VerifyTwoFactorCode(user, code))
         {
-            _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
+            user.AccessFailedCount++;
+            if (user.AccessFailedCount > _appConfiguration.Jwt.LockoutMaxAttempts)
+            {
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTimeOffset.UtcNow.Add(_appConfiguration.Jwt.LockoutDuration);
+                user.LockoutReason = "Too many failed two-factor attempts.";
+            }
+            await _userStore.UpdateUserAsync(user, true);
             return new SignInResult
             {
                 Succeeded = false,
@@ -278,7 +284,6 @@ public class CustomSignInManager
         await _userStore.UpdateUserAsync(user, true);
         
         _memoryCacheService.RemoveValue(tokenKey);
-        _memoryCacheService.RemoveValue(attemptKey);
         
         return new SignInResult
         {
@@ -318,12 +323,19 @@ public class CustomSignInManager
                 Message = "Email address is not confirmed."
             };
         
-        if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
-            return new LauncherSignInResult
-            {
-                Succeeded = false,
-                Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
-            };
+        if (user.LockoutEnabled)
+        {
+            if (user.LockoutEnd > DateTimeOffset.UtcNow)
+                return new LauncherSignInResult
+                {
+                    Succeeded = false,
+                    Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
+                };
+
+            user.LockoutEnabled = false;
+            user.AccessFailedCount = 0;
+            await _userStore.UpdateUserAsync(user, true);
+        }
         
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         switch (result)
@@ -354,7 +366,8 @@ public class CustomSignInManager
             string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
             TimeSpan tokenExpiry = TimeSpan.FromMinutes(5);
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:token", sessionToken, tokenExpiry);
-            _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:attempts", 0, tokenExpiry);
+            user.AccessFailedCount = 0;
+            await _userStore.UpdateUserAsync(user, true);
             
             return new LauncherSignInResult
             {
@@ -417,26 +430,24 @@ public class CustomSignInManager
         
         string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
-        string attemptKey = $"auth:{fingerprint}:tfa-launcher:attempts";
-        if (!_memoryCacheService.TryGetValue(attemptKey, out int cachedAttempts))
+        if (!_memoryCacheService.TryGetValue<string>(tokenKey, out _))
             return new LauncherSignInResult
             {
                 Succeeded = false,
                 RequiresTwoFactor = false,
                 Message = "Session token expired."
             };
-        
-        if (cachedAttempts > 3)
-            return new LauncherSignInResult
-            {
-                Succeeded = false,
-                RequiresTwoFactor = false,
-                Message = "Too many invalid attempts. Please request a new code."
-            };
             
         if (!_userManager.VerifyTwoFactorCode(user, code))
         {
-            _memoryCacheService.SetValue(attemptKey, cachedAttempts + 1);
+            user.AccessFailedCount++;
+            if (user.AccessFailedCount > _appConfiguration.Jwt.LockoutMaxAttempts)
+            {
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTimeOffset.UtcNow.Add(_appConfiguration.Jwt.LockoutDuration);
+                user.LockoutReason = "Too many failed two-factor attempts.";
+            }
+            await _userStore.UpdateUserAsync(user, true);
             return new LauncherSignInResult
             {
                 Succeeded = false,
@@ -460,7 +471,6 @@ public class CustomSignInManager
         }, true);
         
         _memoryCacheService.RemoveValue(tokenKey);
-        _memoryCacheService.RemoveValue(attemptKey);
 
         await CheckPlaySessionsAsync(user, _appConfiguration.Yggdrasil.MaxActiveTokensPerUser);
         
@@ -487,7 +497,7 @@ public class CustomSignInManager
         CustomUserLogin? userLogin = await _userStore.UserLogins.FindAsync(x => x.ProviderKey == userToken.Id);
         if (userLogin != null)
             await _userStore.UserLogins.RemoveAsync(userLogin, true);
-        await _userStore.UserTokens.RemoveAsync(userToken);
+        await _userStore.UserTokens.RemoveAsync(userToken, true);
         return true;
     }
     

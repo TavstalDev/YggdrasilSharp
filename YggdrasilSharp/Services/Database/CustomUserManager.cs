@@ -40,7 +40,7 @@ public class CustomUserManager(
         ClockSkew = appConfiguration.Jwt.ClockSkew,
         
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfiguration.Jwt.EncryptionKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
     };
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
     
@@ -360,7 +360,7 @@ public class CustomUserManager(
             DateTime.UtcNow.Add(duration), 
             DateTime.UtcNow,
             new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appConfiguration.Jwt.EncryptionKey)),
+                new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
                 SecurityAlgorithms.HmacSha256)
             );
         return handler.WriteToken(token);
@@ -462,7 +462,7 @@ public class CustomUserManager(
     
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
-        return StringChiper.GetEncryptedHash(rawData, appConfiguration.Jwt.EncryptionKey);
+        return StringChiper.GetEncryptedHash(rawData, appConfiguration.Jwt.FingerprintKey);
     }
     #endregion
 
@@ -478,7 +478,7 @@ public class CustomUserManager(
     {
         var key = KeyGeneration.GenerateRandomKey(20);
         string token = Encoding.UTF8.GetString(key);
-        user.TwoFactorSecret = token.EncryptSelf(appConfiguration.Jwt.EncryptionKey);
+        user.TwoFactorSecret = token.EncryptSelf(appConfiguration.Jwt.TwoFactorEncryptionKey);
         user.SecurityStamp  = Guid.NewGuid().ToString();
         await userStore.UpdateUserAsync(user, true);
         return token;
@@ -495,9 +495,9 @@ public class CustomUserManager(
         if (string.IsNullOrEmpty(user.TwoFactorSecret))
             return false;
         
-        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.EncryptionKey);
+        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.TwoFactorEncryptionKey);
         var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
-        return totp.VerifyTotp(code, out _, new VerificationWindow(1, 1));
+        return totp.VerifyTotp(code, out _, new VerificationWindow(1));
     }
     
     /// <summary>
@@ -520,7 +520,7 @@ public class CustomUserManager(
             await userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedHash(code, appConfiguration.Jwt.EncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(code, appConfiguration.Jwt.TwoFactorEncryptionKey),
                 CreateAt = DateTime.UtcNow
             });
         }
