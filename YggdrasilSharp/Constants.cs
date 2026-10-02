@@ -336,6 +336,21 @@ public static class Constants
         /// This value must be kept secret.
         /// </summary>
         public const string JwtEncryptionKey = "JWT_ENCRYPTION_KEY";
+
+        /// <summary>
+        /// Environment/config key for the symmetric key used to HMAC-sign machine (device) fingerprints.
+        /// This value must be kept secret and should differ from <see cref="JwtEncryptionKey"/> so that
+        /// the fingerprint signing key is never used as an AES or JWT key.
+        /// </summary>
+        public const string FingerprintSigningKey = "FINGERPRINT_SIGNING_KEY";
+
+        /// <summary>
+        /// Environment/config key for the symmetric key used to encrypt and decrypt stored two-factor
+        /// (TOTP) secrets with AES-GCM.
+        /// This value must be kept secret and should differ from <see cref="JwtEncryptionKey"/> and
+        /// <see cref="FingerprintSigningKey"/>.
+        /// </summary>
+        public const string TwoFactorEncryptionKey = "TWO_FACTOR_ENCRYPTION_KEY";
         
         /// <summary>
         /// Environment/config key for the email sender address used by the app.

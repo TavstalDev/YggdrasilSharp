@@ -1,3 +1,4 @@
+using System.Text;
 using Tavstal.YggdrasilSharp.Models.Config;
 
 namespace Tavstal.YggdrasilSharp.Models;
@@ -118,7 +119,7 @@ public class AppConfiguration
         Proxy = new ProxyConfig();
         Misc = new MiscConfig(websiteUrl, apiUrl);
         Database = new DatabaseConfig("", "", "");
-        Jwt = new JwtConfig(encryptionKey, issuer, audience, clockSkew, lockoutMaxAttempts, lockoutDuration);
+        Jwt = new JwtConfig(Encoding.UTF8.GetBytes(encryptionKey), issuer, audience, clockSkew, lockoutMaxAttempts, lockoutDuration);
         Email = new EmailConfig(emailProvider, emailPort, emailAddress, emailPassword);
         Yggdrasil = new YggdrasilConfig(true, true, true, ["1.1.1.1", "2.2.2.2"], skinDomains, serverName, implementationName,
             implementationVersion);

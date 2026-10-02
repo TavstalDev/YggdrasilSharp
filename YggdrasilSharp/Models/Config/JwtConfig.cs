@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace Tavstal.YggdrasilSharp.Models.Config;
@@ -8,11 +9,26 @@ namespace Tavstal.YggdrasilSharp.Models.Config;
 public class JwtConfig
 {
     /// <summary>
-    /// Gets or sets the encryption key used for JWT.
+    /// Gets or sets the symmetric key used for AES-GCM authenticated encryption of stored data and for
+    /// signing/encrypting JWTs.
     /// </summary>
-    [JsonPropertyName("EncryptionKey")]
-    public string EncryptionKey { get; set; }
-
+    [JsonIgnore]
+    public byte[] EncryptionKey { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the symmetric key used to encrypt and decrypt stored two-factor (TOTP) secrets
+    /// with AES-GCM. It is not used to sign tokens.
+    /// </summary>
+    [JsonIgnore]
+    public byte[] TwoFactorEncryptionKey { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the symmetric key used to HMAC-sign machine (device) fingerprints, so a previously
+    /// issued fingerprint can be recomputed and compared later.
+    /// </summary>
+    [JsonIgnore]
+    public byte[] FingerprintKey { get; set; }
+    
     /// <summary>
     /// Gets or sets the JWT issuer.
     /// </summary>
@@ -52,9 +68,13 @@ public class JwtConfig
     /// <param name="clockSkew">The clock skew tolerance for JWT token validation.</param>
     /// <param name="lockoutMaxAttempts">The amount of failed authentication attempts allowed before a user is locked out.</param>
     /// <param name="lockoutDuration">The duration of the lockout applied when the user exceeds the allowed failed authentication attempts.</param>
-    public JwtConfig(string encryptionKey, string issuer, string audience, TimeSpan clockSkew, int lockoutMaxAttempts, TimeSpan lockoutDuration)
+    /// <param name="signingKey">The symmetric key used to HMAC-sign machine fingerprints. Falls back to <paramref name="encryptionKey"/> when omitted.</param>
+    /// <param name="twoFactorEncryptionKey">The symmetric key used to encrypt stored two-factor secrets. Falls back to <paramref name="encryptionKey"/> when omitted.</param>
+    public JwtConfig(byte[] encryptionKey, string issuer, string audience, TimeSpan clockSkew, int lockoutMaxAttempts, TimeSpan lockoutDuration, byte[]? signingKey = null, byte[]? twoFactorEncryptionKey = null)
     {
         EncryptionKey = encryptionKey;
+        FingerprintKey = signingKey ?? encryptionKey;
+        TwoFactorEncryptionKey = twoFactorEncryptionKey ?? encryptionKey;
         Issuer = issuer;
         Audience = audience;
         ClockSkew = clockSkew;
@@ -66,12 +86,12 @@ public class JwtConfig
     /// Initializes a new instance of the <see cref="JwtConfig"/> class and loads settings from the configuration.
     /// </summary>
     /// <param name="configuration">The configuration to load settings from.</param>
-    /// <exception cref="InvalidOperationException">Thrown if a required JWT configuration value is missing.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if a required JWT configuration value is missing.</exception>
     public JwtConfig(IConfiguration configuration)
     {
-        EncryptionKey = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey);
-        if (string.IsNullOrWhiteSpace(EncryptionKey) || EncryptionKey.Length < 32)
-            throw new ArgumentException("Encryption key must be at least 32 characters.", nameof(EncryptionKey));
+        EncryptionKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey));
+        FingerprintKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.FingerprintSigningKey));
+        TwoFactorEncryptionKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.TwoFactorEncryptionKey));
         
         Issuer = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtIssuer);
         Audience = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtAudience);
