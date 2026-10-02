@@ -55,31 +55,6 @@ public class StatusControllerTests : ControllerTestBase
     }
     
     /// <summary>
-    /// Tests for the status endpoint which returns the current server status.
-    /// </summary>
-    public class StatusTests : StatusControllerTests
-    {
-        /// <summary>
-        /// Initializes a new instance of the class.
-        /// </summary>
-        /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
-        public StatusTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
-        /// <summary>
-        /// Success case: calling <c>Status</c> should return a <see cref="ContentResult"/> describing server status.
-        /// </summary>
-        [Fact(DisplayName = "Success: Get server status")]
-        public async Task ReturnsOk()
-        {
-            var result = await _controller.Status();
-            result.Should().BeOfType<ContentResult>();
-            var contentResult = result as ContentResult;
-            contentResult.Should().NotBeNull();
-            _testOutputHelper.WriteLine("Result: " + contentResult.Content);
-        }
-    }
-    
-    /// <summary>
     /// Tests for the public keys endpoint which exposes server public keys.
     /// </summary>
     public class PublicKeysTests : StatusControllerTests

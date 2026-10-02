@@ -76,39 +76,6 @@ public class StatusController : CustomControllerBase
             return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-
-    /// <summary>
-    /// Retrieves the current status of users, tokens, and pending authentications.
-    /// </summary>
-    /// <returns>
-    /// A JSON response containing the status counts.
-    /// </returns>
-    /// <response code="200">Returns the status counts.</response>
-    [HttpGet("status")]
-    public async Task<IActionResult> Status()
-    {
-        if (_cacheService.TryGetValue("yggdrasil_status", out string? cachedResult) && !string.IsNullOrEmpty(cachedResult))
-            return JsonResult(cachedResult);
-        
-        try
-        {
-            var users = await UserStore.QueryUserAsync(null);
-            var tokens = await UserStore.UserTokens.QueryAsync(null);
-            var result = JsonConvert.SerializeObject(new Dictionary<string, object>
-            {
-                { "user.count", users.Count() },
-                { "token.count", tokens.Count() },
-                { "pendingAuthentication.count", 0 } // Not implemented
-            }, Formatting.Indented);
-            _cacheService.SetValue("yggdrasil_status", result, TimeSpan.FromMinutes(5));
-            return JsonResult(result);
-        }
-        catch (Exception ex)
-        {
-           Logger.LogCritical(ex, "Error retrieving yggdrasil status counts");
-           return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
-        }
-    }
     
     /// <summary>
     /// Retrieves the public keys for profile verification.

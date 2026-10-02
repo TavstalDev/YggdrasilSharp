@@ -112,7 +112,7 @@ public class SessionServerController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            if (!Guid.TryParse(request.selectedProfile, out Guid uuid))
+            if (!Guid.TryParse(request.SelectedProfile, out Guid uuid))
                 return YigErrorResult(HttpStatusCode.BadRequest, "Invalid uuid was provided.");
             
             string dashedUuid = uuid.ToString("D");
@@ -121,10 +121,10 @@ public class SessionServerController : CustomControllerBase
                 return YigErrorResult(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
 
-            if (!await _userManager.VerifyJwtTokenAsync(request.accessToken))
+            if (!await _userManager.VerifyJwtTokenAsync(request.AccessToken))
                 return YigErrorResult(HttpStatusCode.Unauthorized, "Invalid access token");
             
-            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.accessToken);
+            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.AccessToken);
             if (session == null)
                 return YigErrorResult(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");
@@ -140,7 +140,7 @@ public class SessionServerController : CustomControllerBase
 
             await _serverJoinRepo.AddAsync(new ServerJoin
             {
-                ServerId = request.serverId,
+                ServerId = request.ServerId,
                 UserId = user.Id,
                 UserIp = host,
                 CreatedAt = now,
@@ -150,7 +150,7 @@ public class SessionServerController : CustomControllerBase
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.selectedProfile, request.serverId);
+            Logger.LogCritical(ex, "Unknown error while processing join request for selectedProfile: {SelectedProfile}, serverId: {ServerId}.", request.SelectedProfile, request.ServerId);
             return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }

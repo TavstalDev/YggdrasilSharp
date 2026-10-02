@@ -101,9 +101,9 @@ public class SessionServerControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                accessToken = userPlaySession.Token,
-                selectedProfile = user.Id,
-                serverId = Guid.NewGuid().ToString()
+                AccessToken = userPlaySession.Token,
+                SelectedProfile = user.Id,
+                ServerId = Guid.NewGuid().ToString()
             });
             
             result.Should().BeOfType<StatusCodeResult>();
@@ -130,9 +130,9 @@ public class SessionServerControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                accessToken = userPlaySession.Token,
-                selectedProfile = Guid.NewGuid().ToString(),
-                serverId = Guid.NewGuid().ToString()
+                AccessToken = userPlaySession.Token,
+                SelectedProfile = Guid.NewGuid().ToString(),
+                ServerId = Guid.NewGuid().ToString()
             });
             
             result.Should().BeOfType<ContentResult>();
@@ -164,9 +164,9 @@ public class SessionServerControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                accessToken = userPlaySession.Token,
-                selectedProfile = user.Id,
-                serverId = Guid.NewGuid().ToString()
+                AccessToken = userPlaySession.Token,
+                SelectedProfile = user.Id,
+                ServerId = Guid.NewGuid().ToString()
             });
             
             result.Should().BeOfType<ContentResult>();
@@ -196,9 +196,9 @@ public class SessionServerControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                accessToken = userPlaySession.Token,
-                selectedProfile = user.Id,
-                serverId = Guid.NewGuid().ToString()
+                AccessToken = userPlaySession.Token,
+                SelectedProfile = user.Id,
+                ServerId = Guid.NewGuid().ToString()
             });
             
             result.Should().BeOfType<ContentResult>();
