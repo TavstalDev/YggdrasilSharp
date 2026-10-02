@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 
 /// <summary>
@@ -9,11 +11,13 @@ public class YigProfileBody
     /// Gets or sets the unique identifier of the profile.
     /// This field is required.
     /// </summary>
-    public required string id { get; set; }
+    [JsonPropertyName("id")]
+    public required string Id { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the profile.
     /// This field is required.
     /// </summary>
-    public required string name { get; set; }
+    [JsonPropertyName("name")]
+    public required string Name { get; set; }
 }

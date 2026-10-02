@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 
@@ -14,7 +15,8 @@ public class YigJoinServerRequest
     [Required]
     [MinLength(32)]
     [MaxLength(1024)]
-    public required string accessToken { get; set; }
+    [JsonPropertyName("accessToken")]
+    public required string AccessToken { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the selected profile.
@@ -23,12 +25,14 @@ public class YigJoinServerRequest
     [Required]
     [MinLength(32)]
     [MaxLength(64)]
-    public required string selectedProfile { get; set; }
+    [JsonPropertyName("selectedProfile")]
+    public required string SelectedProfile { get; set; }
 
     /// <summary>
     /// Gets or sets the server ID to join.
     /// This field is required.
     /// </summary>
     [Required]
-    public required string serverId { get; set; }
+    [JsonPropertyName("ServerId")]
+    public required string ServerId { get; set; }
 }

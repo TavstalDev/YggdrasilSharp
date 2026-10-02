@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 
 /// <summary>
@@ -9,11 +11,13 @@ public class YigValidateRequest
     /// Gets or sets the access token to be validated.
     /// This field is required.
     /// </summary>
-    public required string accessToken { get; set; }
+    [JsonPropertyName("accessToken")]
+    public required string AccessToken { get; set; }
 
     /// <summary>
     /// Gets or sets the client token associated with the session.
     /// This field is optional.
     /// </summary>
-    public string? clientToken { get; set; }
+    [JsonPropertyName("clientToken")]
+    public string? ClientToken { get; set; }
 }

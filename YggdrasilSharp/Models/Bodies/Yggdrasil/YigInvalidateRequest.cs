@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 
 /// <summary>
@@ -9,5 +11,9 @@ public class YigInvalidateRequest
     /// Gets or sets the access token to be invalidated.
     /// This field is required.
     /// </summary>
-    public required String accessToken { get; set; }
+    [JsonPropertyName("accessToken")]
+    public required string AccessToken { get; set; }
+    
+    [JsonPropertyName("clientToken")]
+    public string? ClientToken { get; set; }
 }
