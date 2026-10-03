@@ -71,7 +71,7 @@ public class SkinsControllerTests : ControllerTestBase
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {
@@ -235,7 +235,7 @@ public class SkinsControllerTests : ControllerTestBase
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
             try
             {
                 var result = await _controller.DeleteSkin();
@@ -304,7 +304,7 @@ public class SkinsControllerTests : ControllerTestBase
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {
@@ -477,7 +477,7 @@ public class SkinsControllerTests : ControllerTestBase
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {

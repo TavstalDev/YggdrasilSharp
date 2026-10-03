@@ -29,7 +29,7 @@ public class CapesControllerTests : ControllerTestBase
     /// <summary>
     /// Initializes the test fixture. Creates an in-memory database, custom user manager,
     /// controller instance and initializes Startup with a temporary upload directory
-    /// so that <see cref="FileData.SaveFile"/> can write files during tests.
+    /// so that <see cref="FileData.SaveFileAsync"/> can write files during tests.
     /// </summary>
     /// <param name="testOutputHelper">xUnit output helper injected by the test runner.</param>
     public CapesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
@@ -241,7 +241,7 @@ public class CapesControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.CAPE,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
             Cape cape = await _capeRepo.AddAsync(new Cape
             {
                 Name = "test",

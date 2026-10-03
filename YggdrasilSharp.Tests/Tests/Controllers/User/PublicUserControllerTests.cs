@@ -111,7 +111,7 @@ public class PublicUserControllerTests : ControllerTestBase
                 Type = EFileDataType.PROFILE_PICTURE,
                 UserId = user.Id
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {

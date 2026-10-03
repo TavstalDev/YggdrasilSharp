@@ -276,14 +276,17 @@ public class TestHelper
     /// <param name="result">The action result returned by the controller under test.</param>
     /// <param name="statusCode">The status code expected in the error response.</param>
     /// <param name="message">The message expected in the error response, or <c>null</c> to skip the message check.</param>
-    public static void TestResponse(IActionResult result, HttpStatusCode statusCode, string? message = null)
+    /// <param name="testOutputHelper">Optional test output helper to log the response content for debugging.</param>
+    public static void TestResponse(IActionResult result, HttpStatusCode statusCode, string? message = null, ITestOutputHelper? testOutputHelper = null)
     {
         result.Should().BeOfType<ContentResult>();
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
         contentResult.Content.Should().NotBeNullOrEmpty();
         var response = JsonConvert.DeserializeObject<ErrorResponse>(contentResult.Content);
+        testOutputHelper?.WriteLine($"Response content: {contentResult.Content}");
         response.Should().NotBeNull();
+        testOutputHelper?.WriteLine($"Response status code: {response.StatusCode}\nResponse message: {response.Message}");
         response.StatusCode.Should().Be(statusCode);
         if (message != null)
             response.Message.Should().Be(message);

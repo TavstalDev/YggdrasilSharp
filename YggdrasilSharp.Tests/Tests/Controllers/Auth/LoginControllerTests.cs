@@ -512,7 +512,7 @@ public class LoginControllerTests
             logoutResult.Should().BeOfType<SignOutResult>();
             _testOutputHelper.WriteLine("Result: " + logoutResult.GetType().Name);
 
-            (await _userStore.UserTokens.FindAsync(x => x.Value == token))
+            (await _userStore.UserTokens.FindAsync(x => x.Value == token, TestContext.Current.CancellationToken))
                 .Should().BeNull("logout should revoke the access token");
         }
         
@@ -529,7 +529,7 @@ public class LoginControllerTests
             IActionResult logoutResult = await _controller.LogoutAsync(token);
             logoutResult.Should().BeOfType<SignOutResult>();
 
-            (await _userStore.UserTokens.FindAsync(x => x.Value == token))
+            (await _userStore.UserTokens.FindAsync(x => x.Value == token, TestContext.Current.CancellationToken))
                 .Should().BeNull("logout should revoke the access token");
         }
 
@@ -635,6 +635,6 @@ public class LoginControllerTests
         var tokens = await _userStore.UserTokens.QueryAsync(x => x.UserId == userId && x.Name == "AccessToken");
         var token = tokens.FirstOrDefault();
         token.Should().NotBeNull("login should have issued an access token for the user");
-        return token!.Value;
+        return token.Value!;
     }
 }

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
@@ -225,7 +226,19 @@ public class LauncherControllerTests : ControllerTestBase
                 UpdatedAt = DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
 
-            byte[] bytes = "Hello world"u8.ToArray();
+            byte[] bytes;
+            using (var zipStream = new MemoryStream())
+            {
+                await using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                {
+                    var entry = archive.CreateEntry("test.txt");
+                    await using var entryStream = await entry.OpenAsync(TestContext.Current.CancellationToken);
+                    await using var writer = new StreamWriter(entryStream);
+                    await writer.WriteAsync("Hello world");
+                }
+                bytes = zipStream.ToArray();
+            }
+            
             using var stream = new MemoryStream(bytes);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
@@ -239,7 +252,8 @@ public class LauncherControllerTests : ControllerTestBase
                 ContentType = "application/zip",
                 Type = EFileDataType.LAUNCHER,
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            var fr = await fd.SaveFileAsync(stream);
+            fr.Success.Should().BeTrue();
 
             try
             {
@@ -415,7 +429,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Version = "1.0.1",
                 Changelog = "Patch"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, testOutputHelper: _testOutputHelper);
         }
 
         /// <summary>
@@ -732,7 +746,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Type = EFileDataType.LAUNCHER
             }, true, TestContext.Current.CancellationToken);
             stream.Position = 0;
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {

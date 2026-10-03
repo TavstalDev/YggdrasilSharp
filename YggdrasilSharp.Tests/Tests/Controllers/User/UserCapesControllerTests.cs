@@ -302,7 +302,7 @@ public class UserCapesControllerTests : ControllerTestBase
             UserId = userId,
             Type = EFileDataType.CAPE,
         }, true);
-        fd.SaveFile(stream);
+        await fd.SaveFileAsync(stream);
         var cape = await _capeRepo.AddAsync(new Cape
         {
             Name = "Test Cape",

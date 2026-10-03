@@ -77,7 +77,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             await _newsRepo.AddAsync(new News
             {
@@ -156,7 +156,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             await _newsRepo.AddAsync(new News
             {
@@ -234,7 +234,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             var news = await _newsRepo.AddAsync(new News
             {
@@ -406,7 +406,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {
@@ -451,7 +451,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {
@@ -525,7 +525,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             var news = await _newsRepo.AddAsync(new News
             {
@@ -560,7 +560,7 @@ public class NewsControllerTests : ControllerTestBase
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
             }, true, TestContext.Current.CancellationToken);
-            fd.SaveFile(stream);
+            await fd.SaveFileAsync(stream);
 
             try
             {
