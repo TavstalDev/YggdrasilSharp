@@ -16,6 +16,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// <summary>
 /// Controller for managing public user-related operations.
 /// </summary>
+[ApiController]
 [Route("/user")]
 public class PublicUserController : CustomControllerBase
 {

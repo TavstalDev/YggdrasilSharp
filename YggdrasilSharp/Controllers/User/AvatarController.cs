@@ -23,6 +23,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 /// <summary>
 /// Controller for managing user avatars, including retrieving, uploading, and deleting avatars.
 /// </summary>
+[ApiController]
 [Route("/user")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class AvatarController : CustomControllerBase
@@ -146,7 +147,7 @@ public class AvatarController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (file.Length > 1024 * 500) // 500 KB limit
+            if (file.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -161,6 +162,18 @@ public class AvatarController : CustomControllerBase
             if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
+            FileData fd = new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.PROFILE_PICTURE,
+                UserId = user.Id
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
             FileData? existingAvatar =
                 await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
@@ -169,16 +182,8 @@ public class AvatarController : CustomControllerBase
                 await _fileDataRepo.RemoveAsync(existingAvatar, true);
                 _memoryCache.RemoveValue("avatar:" + user.Id);
             }
-
-            FileData fd = await _fileDataRepo.AddAsync(new FileData
-            {
-                Hash = fileHash,
-                FileName = $"{Guid.NewGuid():N}.png",
-                ContentType = "image/png",
-                Type = EFileDataType.PROFILE_PICTURE,
-                UserId = user.Id
-            }, true);
-            fd.SaveFile(stream);
+            
+            await _fileDataRepo.AddAsync(fd, true);
             return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
         catch (Exception ex)
@@ -284,7 +289,7 @@ public class AvatarController : CustomControllerBase
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            if (file.Length > 1024 * 500) // 500 KB limit
+            if (file.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -299,6 +304,18 @@ public class AvatarController : CustomControllerBase
             if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
+            FileData fd = new FileData
+            {
+                Hash = fileHash,
+                FileName = $"{Guid.NewGuid():N}.png",
+                ContentType = "image/png",
+                Type = EFileDataType.PROFILE_PICTURE,
+                UserId = targetUser.Id
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
@@ -307,16 +324,9 @@ public class AvatarController : CustomControllerBase
                 await _fileDataRepo.RemoveAsync(existingAvatar, true);
                 _memoryCache.RemoveValue("avatar:" + user.Id);
             }
-
-            FileData fd = await _fileDataRepo.AddAsync(new FileData
-            {
-                Hash = fileHash,
-                FileName = $"{Guid.NewGuid():N}.png",
-                ContentType = "image/png",
-                Type = EFileDataType.PROFILE_PICTURE,
-                UserId = targetUser.Id
-            }, true);
-            fd.SaveFile(stream);
+            
+            await _fileDataRepo.AddAsync(fd, true);
+            
             return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
         catch (Exception ex)

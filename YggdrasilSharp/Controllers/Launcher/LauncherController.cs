@@ -444,15 +444,18 @@ public class LauncherController : CustomControllerBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
 
-            FileData fd = await _fileDataRepository.AddAsync(new FileData
+            FileData fd = new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.{request.File.FileName.Split('.').Last()}",
                 ContentType = request.File.ContentType,
                 Type = EFileDataType.LAUNCHER
-            }, true);
-            fd.SaveFile(stream);
-
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
+            fd = await _fileDataRepository.AddAsync(fd, true);
             await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,

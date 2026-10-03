@@ -123,19 +123,11 @@ public class SkinsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (file.Length > 1024 * 500) // 500 KB limit
+            if (file.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
-
-            FileData? existingSkin =
-                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
-            if (existingSkin != null)
-            {
-                existingSkin.DeleteFile();
-                await _fileDataRepository.RemoveAsync(existingSkin, true);
-            }
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -146,20 +138,32 @@ public class SkinsController : CustomControllerBase
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-
-            // Remove profile cache
-            _cacheService.RemoveValue($"profile:{user.Id}:signed");
-            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
             
-            FileData fd = await _fileDataRepository.AddAsync(new FileData
+            FileData fd = new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = user.Id,
                 Type = EFileDataType.SKIN,
-            }, true);
-            fd.SaveFile(stream);
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
+            FileData? existingSkin =
+                await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
+            if (existingSkin != null)
+            {
+                existingSkin.DeleteFile();
+                await _fileDataRepository.RemoveAsync(existingSkin, true);
+            }
+            
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{user.Id}:signed");
+            _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
+            
+            await _fileDataRepository.AddAsync(fd, true);
             return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
         }
         catch (Exception ex)
@@ -322,19 +326,11 @@ public class SkinsController : CustomControllerBase
             if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
-            if (file.Length > 1024 * 500) // 500 KB limit
+            if (file.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
-
-            FileData? existingSkin =
-                await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
-            if (existingSkin != null)
-            {
-                existingSkin.DeleteFile();
-                await _fileDataRepository.RemoveAsync(existingSkin, true);
-            }
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -345,20 +341,33 @@ public class SkinsController : CustomControllerBase
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-
-            // Remove profile cache
-            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
-            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
             
-            FileData fd = await _fileDataRepository.AddAsync(new FileData
+            FileData fd = new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 UserId = targetUser.Id,
                 Type = EFileDataType.SKIN,
-            }, true);
-            fd.SaveFile(stream);
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
+            FileData? existingSkin =
+                await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
+            if (existingSkin != null)
+            {
+                existingSkin.DeleteFile();
+                await _fileDataRepository.RemoveAsync(existingSkin, true);
+            }
+
+            // Remove profile cache
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
+            _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
+            
+            await _fileDataRepository.AddAsync(fd, true);
+
             return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
         }
         catch (Exception ex)

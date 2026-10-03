@@ -8,6 +8,7 @@ namespace Tavstal.YggdrasilSharp.Controllers;
 /// <summary>
 /// Controller responsible for handling requests to the home endpoint.
 /// </summary>
+[ApiController]
 public class HomeController : CustomControllerBase
 {
     /// <summary>

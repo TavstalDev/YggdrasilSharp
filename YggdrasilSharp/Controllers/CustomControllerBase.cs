@@ -3,8 +3,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Responses;
@@ -115,9 +113,7 @@ public abstract class CustomControllerBase : Controller
     /// The object to serialize and include in the response. Supported types include:
     /// <list type="bullet">
     /// <item><description><see cref="string"/> - Raw JSON string (returned as-is)</description></item>
-    /// <item><description><see cref="JObject"/> - Newtonsoft.Json object (converted to compact JSON string)</description></item>
-    /// <item><description><see cref="JArray"/> - Newtonsoft.Json array (converted to compact JSON string)</description></item>
-    /// <item><description>Any other object - Serialized using <see cref="JsonConvert.SerializeObject(object, Newtonsoft.Json.Formatting)"/></description></item>
+    /// <item><description>Any other object - Serialized using <see cref="JsonHelper.SerializeJson"/></description></item>
     /// </list>
     /// </param>
     /// <returns>
@@ -129,12 +125,8 @@ public abstract class CustomControllerBase : Controller
         {
             case string str:
                 return Content(str, "application/json");
-            case JObject jobj:
-                return Content(jobj.ToString(Formatting.None), "application/json");
-            case JArray jarray:
-                return Content(jarray.ToString(Formatting.None), "application/json");
             default:
-               return Content(JsonConvert.SerializeObject(obj, Formatting.None), "application/json");
+               return Content(JsonHelper.SerializeJson(obj), "application/json");
         }
     }
     

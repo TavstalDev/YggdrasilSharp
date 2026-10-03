@@ -34,7 +34,6 @@ public class RegisterController : CustomControllerBase
     private readonly IEmailService _emailService;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
-    private readonly AppConfiguration _appConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RegisterController"/> class.
@@ -54,7 +53,6 @@ public class RegisterController : CustomControllerBase
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _fileDataRepo = fileDataRepo;
-        _appConfiguration = appConfiguration;
     }
 
     /// <summary>
@@ -109,14 +107,18 @@ public class RegisterController : CustomControllerBase
                 if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
                     return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
                 
-                avatarData = await _fileDataRepo.AddAsync(new FileData
+                FileData fd = new FileData
                 {
                     Hash = fileHash,
                     FileName = $"{Guid.NewGuid():N}.png",
                     ContentType = "image/png",
                     Type = EFileDataType.PROFILE_PICTURE
-                }, true);
-                avatarData.SaveFile(stream);
+                };
+                var uploadResult = await fd.SaveFileAsync(stream);
+                if (!uploadResult.Success)
+                    return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+                
+                avatarData = await _fileDataRepo.AddAsync(fd, true);
             }
 
             var newUser = new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail,

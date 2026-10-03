@@ -121,6 +121,11 @@ public class NewsController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
+            
+            if (count < 1)
+                count = 1;
+            else if (count > 20)
+                count = 20;
 
             if (_cacheService.TryGetValue("news:latest", out List<NewsResponseBody>? cachedNews) && cachedNews != null)
             {
@@ -252,7 +257,7 @@ public class NewsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
+            if (requestBody.Banner.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!requestBody.Banner.FileName.EndsWith(".png"))
@@ -267,14 +272,19 @@ public class NewsController : CustomControllerBase
             if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
 
-            FileData fd = await _fileDataRepo.AddAsync(new FileData
+            FileData fd = new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
                 Type = EFileDataType.NEWS_BANNER
-            }, true);
-            fd.SaveFile(stream);
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
+            
+            fd = await _fileDataRepo.AddAsync(fd, true);
 
             await _newsRepo.AddAsync(new News
             {
@@ -341,7 +351,7 @@ public class NewsController : CustomControllerBase
 
             if (requestBody.Banner != null)
             {
-                if (requestBody.Banner.Length > 1024 * 500) // 500 KB limit
+                if (requestBody.Banner.Length > 1024 * 500)
                     return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
                 if (!requestBody.Banner.FileName.EndsWith(".png"))
@@ -365,14 +375,18 @@ public class NewsController : CustomControllerBase
                     await _fileDataRepo.RemoveAsync(existingBanner, true);
                 }
 
-                FileData fd = await _fileDataRepo.AddAsync(new FileData
+                FileData fd = new FileData
                 {
                     Hash = fileHash,
                     FileName = $"{Guid.NewGuid():N}.png",
                     ContentType = "image/png",
                     Type = EFileDataType.NEWS_BANNER
-                }, true);
-                fd.SaveFile(stream);
+                };
+                var uploadResult = await fd.SaveFileAsync(stream);
+                if (!uploadResult.Success)
+                    return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+                
+                fd = await _fileDataRepo.AddAsync(fd, true);
                 news.BannerId = fd.Id;
             }
 
@@ -419,7 +433,7 @@ public class NewsController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            News? news = await _newsRepo.FindAsync(x => x.Id == id);
+            News? news = await _newsRepo.FindByIdAsync(id);
             if (news == null)
                 return JsonResult(HttpStatusCode.NotFound, "News article not found.");
 

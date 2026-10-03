@@ -6,7 +6,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Newtonsoft.Json;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 using Tavstal.YggdrasilSharp.Models.Common;
@@ -68,7 +67,7 @@ public class SessionServerController : CustomControllerBase
     [HttpGet("/yggdrasil/sessionserver/blockedservers")]
     public IActionResult GetBlockedServers()
     {
-        string finalJson = JsonConvert.SerializeObject(new
+        string finalJson = JsonHelper.SerializeJson(new
         {
             blockedServers = _appConfiguration.Yggdrasil.BlockedServers
         });
@@ -311,10 +310,10 @@ public class SessionServerController : CustomControllerBase
             var userCape = await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.IsSelected);
             if (userCape != null)
             {
-                var cape = await _capeRepo.FindByIdAsync(userCape.CapeId);
+                var cape = await _capeRepo.FindAsync(x => x.Id == userCape.CapeId);
                 if (cape != null)
                 {
-                    var capeData = await _fileDataRepository.FindByIdAsync(cape.FileId);
+                    var capeData = await _fileDataRepository.FindAsync(x => x.Id == cape.FileId);
                     if (capeData != null)
                     {
                         textures.Add("CAPE", new Dictionary<string, object>
@@ -335,7 +334,7 @@ public class SessionServerController : CustomControllerBase
             if (!unsigned)
                 textureValues.Add("signatureRequired", true);
 
-            string jsonString = JsonConvert.SerializeObject(textureValues, Formatting.None);
+            string jsonString = JsonHelper.SerializeJson(textureValues);
             string base64Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonString));
 
             List<Dictionary<string, object>> properties = [];
@@ -365,7 +364,7 @@ public class SessionServerController : CustomControllerBase
                 { "name", user.UserName },
                 { "properties", properties }
             };
-            string finalJson = JsonConvert.SerializeObject(response, Formatting.None);
+            string finalJson = JsonHelper.SerializeJson(response);
             
             // Cache the result with absolute expiration
             _cacheService.SetValue(key, finalJson, ttl);

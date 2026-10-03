@@ -20,6 +20,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 /// <summary>
 /// Controller for managing capes, including uploading and deleting capes.
 /// </summary>
+[ApiController]
 [Route("/capes")]
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class CapesController : CustomControllerBase
@@ -82,7 +83,7 @@ public class CapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            if (file.Length > 1024 * 512) // 500 KB limit
+            if (file.Length > 1024 * 500)
                 return JsonResult(HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
 
             if (!file.FileName.EndsWith(".png"))
@@ -103,14 +104,19 @@ public class CapesController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
 
-            FileData fd = await _fileDataRepo.AddAsync(new FileData
+            FileData fd = new FileData
             {
                 Hash = fileHash,
                 FileName = $"{Guid.NewGuid():N}.png",
                 ContentType = "image/png",
-                Type = EFileDataType.CAPE,
-            }, true);
-            fd.SaveFile(stream);
+                Type = EFileDataType.CAPE
+            };
+            var uploadResult = await fd.SaveFileAsync(stream);
+            if (!uploadResult.Success)
+                return JsonResult(uploadResult.StatusCode, uploadResult.Message);
+            
+            fd = await _fileDataRepo.AddAsync(fd, true);
+            
             Cape cape = await _capeRepo.AddAsync(new Cape
             {
                 Name = file.FileName.Split('.')[0],
@@ -171,11 +177,11 @@ public class CapesController : CustomControllerBase
             if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
-            Cape? cape = await _capeRepo.FindByIdAsync(capeId);
+            Cape? cape = await _capeRepo.FindAsync(x => x.Id == capeId);
             if (cape == null)
                 return JsonResult(HttpStatusCode.NotFound, "Cape not found");
 
-            var fileData = await _fileDataRepo.FindByIdAsync(cape.FileId);
+            var fileData = await _fileDataRepo.FindAsync(x => x.Id == cape.FileId);
             if (fileData != null)
             {
                 fileData.DeleteFile();
