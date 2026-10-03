@@ -155,6 +155,12 @@ public static class Constants
         /// Example: 25, 465, or 587
         /// </summary>
         public const string EmailPort = "Email:Port";
+        
+        /// <summary>
+        /// Configuration key for the SMTP client timeout, in milliseconds.
+        /// Example: 12000
+        /// </summary>
+        public const string EmailTimeout = "Email:Timeout";
 
         /// <summary>
         /// Configuration key that controls whether the legacy Yggdrasil authentication flow
