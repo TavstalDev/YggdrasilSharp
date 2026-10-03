@@ -495,6 +495,8 @@ public static class Program
             return;
         }
         
+        app.UseHttpsRedirection();
+        
         if (_settings.Proxy.Enabled)
         {
             ForwardedHeadersOptions options = new ForwardedHeadersOptions
@@ -533,14 +535,11 @@ public static class Program
             c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings.Swagger.Name} v1");
             c.RoutePrefix = "docs";
         });
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
-        {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-        });
-
-        app.UseHttpsRedirection();
+        
         app.UseStaticFiles();
-            
+        
+        app.UseRouting();
+        
         // Configure CORS.
         app.UseCors("Default");
         app.Use(async (context, next) =>
@@ -549,7 +548,6 @@ public static class Program
             await next();
         });
         
-        app.UseRouting();
         app.UseRateLimiter();
 
         app.UseSession();
