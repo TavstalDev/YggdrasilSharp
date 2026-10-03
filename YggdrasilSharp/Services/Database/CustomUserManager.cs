@@ -212,7 +212,7 @@ public class CustomUserManager(
         List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = await userStore.Roles.FindByIdAsync(role.RoleId);
+            var r = await userStore.Roles.FindAsync(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -230,7 +230,7 @@ public class CustomUserManager(
         List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = await userStore.Roles.FindByIdAsync(role.RoleId);
+            var r = await userStore.Roles.FindAsync(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }

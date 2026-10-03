@@ -77,11 +77,6 @@ public class CustomDbContext : DbContext
 
         builder.Entity<CustomUserToken>()
             .HasKey(x => x.Id);
-
-        builder.Entity<CustomUserToken>()
-            .Property(x => x.Value)
-            .HasDefaultValueSql("UUID()")
-            .ValueGeneratedOnAdd();
         
         builder.Entity<CustomUserRole>(entity =>
         {

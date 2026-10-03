@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using Newtonsoft.Json;
 using Tavstal.YggdrasilSharp.Models.Common;
 
 namespace Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -33,7 +32,7 @@ public static class DatabaseHelper
         try
         {
             string info = await _client.GetStringAsync($"https://ipinfo.io/{ip}");
-            var localInfo = JsonConvert.DeserializeObject<IpInfo>(info);
+            var localInfo = JsonHelper.DeserializeJson<IpInfo>(info);
             if (localInfo != null)
             {
                 ipInfo = localInfo;

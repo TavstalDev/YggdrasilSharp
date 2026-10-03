@@ -1,4 +1,5 @@
-﻿using Tavstal.YggdrasilSharp.Models.Claims;
+﻿using Microsoft.EntityFrameworkCore;
+using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Database.User.Claims;
 
@@ -19,7 +20,7 @@ public static class DatabaseInitializer
     public static async Task InitializeAsync(CustomDbContext context, CustomUserStore userStore, CancellationToken cancellationToken = default)
     {
         // Ensures the database is created.
-        await context.Database.EnsureCreatedAsync(cancellationToken);
+        await context.Database.MigrateAsync(cancellationToken);
         
         // Checks if roles are empty and adds default roles.
         var roles = await userStore.Roles.QueryAsync(null, cancellationToken);

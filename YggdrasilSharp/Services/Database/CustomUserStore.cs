@@ -193,8 +193,8 @@ public class CustomUserStore
     /// <summary>
     /// Finds a user by their primary key (ID).
     /// </summary>
-    /// <param name="id">The unique identifier of the user to retrieve. Typically a GUID or integer string.</param>
+    /// <param name="id">The unique identifier of the user to retrieve.</param>
     /// <param name="cancellationToken">Optional cancellation token for task cancellation.</param>
     /// <returns>The <see cref="CustomUser"/> with the specified ID, or null if not found.</returns>
-    public async Task<CustomUser?> FindUserByIdAsync(object id, CancellationToken cancellationToken = default) => await Users.FindByIdAsync(id, cancellationToken);
+    public async Task<CustomUser?> FindUserByIdAsync(string id, CancellationToken cancellationToken = default) => await Users.FindAsync(x => x.Id == id, cancellationToken);
 }
