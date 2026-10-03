@@ -11,11 +11,9 @@ namespace Tavstal.YggdrasilSharp.Services;
 /// </summary>
 public class EmailService : IEmailService
 {
-    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<EmailService> _logger;
     private readonly AppConfiguration _appConfiguration;
-    private string _emailBlankDoc = string.Empty;
-    private string _emailActionDoc = string.Empty;
+    private readonly Dictionary<string, string> _emailTemplates = [];
     
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailService"/> class.
@@ -25,49 +23,23 @@ public class EmailService : IEmailService
     /// <param name="appConfiguration">The settings containing email configuration details.</param>
     public EmailService(IWebHostEnvironment environment, ILogger<EmailService> logger, AppConfiguration appConfiguration)
     {
-        _environment = environment;
         _logger = logger;
         _appConfiguration = appConfiguration;
-        // Load templates asynchronously in background. Email sending will use empty templates if loading fails.
-        _ = InitAsync();
-    }
-
-    /// <summary>
-    /// Asynchronously loads email templates from the web root "templates" folder.
-    /// <br/><br/>
-    /// Expected files:
-    /// <br/>- {webroot}/templates/emailBlank.html
-    /// <br/>- {webroot}/templates/emailAction.html
-    /// <br/><br/>
-    /// If the templates directory or files are missing, the method logs an error and leaves
-    /// the corresponding template fields as empty strings. This method is private and invoked
-    /// by the constructor in the background.
-    /// </summary>
-    /// <returns>A task that completes when template loading has finished.</returns>
-    private async Task InitAsync()
-    {
-        string templateDir = Path.Combine(_environment.WebRootPath, "templates");
+       
+        // Load email templates   
+        
+        string templateDir = Path.Combine(environment.WebRootPath, "templates");
         if (!Directory.Exists(templateDir))
         {
             _logger.LogError("Email template directory not found at path: {Path}", templateDir);
             return;
         }
         
-        string templatePath = Path.Combine(templateDir, "emailBlank.html");
-        if (!File.Exists(templatePath))
+        foreach (var file in Directory.GetFiles(templateDir, "*.html"))
         {
-            _logger.LogError("Email document not found at path: {Path}", templatePath);
-            return;
+            string templateName = Path.GetFileNameWithoutExtension(file);
+            _emailTemplates[templateName] = File.ReadAllText(file);
         }
-        _emailBlankDoc = await File.ReadAllTextAsync(templatePath);
-        
-        templatePath = Path.Combine(templateDir, "emailAction.html");
-        if (!File.Exists(templatePath))
-        {
-            _logger.LogError("Email document not found at path: {Path}", templatePath);
-            return;
-        }
-        _emailActionDoc = await File.ReadAllTextAsync(templatePath);
     }
     
     /// <summary>
@@ -87,7 +59,8 @@ public class EmailService : IEmailService
         email.Body = new TextPart(TextFormat.Html) { Text = body };
 
         using var smtp = new SmtpClient();
-        await smtp.ConnectAsync(_appConfiguration.Email.Provider,  _appConfiguration.Email.Port, SecureSocketOptions.None, cancellationToken);
+        smtp.Timeout = _appConfiguration.Email.Timeout;
+        await smtp.ConnectAsync(_appConfiguration.Email.Provider,  _appConfiguration.Email.Port, SecureSocketOptions.Auto, cancellationToken);
         try
         {
             try
@@ -101,11 +74,13 @@ public class EmailService : IEmailService
             }
             catch (Exception ex)
             {
-                // Unexpected error - log but continue
                 _logger.LogError(ex, "Unexpected error during SMTP authentication");
             }
-
             await smtp.SendAsync(email, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Recipient}", to);
         }
         finally
         {
@@ -130,7 +105,14 @@ public class EmailService : IEmailService
     /// <returns>A task representing the asynchronous send operation.</returns>
     public async Task SendEmailAsync(string to, string username, string subject, string body, CancellationToken cancellationToken = default)
     {
-        string finalBody = _emailBlankDoc.Replace("{{TITLE}}", subject)
+        if (!_emailTemplates.TryGetValue("emailBlank", out var emailBlankDoc))
+        {
+            _logger.LogWarning("Email 'blank' template not found. Falling back to raw send.");
+            await SendEmailAsync(to, subject, body, cancellationToken);
+            return;
+        }
+        
+        string finalBody = emailBlankDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username);
         await SendEmailAsync(to, subject, finalBody, cancellationToken);
@@ -159,7 +141,14 @@ public class EmailService : IEmailService
     public async Task SendEmailAsync(string to, string username, string subject, string body, string actionUrl,
         string buttonText, CancellationToken cancellationToken = default)
     {
-        string finalBody = _emailActionDoc.Replace("{{TITLE}}", subject)
+        if (!_emailTemplates.TryGetValue("emailAction", out var emailActionDoc))
+        {
+            _logger.LogWarning("Email 'action' template not found. Falling back to raw send.");
+            await SendEmailAsync(to, subject, body, cancellationToken);
+            return;
+        }
+        
+        string finalBody = emailActionDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username)
             .Replace("{{ACTION_URL}}", actionUrl)
