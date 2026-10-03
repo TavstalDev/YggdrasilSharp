@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Models.Database;
 
@@ -99,18 +100,20 @@ public class FileData
     /// Saves the file to the storage directory using the provided stream.
     /// </summary>
     /// <param name="stream">The stream containing the file data to save.</param>
-    public void SaveFile(Stream stream)
+    /// <returns>A task that represents the asynchronous operation. The task result describes the outcome of the save.</returns>
+    public async Task<FileSaveResult> SaveFileAsync(Stream stream)
     {
         string dirPath = Program.UploadDir;
         if (!Directory.Exists(dirPath))
             Directory.CreateDirectory(dirPath);
+        
         string containingDir = GetContainingDirectoryName();
         string containingDirPath = Path.Combine(dirPath, containingDir);
         if (!Directory.Exists(containingDirPath))
             Directory.CreateDirectory(containingDirPath);
+        
         string filePath = Path.Combine(containingDirPath, FileName);
-        using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-        stream.CopyTo(fileStream);
+        return await IOHelper.SaveFileAsync(filePath, stream);
     }
     
     /// <summary>

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Tavstal.YggdrasilSharp.Models.Attributes;
+using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Launcher;
@@ -23,6 +24,7 @@ public class CreateLauncherVersionDataRequest
     /// Supported content types are application/zip, application/gzip, and application/x-tar.
     /// </summary>
     [Required]
-    [FormFile(maxFileSize: 512, fileExtensions: [".zip", ".tar.gz", ".tar"], contentTypes: ["application/zip", "application/gzip", "application/x-tar"])]
+    // ReSharper disable once RedundantArgumentDefaultValue - It is more readable to have the default value explicitly stated here
+    [FormFile(512, EFileSizeUnit.Megabytes, fileExtensions: [".zip", ".tar.gz", ".tar"], contentTypes: ["application/zip", "application/gzip", "application/x-tar"])]
     public required IFormFile File { get; set; }
 }

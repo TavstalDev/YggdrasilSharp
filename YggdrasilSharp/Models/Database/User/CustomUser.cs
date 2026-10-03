@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
 using Tavstal.YggdrasilSharp.Models.Common;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -13,6 +14,8 @@ namespace Tavstal.YggdrasilSharp.Models.Database.User;
 /// Represents a custom user entity that extends the IdentityUser class with additional properties
 /// such as DisplayName, SkinModel, DiscordId, and various navigation properties.
 /// </summary>
+[Index(nameof(NormalizedUserName), IsUnique = true, Name = "UserNameIndex")]
+[Index(nameof(NormalizedEmail), IsUnique = true, Name = "EmailIndex")]
 public sealed class CustomUser : IdentityUser<string>
 {
     /// <summary>
@@ -232,7 +235,7 @@ public sealed class CustomUser : IdentityUser<string>
     /// <summary>
     /// Gets the highest role of the user based on role level.
     /// </summary>
-    public string HighestRole => UserRoles.OrderByDescending(x => x.Role?.Level).First().Role?.Name ?? "Anonymous";
+    public string HighestRole => UserRoles.OrderByDescending(x => x.Role?.Level).FirstOrDefault()?.Role?.Name ?? "Anonymous";
     
     /// <summary>
     /// Gets or sets the claims associated with the user.

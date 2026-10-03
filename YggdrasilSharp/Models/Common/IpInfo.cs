@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Tavstal.YggdrasilSharp.Models.Common;
 
@@ -10,49 +10,49 @@ public class IpInfo
     /// <summary>
     /// Gets or sets the IP address.
     /// </summary>
-    [JsonProperty("ip")]
+    [JsonPropertyName("ip")]
     public string Ip { get; set; }
     
     /// <summary>
     /// Gets or sets the hostname associated with the IP address.
     /// </summary>
-    [JsonProperty("hostname")]
+    [JsonPropertyName("hostname")]
     public string Hostname { get; set; }
     
     /// <summary>
     /// Gets or sets the city where the IP address is located.
     /// </summary>
-    [JsonProperty("city")]
+    [JsonPropertyName("city")]
     public string City { get; set; }
     
     /// <summary>
     /// Gets or sets the region where the IP address is located.
     /// </summary>
-    [JsonProperty("region")]
+    [JsonPropertyName("region")]
     public string Region { get; set; }
     
     /// <summary>
     /// Gets or sets the country where the IP address is located.
     /// </summary>
-    [JsonProperty("country")]
+    [JsonPropertyName("country")]
     public string Country { get; set; }
     
     /// <summary>
     /// Gets or sets the latitude and longitude coordinates of the IP address location.
     /// </summary>
-    [JsonProperty("loc")]
+    [JsonPropertyName("loc")]
     public string Loc { get; set; }
     
     /// <summary>
     /// Gets or sets the organization associated with the IP address.
     /// </summary>
-    [JsonProperty("org")]
+    [JsonPropertyName("org")]
     public string Organization { get; set; }
     
     /// <summary>
     /// Gets or sets the postal code of the IP address location.
     /// </summary>
-    [JsonProperty("postal")]
+    [JsonPropertyName("postal")]
     public string Postal { get; set; }
     
     /// <summary>

@@ -18,6 +18,12 @@ public class EmailConfig
     /// </summary>
     [JsonPropertyName("Port")]
     public int Port { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the SMTP client timeout, in milliseconds.
+    /// </summary>
+    [JsonPropertyName("Timeout")]
+    public int Timeout { get; set; }
 
     /// <summary>
     /// Gets or sets the email address.
@@ -36,12 +42,14 @@ public class EmailConfig
     /// </summary>
     /// <param name="provider">The SMTP server hostname or provider identifier.</param>
     /// <param name="port">The SMTP port used to send email (commonly 25, 465, or 587).</param>
+    /// <param name="timeout">The SMTP client timeout in milliseconds used while waiting for server commands.</param>
     /// <param name="address">The email address used as the sender for outgoing messages.</param>
     /// <param name="password">The password or app-specific secret for the sender account.</param>
-    public EmailConfig(string provider, int port, string address, string password)
+    public EmailConfig(string provider, int port, int timeout, string address, string password)
     {
         Provider = provider;
         Port = port;
+        Timeout = timeout;
         Address = address;
         Password = password;
     }
@@ -55,6 +63,7 @@ public class EmailConfig
     {
         Provider = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.EmailProvider);
         Port = configuration.GetValue(Constants.ConfigurationKeys.EmailPort, 587); 
+        Timeout = configuration.GetValue(Constants.ConfigurationKeys.EmailTimeout, 12000);
         Address = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailAddress); 
         Password = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailPassword);
     }

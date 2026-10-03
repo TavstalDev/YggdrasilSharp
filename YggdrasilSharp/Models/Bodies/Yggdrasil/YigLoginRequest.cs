@@ -7,6 +7,10 @@ namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
 /// </summary>
 public class YigLoginRequest
 {
+    /// <summary>
+    /// Gets or sets information about the client performing the login.
+    /// This field is required.
+    /// </summary>
     [JsonPropertyName("agent")]
     public required YigAgent Agent { get; set; }
 

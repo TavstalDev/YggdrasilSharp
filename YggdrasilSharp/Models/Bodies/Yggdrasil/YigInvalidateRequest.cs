@@ -14,6 +14,10 @@ public class YigInvalidateRequest
     [JsonPropertyName("accessToken")]
     public required string AccessToken { get; set; }
     
+    /// <summary>
+    /// Gets or sets the client token bound to the access token being invalidated.
+    /// This field is optional.
+    /// </summary>
     [JsonPropertyName("clientToken")]
     public string? ClientToken { get; set; }
 }
