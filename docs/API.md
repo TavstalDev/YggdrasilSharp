@@ -1,6 +1,6 @@
 # API Reference
 
-All endpoints return JSON. Authentication uses one of three schemes: **Bearer**, **Basic**, or **Cookie** (JWT-based). URLs are relative to the configured API base URL (e.g. `http://localhost:5001`).
+Authentication uses one of two schemes: **Bearer** or **Basic**, both JWT-based. URLs are relative to the configured API base URL (e.g. `http://localhost:5001`). Most endpoints respond with JSON; the texture, file download, avatar, and skin endpoints respond with raw file content.
 
 Interactive documentation (Swagger UI) is available at `/docs`.
 
@@ -18,7 +18,7 @@ Interactive documentation (Swagger UI) is available at `/docs`.
 - [News](#news)
 - [Launcher](#launcher)
 - [Yggdrasil (Minecraft Auth)](#yggdrasil-minecraft-auth)
-  - [Status & Keys](#status--keys)
+  - [Metadata & Keys](#metadata--keys)
   - [Profiles & Textures](#profiles--textures)
   - [Session Server](#session-server)
 - [Versioning](#versioning)
@@ -114,7 +114,7 @@ All endpoints in this section require authentication, except the two public prof
 
 | Method | Route | Description | Auth |
 | --- | --- | --- | --- |
-| GET | `/news` | List all news posts (paginated). | Public |
+| GET | `/news` | List all news posts. | Public |
 | GET | `/news/latest` | Fetch the latest news posts. | Public |
 | GET | `/news/{id}` | Fetch a single news post. | Public |
 | POST | `/news` | Create a news post. | Bearer/Basic |
@@ -139,14 +139,13 @@ All endpoints in this section require authentication, except the two public prof
 
 These endpoints are compatible with the official Yggdrasil protocol and the Minecraft session server.
 
-### Status & Keys
+### Metadata & Keys
 
 | Method | Route | Description | Auth |
 | --- | --- | --- | --- |
 | GET | `/yggdrasil` | Root metadata: skin domains, public key signature, server/implementation name and version, feature flags, and homepage/register links. | Public |
-| GET | `/yggdrasil/status` | Service counters: user count, token count, and pending authentication count. | Public |
-| GET | `/yggdrasil/publickeys` | Public encryption keys. | Public |
-| GET | `/yggdrasil/minecraftservices/publickeys` | Public keys (Minecraft services alias). | Public |
+| GET | `/yggdrasil/publickeys` | Public profile keys. Currently returns an empty list. | Public |
+| GET | `/yggdrasil/minecraftservices/publickeys` | Public profile keys (Minecraft services alias). Currently returns an empty list. | Public |
 
 ### Profiles & Textures
 
@@ -162,7 +161,7 @@ Routes are available under both client (`yggdrasil/session/minecraft`) and serve
 | Method | Route | Description | Auth |
 | --- | --- | --- | --- |
 | GET | `/yggdrasil/sessionserver/blockedservers` | List of blocked servers (currently empty). | Public |
-| POST | …/`join` | Verify the client joined a server. | Client token |
+| POST | …/`join` | Verify the client joined a server. | Access token |
 | GET | …/`hasJoined` | Confirm a profile has joined a server. | Public |
 | GET | …/`profile/{uuid}` | Fetch a session profile by UUID (with signatures). | Public |
 

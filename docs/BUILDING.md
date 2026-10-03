@@ -39,8 +39,16 @@ entirely on EF Core's in-memory provider, so no external database or service is 
 dotnet run --project YggdrasilSharp
 ```
 
-For a debug build the app runs in Development mode, which enables the developer exception page. Note
-that the upload directory is resolved from `Runtime:UploadDir` (relative to the web root) in every
+The environment is chosen by `ASPNETCORE_ENVIRONMENT` or by the launch profile in
+`Properties/launchSettings.json`, not by the build configuration — plain `dotnet run --project
+YggdrasilSharp` uses the first profile, which sets `Production`. Pick the Development environment to get
+the developer exception page:
+
+```bash
+dotnet run --project YggdrasilSharp --launch-profile Development
+```
+
+Note that the upload directory is resolved from `Runtime:UploadDir` (relative to the web root) in every
 environment, not just Development.
 
 ## Publish

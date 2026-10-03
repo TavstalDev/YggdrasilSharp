@@ -89,7 +89,9 @@ Kestrel listens on the port set in `Application:Port` (default `5001`).
 - Root endpoint: `http://localhost:5001/`
 - API base: the routes under the Controller folders, e.g. `http://localhost:5001/register`
 
-> The database and its default roles (`Default`, `Moderator`, `Admin`) are created automatically on first startup.
+> The default roles (`Default`, `Moderator`, `Admin`) and their claims are seeded on first startup. The
+> schema itself comes from EF Core migrations, and no migrations are currently shipped — see
+> [Database](DATABASE.md#initialization).
 
 ## 6. Next Steps
 

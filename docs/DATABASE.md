@@ -49,16 +49,18 @@ Credentials are stored in `.env` and substituted at runtime via the `$DB_USER` /
 "ConnectionString": "Data Source=yggdrasil.db"
 ```
 
-SQLite needs no server, user, or password — a single file is created on first run. `$DB_USER` / `$DB_PASSWORD` are simply ignored.
+SQLite needs no server, user, or password — everything lives in a single file. `$DB_USER` / `$DB_PASSWORD` are simply ignored.
 
 ## Initialization
 
 On startup the application:
 
-1. Creates the database if it does not exist (via `EnsureCreated`).
+1. Applies EF Core migrations (`Database.MigrateAsync`) via `DatabaseInitializer`.
 2. Seeds the default roles `Default`, `Moderator`, and `Admin` together with their claims.
 
-No migrations are shipped yet — schema changes are managed by `EnsureCreated`. For a migration-based flow, add EF Core migrations and replace the initializer accordingly.
+No migrations are shipped in this repository, so `MigrateAsync` has nothing to apply and the schema is
+**not** created automatically. Generate an initial migration (see below) before pointing the app at an
+empty database, or swap the initializer call for `Database.EnsureCreated()`.
 
 ## Common Commands
 

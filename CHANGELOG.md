@@ -18,18 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Yggdrasil compatibility
-- Server root metadata (skin domains, public key signature, server and implementation name/version,
-  feature flags, homepage and register links) and a service status endpoint reporting user, token,
-  and pending-authentication counts.
-- Public encryption keys, exposed under both `/yggdrasil/publickeys` and the
-  `/yggdrasil/minecraftservices/publickeys` alias.
+- Server root metadata at `/yggdrasil` (skin domains, public key signature, server and implementation
+  name/version, feature flags, homepage and register links).
+- A profile public-keys endpoint, exposed under both `/yggdrasil/publickeys` and the
+  `/yggdrasil/minecraftservices/publickeys` alias. It currently returns an empty `profileKeys` list.
 - Profile lookup by username or batch of usernames at `/yggdrasil/api/profiles/minecraft`.
 - Texture payload retrieval by hash at `/yggdrasil/textures/{hash}`.
 - Session server endpoints, served under both the client prefix
   (`/yggdrasil/session/minecraft`) and the server prefix
   (`/yggdrasil/sessionserver/session/minecraft`): blocked-server list, `join`, `hasJoined`, and
   `profile/{uuid}` with signed session profiles.
-- Client-token and remote-IP validation on `join`, plus expiry enforcement for play sessions and
+- Access-token and remote-IP validation on `join`, plus expiry enforcement for play sessions and
   server-join records.
 - `ETag` / `If-None-Match` revalidation (`304 Not Modified`) on the blocked-server list and session
   profile responses.
@@ -42,8 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Two-factor recovery using a backup code, for users who lose their authenticator.
 - Dedicated launcher login flows at `/login/launcher` and `/login/launcher/2fa`.
 - Configurable account lockout (5 attempts per 15 minutes by default).
-- Three interchangeable authentication schemes — **Bearer**, **Basic**, and **Cookie** — all
-  JWT-based and selectable per endpoint, with Bearer as the default challenge scheme.
+- Two interchangeable authentication schemes — **Bearer** and **Basic** — both JWT-based and
+  selectable per endpoint, with Bearer as the default challenge scheme.
 - Public user profile and avatar lookups by user id.
 
 #### User assets
@@ -70,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Persistence
 - Entity Framework Core with selectable **MySQL**, **PostgreSQL**, or **SQLite** providers, including
   MySQL connection resiliency with retry-on-failure.
-- EF Core migrations for schema management.
+- EF Core schema management: startup applies migrations through `DatabaseInitializer`. No migrations are
+  currently committed to the repository.
 - Automatic seeding of the `Default`, `Moderator`, and `Admin` roles with granular permission claims
   on first startup.
 - A background service that cleans up expired logins, play sessions, and server joins hourly, and
@@ -86,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTPS through Kestrel using a certificate-store thumbprint on Windows or a `.pfx` file on
   Linux/macOS, with HTTPS redirection.
 - A restrictive `Content-Security-Policy` response header.
-- Forwarded-headers support for reverse-proxy deployments, and HTTP method override support.
+- Forwarded-headers support for reverse-proxy deployments.
 - Configurable request upload size limit (100 MB by default).
 - Secrets supplied through environment variables via a `.env` file, keeping credentials out of
   `appsettings.json`.
@@ -99,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint metadata and custom response attributes.
 
 #### Engineering
-- A 227-test xUnit v3 suite using FluentAssertions and Moq, covering the controllers and all three
+- A 222-test xUnit v3 suite using FluentAssertions and Moq, covering the controllers and both
   authentication handlers.
 - Continuous integration and a release workflow that publishes source code only — no NuGet packages
   or build artifacts are attached to releases.

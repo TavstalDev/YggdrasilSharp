@@ -8,7 +8,7 @@ using Tavstal.YggdrasilSharp.Services.Database;
 namespace Tavstal.YggdrasilSharp.Services.Authentication;
 
 /// <summary>
-/// Abstract base class for all authentication handlers (Bearer, Basic, Cookie).
+/// Abstract base class for all authentication handlers (Bearer, Basic).
 /// Provides common functionality for user validation, lockout management, and claims creation.
 /// </summary>
 public abstract class AuthenticationHandlerBase : AuthenticationHandler<AuthenticationSchemeOptions>

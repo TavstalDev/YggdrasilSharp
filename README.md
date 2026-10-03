@@ -17,7 +17,7 @@ A lightweight, self-hostable implementation of the Minecraft [Yggdrasil](https:/
 - **Launcher server** – version management and file hosting for custom launchers.
 - **Extras** – news feed, generic file hosting, per-user session management.
 - **Flexible database** – MySQL, PostgreSQL, or SQLite via EF Core.
-- **Multiple auth schemes** – JWT Bearer, Basic, and Cookie.
+- **Multiple auth schemes** – JWT Bearer and Basic, selectable per endpoint.
 - **Security defaults** – per-endpoint rate limiting, CORS policies, HTTPS with certificate support, security headers.
 - **API documentation** – Swagger/OpenAPI at `/docs`.
 

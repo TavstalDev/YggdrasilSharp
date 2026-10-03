@@ -35,8 +35,11 @@ dotnet build YggdrasilSharp.sln
 Run the tests:
 
 ```bash
-dotnet test YggdrasilSharp.sln
+dotnet run --project ./YggdrasilSharp.Tests/YggdrasilSharp.Tests.csproj
 ```
+
+> `dotnet test` does not work for this solution. The suite uses xUnit v3 on Microsoft.Testing.Platform,
+> which the .NET 10 SDK no longer drives through `dotnet test`.
 
 ---
 
