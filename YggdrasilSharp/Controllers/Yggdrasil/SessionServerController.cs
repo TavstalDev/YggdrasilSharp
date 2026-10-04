@@ -59,7 +59,7 @@ public class SessionServerController : CustomControllerBase
         _appConfiguration = appConfiguration;
         _cacheService = cacheService;
     }
-    
+
     /// <summary>
     /// Retrieves the list of blocked servers.
     /// </summary>
@@ -113,7 +113,7 @@ public class SessionServerController : CustomControllerBase
 
             if (!Guid.TryParse(request.SelectedProfile, out Guid uuid))
                 return YigErrorResult(HttpStatusCode.BadRequest, "Invalid uuid was provided.");
-            
+
             string dashedUuid = uuid.ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
@@ -122,8 +122,8 @@ public class SessionServerController : CustomControllerBase
 
             if (!await _userManager.VerifyJwtTokenAsync(request.AccessToken))
                 return YigErrorResult(HttpStatusCode.Unauthorized, "Invalid access token");
-            
-            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.AccessToken);
+
+            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.UserId == user.Id && x.Token == request.AccessToken);
             if (session == null)
                 return YigErrorResult(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");
@@ -186,9 +186,9 @@ public class SessionServerController : CustomControllerBase
             if (user == null)
                 return YigErrorResult(HttpStatusCode.NotFound, "User not found");
 
-            ServerJoin? join = await _serverJoinRepo.FindAsync(x => x.UserId == user.Id && x.ServerId == serverId && 
-                                                                    ( x.UserIp == ip || 
-                                                                      !_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined || 
+            ServerJoin? join = await _serverJoinRepo.FindAsync(x => x.UserId == user.Id && x.ServerId == serverId &&
+                                                                    ( x.UserIp == ip ||
+                                                                      !_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined ||
                                                                       (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
             if (join == null)
                 return YigErrorResult(HttpStatusCode.NotFound,
@@ -232,10 +232,10 @@ public class SessionServerController : CustomControllerBase
 
                 return YigErrorResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
+
             if (!Guid.TryParse(uuid, out Guid guid))
                 return YigErrorResult(HttpStatusCode.BadRequest, "Invalid uuid was provided.");
-            
+
             string dashedUuid = guid.ToString("D");
             CustomUser? user = await UserStore.FindUserByIdAsync(dashedUuid);
             if (user == null)
@@ -261,7 +261,7 @@ public class SessionServerController : CustomControllerBase
             return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Generates or retrieves cached profile JSON for a given user.
     /// The method uses an in-memory cache with different TTLs for signed and unsigned profiles.
@@ -269,7 +269,7 @@ public class SessionServerController : CustomControllerBase
     /// </summary>
     /// <param name="user">The user for whom the profile JSON is being generated.</param>
     /// <param name="unsigned">
-    /// A boolean indicating whether the profile should be unsigned. 
+    /// A boolean indicating whether the profile should be unsigned.
     /// Defaults to true.
     /// </param>
     /// <returns>A JSON string representing the user's profile.</returns>
@@ -277,7 +277,7 @@ public class SessionServerController : CustomControllerBase
     {
         string key = $"profile:{user.Id}:{(unsigned ? "unsigned" : "signed")}";
         TimeSpan ttl = unsigned ? UnsignedTtl : SignedTtl;
-        
+
         if (_cacheService.TryGetValue<string>(key, out var cached))
             return cached!;
 
@@ -365,13 +365,13 @@ public class SessionServerController : CustomControllerBase
                 { "properties", properties }
             };
             string finalJson = JsonHelper.SerializeJson(response);
-            
+
             // Cache the result with absolute expiration
             _cacheService.SetValue(key, finalJson, ttl);
             return finalJson;
         }
         finally
-        {  
+        {
             sem.@lock.Release();
             sem.waits--;
             if (sem.waits <= 0)
