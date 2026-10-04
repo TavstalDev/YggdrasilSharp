@@ -13,7 +13,7 @@ public class YggdrasilConfig
     /// </summary>
     [JsonPropertyName("EnableLegacyAuth")]
     public bool EnableLegacyAuth { get; set; }
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether the request IP is compared against the
     /// play session IP when a client joins a game server.
@@ -33,13 +33,26 @@ public class YggdrasilConfig
     /// </summary>
     [JsonPropertyName("AllowEmptyJoinedAddress")]
     public bool AllowEmptyJoinedAddress { get; set; }
-    
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the AuthController received agent
+    /// is validated against <see cref="Agent"/>. When disabled, any agent is accepted.
+    /// </summary>
+    [JsonPropertyName("EnforceAgent")]
+    public bool EnforceAgent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the user agent accepted by the session server endpoints.
+    /// </summary>
+    [JsonPropertyName("Agent")]
+    public AgentConfig Agent { get; set; }
+
     /// <summary>
     /// Gets or sets the allowed skin domains.
     /// </summary>
     [JsonPropertyName("SkinDomains")]
     public string[] SkinDomains { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the server identifiers that clients are not allowed to join.
     /// Returned verbatim by the session server's <c>blockedservers</c> endpoint.
@@ -131,9 +144,12 @@ public class YggdrasilConfig
     /// <param name="enforceUsernameCheck">Whether username validation is enforced and advertised to authlib-injector.</param>
     /// <param name="homepageUrl">The site homepage URL advertised as meta.links.homepage.</param>
     /// <param name="registerUrl">The registration page URL advertised as meta.links.register.</param>
-    public YggdrasilConfig(bool enforceIpCheckInJoin, bool enforceIpCheckInHasJoined, bool allowEmptyJoinedAddress, string[] blockedServers, string[] skinDomains, string serverName, 
+    /// <param name="enforceAgent">Whether session server requests are validated against the configured agent.</param>
+    /// <param name="agent">The user agent accepted by the session server endpoints.</param>
+    public YggdrasilConfig(bool enforceIpCheckInJoin, bool enforceIpCheckInHasJoined, bool allowEmptyJoinedAddress, string[] blockedServers, string[] skinDomains, string serverName,
         string implementationName, string implementationVersion, bool allowProfileNameLogin = false, int tokenTtlHours = 30, int maxActiveTokensPerUser = 10,
-        bool enableProfileKey = false, bool enforceUsernameCheck = true, string? homepageUrl = null, string? registerUrl = null)
+        bool enableProfileKey = false, bool enforceUsernameCheck = true, string? homepageUrl = null, string? registerUrl = null,
+        bool enforceAgent = false, AgentConfig? agent = null)
     {
         EnforceIpCheckInJoin = enforceIpCheckInJoin;
         EnforceIpCheckInHasJoined = enforceIpCheckInHasJoined;
@@ -150,6 +166,8 @@ public class YggdrasilConfig
         EnforceUsernameCheck = enforceUsernameCheck;
         HomepageUrl = homepageUrl;
         RegisterUrl = registerUrl;
+        EnforceAgent = enforceAgent;
+        Agent = agent ?? new AgentConfig("Minecraft", 1);
     }
 
     /// <summary>
@@ -180,5 +198,7 @@ public class YggdrasilConfig
         ArgumentException.ThrowIfNullOrWhiteSpace(HomepageUrl);
         RegisterUrl = configuration.GetValue<string>(Constants.ConfigurationKeys.YggdrasilRegisterUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(RegisterUrl);
+        EnforceAgent = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceAgent, false);
+        Agent = new AgentConfig(configuration);
     }
 }

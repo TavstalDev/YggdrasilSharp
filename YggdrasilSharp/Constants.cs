@@ -215,6 +215,27 @@ public static class Constants
         public const string YggdrasilAllowEmptyJoinedAddress = "Yggdrasil:AllowEmptyJoinedAddress";
 
         /// <summary>
+        /// Configuration key that controls whether the <c>User-Agent</c> header of session server
+        /// requests is validated against the configured agent. When disabled, any agent is accepted.
+        /// Example: false
+        /// </summary>
+        public const string YggdrasilEnforceAgent = "Yggdrasil:EnforceAgent";
+
+        /// <summary>
+        /// Configuration key for the name of the user agent accepted by the session server endpoints,
+        /// which is the part before the slash in the <c>User-Agent</c> header.
+        /// Example: "Minecraft"
+        /// </summary>
+        public const string YggdrasilAgentName = "Yggdrasil:Agent:Name";
+
+        /// <summary>
+        /// Configuration key for the version of the user agent accepted by the session server endpoints,
+        /// which is the part after the slash in the <c>User-Agent</c> header.
+        /// Example: 1
+        /// </summary>
+        public const string YggdrasilAgentVersion = "Yggdrasil:Agent:Version";
+
+        /// <summary>
         /// Configuration key containing the list of server identifiers that clients are not allowed to join.
         /// Returned verbatim by the session server's <c>blockedservers</c> endpoint.
         /// Example: [ "an-abusive-server.example.com" ]
