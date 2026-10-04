@@ -31,4 +31,11 @@ public class YigLoginResponse
     /// </summary>
     [JsonPropertyName("selectedProfile")]
     public required YigProfileBody SelectedProfile { get; set; }
+
+    /// <summary>
+    /// Gets or sets the user the session was issued for. Optional; clients that do not request
+    /// user details receive a response without this field.
+    /// </summary>
+    [JsonPropertyName("user")]
+    public YigUser? User { get; set; }
 }
