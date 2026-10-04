@@ -33,17 +33,23 @@ public class DatabaseCleanerService : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await CleanupExpiredContentAsync(stoppingToken);
-
-            // If cleanup fails too many times, stop the service to prevent further issues.
-            if (_cleanupFails > 3)
+            switch (_cleanupFails)
             {
-                // TODO: Send email to admin accounts.
-                _logger.LogWarning("Cleanup has failed more than 3 times. Stopping the DatabaseCleanerService to prevent further issues.");
-                break;
+                case > 5:
+                    _logger.LogError("Cleanup has failed more than 5 times. Stopping the cleanup service.");
+                    return;
+                case > 3:
+                    _logger.LogWarning("Cleanup has failed more than 3 times. Waiting for 5 minutes before retrying.");
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    break;
+                case > 0:
+                    _logger.LogWarning("Cleanup has failed. Waiting for 1 minute before retrying.");
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    break;
+                default:
+                    await Task.Delay(_cleanupInterval, stoppingToken);
+                    break;
             }
-            
-            // run every hour
-            await Task.Delay(_cleanupInterval, stoppingToken);
         }
     }
 
@@ -69,10 +75,11 @@ public class DatabaseCleanerService : BackgroundService
             await db.ClearExpiredServerJoinsAsync(cancellationToken: cancellationToken);
 
             await db.SaveChangesAsync(cancellationToken);
+            _cleanupFails = 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Cleanup failed");
+            _logger.LogError(ex, "Cleanup failed.");
             _cleanupFails++;
         }
     }
