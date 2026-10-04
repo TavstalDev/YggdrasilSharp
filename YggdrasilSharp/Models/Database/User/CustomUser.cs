@@ -111,12 +111,12 @@ public sealed class CustomUser : IdentityUser<string>
     /// <summary>
     /// Gets or sets the last update date of the user.
     /// </summary>
-    public DateTimeOffset LastUpdate { get; set; }
+    public DateTimeOffset? LastUpdate { get; set; }
     
     /// <summary>
     /// Gets or sets the last login date of the user.
     /// </summary>
-    public DateTimeOffset LastLogin { get; set; }
+    public DateTimeOffset? LastLogin { get; set; }
 
     #region JSON Ignored Identity Properties
     

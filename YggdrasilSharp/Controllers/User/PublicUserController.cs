@@ -67,7 +67,7 @@ public class PublicUserController : CustomControllerBase
             if (user.Avatar != null && !string.IsNullOrEmpty(_appConfiguration.Misc.ApiUrl))
                 avatarUrl = user.Avatar.GetUrl(_appConfiguration.Misc.ApiUrl);
             
-            return JsonResult(new UserInfoResponse()
+            return JsonResult(new UserInfoResponse
             {
                 UserId = user.Id,
                 AvatarUrl = avatarUrl,

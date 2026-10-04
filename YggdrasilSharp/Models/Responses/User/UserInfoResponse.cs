@@ -41,5 +41,5 @@ public class UserInfoResponse
     /// Gets or sets the date and time at which the user account was last updated.
     /// </summary>
     [JsonPropertyName("LastUpdate")]
-    public DateTimeOffset LastUpdate { get; set; }
+    public DateTimeOffset? LastUpdate { get; set; }
 }
