@@ -62,9 +62,12 @@ public class EmailConfig
     public EmailConfig(IConfiguration configuration)
     {
         Provider = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.EmailProvider);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Provider);
         Port = configuration.GetValue(Constants.ConfigurationKeys.EmailPort, 587); 
         Timeout = configuration.GetValue(Constants.ConfigurationKeys.EmailTimeout, 12000);
         Address = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailAddress); 
+        ArgumentException.ThrowIfNullOrWhiteSpace(Address);
         Password = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.EmailPassword);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Password);
     }
 }

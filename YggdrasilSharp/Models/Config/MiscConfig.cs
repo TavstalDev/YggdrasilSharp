@@ -38,6 +38,8 @@ public class MiscConfig
     public MiscConfig(IConfiguration configuration)
     {
         WebsiteUrl = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.RuntimeWebsiteUrl); 
+        ArgumentException.ThrowIfNullOrWhiteSpace(WebsiteUrl);
         ApiUrl = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.RuntimeApiUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ApiUrl);
     }
 }

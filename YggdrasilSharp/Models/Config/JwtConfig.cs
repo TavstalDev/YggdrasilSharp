@@ -89,12 +89,20 @@ public class JwtConfig
     /// <exception cref="ArgumentNullException">Thrown if a required JWT configuration value is missing.</exception>
     public JwtConfig(IConfiguration configuration)
     {
-        EncryptionKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey));
-        FingerprintKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.FingerprintSigningKey));
-        TwoFactorEncryptionKey = Encoding.UTF8.GetBytes(AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.TwoFactorEncryptionKey));
+        string key = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.JwtEncryptionKey);
+        EncryptionKey = Encoding.UTF8.GetBytes(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        key = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.FingerprintSigningKey);
+        FingerprintKey = Encoding.UTF8.GetBytes(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        key = AppConfiguration.GetString(configuration, Constants.EnvironmentKeys.TwoFactorEncryptionKey);
+        TwoFactorEncryptionKey = Encoding.UTF8.GetBytes(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
         
         Issuer = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtIssuer);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Issuer);
         Audience = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.JwtAudience);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Audience);
         ClockSkew = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtClockSkew, 5));
         LockoutMaxAttempts = configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutMaxAttempts, 5);
         LockoutDuration = TimeSpan.FromSeconds(configuration.GetValue(Constants.ConfigurationKeys.JwtLockoutDuration, 900)); 

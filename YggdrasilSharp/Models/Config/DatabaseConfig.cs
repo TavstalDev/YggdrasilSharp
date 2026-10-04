@@ -48,7 +48,10 @@ public class DatabaseConfig
     public DatabaseConfig(IConfiguration configuration)
     {
         Provider = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseProvider);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Provider);
         Version = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseVersion);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Version);
         ConnectionString = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.DatabaseConnectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ConnectionString);
     }
 }

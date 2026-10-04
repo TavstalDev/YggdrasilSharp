@@ -83,11 +83,18 @@ public class SwaggerConfig
     public SwaggerConfig(IConfiguration configuration)
     {
         Name = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
         Description = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerDescription);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Description);
         Version = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerVersion);
+        ArgumentException.ThrowIfNullOrWhiteSpace(Version);
         ContactName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ContactName);
         ContactLink = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerContactLink);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ContactLink);
         LicenseName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(LicenseName);
         LicenseLink = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.SwaggerLicenseLink);
+        ArgumentException.ThrowIfNullOrWhiteSpace(LicenseLink);
     }
 }

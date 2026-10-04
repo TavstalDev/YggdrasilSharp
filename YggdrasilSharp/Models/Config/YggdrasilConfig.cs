@@ -166,14 +166,19 @@ public class YggdrasilConfig
         BlockedServers = configuration.GetSection(Constants.ConfigurationKeys.YggdrasilBlockedServers).Get<string[]>() ?? [];
         SkinDomains = configuration.GetSection(Constants.ConfigurationKeys.YggdrasilSkinDomains).Get<string[]>() ?? throw new InvalidOperationException(Constants.ConfigurationKeys.YggdrasilSkinDomains);
         ServerName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilServerName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ServerName);
         ImplementationName = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilImplementationName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ImplementationName);
         ImplementationVersion = AppConfiguration.GetString(configuration, Constants.ConfigurationKeys.YggdrasilImplementationVersion);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ImplementationVersion);
         AllowProfileNameLogin = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilAllowProfileNameLogin, false);
         TokenTtlHours = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilTokenTtlHours, 30);
         MaxActiveTokensPerUser = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilMaxActiveTokensPerUser, 10);
         EnableProfileKey = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnableProfileKey, false);
         EnforceUsernameCheck = configuration.GetValue(Constants.ConfigurationKeys.YggdrasilEnforceUsernameCheck, true);
         HomepageUrl = configuration.GetValue<string>(Constants.ConfigurationKeys.YggdrasilHomepageUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(HomepageUrl);
         RegisterUrl = configuration.GetValue<string>(Constants.ConfigurationKeys.YggdrasilRegisterUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(RegisterUrl);
     }
 }
