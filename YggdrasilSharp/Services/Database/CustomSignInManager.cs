@@ -20,7 +20,7 @@ public class CustomSignInManager
     private readonly AppConfiguration _appConfiguration;
     private readonly TimeSpan _regularLogin = TimeSpan.FromHours(1);
     private readonly TimeSpan _rememberMeLogin = TimeSpan.FromDays(7);
-    
+
     /// <summary>
     /// Creates a new instance of <see cref="CustomSignInManager"/>.
     /// </summary>
@@ -31,7 +31,7 @@ public class CustomSignInManager
     /// <param name="appConfiguration">Application settings (lockout thresholds, durations).</param>
     public CustomSignInManager(CustomUserStore userStore, CustomUserManager userManager, IPasswordHasher<CustomUser> passwordHasher, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration)
     {
-         _userStore = userStore; 
+         _userStore = userStore;
          _userManager = userManager;
          _passwordHasher = passwordHasher;
          _memoryCacheService = memoryCacheService;
@@ -56,7 +56,7 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Invalid credentials."
             };
-        
+
         return await SignInAsync(user, password, rememberMe, httpContext);
     }
 
@@ -79,7 +79,7 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Invalid credentials."
             };
-        
+
         return await SignInAsync(user, password, rememberMe, httpContext);
     }
 
@@ -143,7 +143,7 @@ public class CustomSignInManager
                 user.SecurityStamp = Guid.NewGuid().ToString();
                 break;
         }
-        
+
         if (user.TwoFactorEnabled)
         {
             string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
@@ -152,7 +152,7 @@ public class CustomSignInManager
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa:token", sessionToken, tokenExpiry);
             user.AccessFailedCount = 0;
             await _userStore.UpdateUserAsync(user, true);
-            
+
             return new SignInResult
             {
                 Succeeded = false,
@@ -163,7 +163,7 @@ public class CustomSignInManager
                 Message = "Two-factor authentication required."
             };
         }
-        
+
         var lifeSpan = rememberMe ? _rememberMeLogin : _regularLogin;
         DateTimeOffset expireDate = DateTimeOffset.UtcNow.Add(lifeSpan);
         var userToken = await _userStore.UserTokens.AddAsync(
@@ -174,14 +174,14 @@ public class CustomSignInManager
                 "Default",
                 DateTimeOffset.UtcNow
             ), true);
-        
+
         string ipv4 = httpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
         string ipv6 = httpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
         string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
         string browser = HttpHelper.GetBrowser(userAgent);
         IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-        
+
         var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "Default",
             "Default", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
 
@@ -197,7 +197,7 @@ public class CustomSignInManager
             Message = "Sign-in successful."
         };
     }
-    
+
     /// <summary>
     /// Complete a two-factor sign-in flow for a user that previously initiated TFA.
     /// </summary>
@@ -214,21 +214,21 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Two-factor authentication is not enabled for this account."
             };
-        
+
         if (!user.EmailConfirmed)
             return new SignInResult
             {
                 Succeeded = false,
                 Message = "Email address is not confirmed."
             };
-        
+
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
             return new SignInResult
             {
                 Succeeded = false,
                 Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
             };
-        
+
         string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa:token";
         if (!_memoryCacheService.TryGetValue<string>(tokenKey, out _))
@@ -238,7 +238,7 @@ public class CustomSignInManager
                 RequiresTwoFactor = false,
                 Message = "Session token expired."
             };
-            
+
         if (!_userManager.VerifyTwoFactorCode(user, code))
         {
             user.AccessFailedCount++;
@@ -256,8 +256,8 @@ public class CustomSignInManager
                 Message = "Invalid two-factor code."
             };
         }
-        
-        
+
+
         var lifeSpan = rememberMe ? _rememberMeLogin : _regularLogin;
         DateTimeOffset expireDate = DateTimeOffset.UtcNow.Add(lifeSpan);
         var userToken = await _userStore.UserTokens.AddAsync(
@@ -268,23 +268,23 @@ public class CustomSignInManager
                 "Default",
                 DateTimeOffset.UtcNow
             ), true);
-        
+
         string ipv4 = httpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "127.0.0.1";
         string ipv6 = httpContext.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "::1";
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
         string operatingSystem = HttpHelper.GetOperatingSystem(userAgent);
         string browser = HttpHelper.GetBrowser(userAgent);
         IpInfo ipInfo = await DatabaseHelper.GetIpInformation(ipv4);
-        
+
         var userLogin = await _userStore.UserLogins.AddAsync(new CustomUserLogin(user.Id, userToken.Id, "Default",
             "Default", ipv4, ipv6, ipInfo, operatingSystem, browser, DateTimeOffset.UtcNow, expireDate), true);
-        
+
         user.AccessFailedCount = 0;
         user.LockoutEnabled = false;
         await _userStore.UpdateUserAsync(user, true);
-        
+
         _memoryCacheService.RemoveValue(tokenKey);
-        
+
         return new SignInResult
         {
             Succeeded = true,
@@ -294,8 +294,8 @@ public class CustomSignInManager
             Message = "Sign-in successful."
         };
     }
-    
-    
+
+
     /// <summary>
     /// Sign in specifically for the desktop launcher flow (returns a play session token).
     /// This flow is similar to <see cref="SignInAsync"/> but creates a shorter-lived play session record
@@ -303,9 +303,10 @@ public class CustomSignInManager
     /// </summary>
     /// <param name="username">Username provided by the launcher.</param>
     /// <param name="password">Password provided by the launcher.</param>
+    /// <param name="clientId">Client id provided by the launcher.</param>
     /// <param name="httpContext">HttpContext used to extract host for play session recording.</param>
     /// <returns>A <see cref="LauncherSignInResult"/> indicating success/failure and containing the play session record.</returns>
-    public async Task<LauncherSignInResult> LauncherSignInAsync(string username, string password, HttpContext httpContext)
+    public async Task<LauncherSignInResult> LauncherSignInAsync(string username, string password, string? clientId, HttpContext httpContext)
     {
         string normalizedUsername = username.Normalize();
         CustomUser? user = await _userStore.FindUserAsync(x => x.NormalizedUserName == normalizedUsername);
@@ -315,14 +316,14 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Invalid credentials."
             };
-        
+
         if (!user.EmailConfirmed)
             return new LauncherSignInResult
             {
                 Succeeded = false,
                 Message = "Email address is not confirmed."
             };
-        
+
         if (user.LockoutEnabled)
         {
             if (user.LockoutEnd > DateTimeOffset.UtcNow)
@@ -336,7 +337,7 @@ public class CustomSignInManager
             user.AccessFailedCount = 0;
             await _userStore.UpdateUserAsync(user, true);
         }
-        
+
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         switch (result)
         {
@@ -359,7 +360,7 @@ public class CustomSignInManager
                 user.SecurityStamp = Guid.NewGuid().ToString();
                 break;
         }
-        
+
         if (user.TwoFactorEnabled)
         {
             string sessionToken = TokenHelper.GenerateTwoFactorSessionToken();
@@ -368,7 +369,7 @@ public class CustomSignInManager
             _memoryCacheService.SetValue($"auth:{fingerprint}:tfa-launcher:token", sessionToken, tokenExpiry);
             user.AccessFailedCount = 0;
             await _userStore.UpdateUserAsync(user, true);
-            
+
             return new LauncherSignInResult
             {
                 Succeeded = false,
@@ -379,12 +380,13 @@ public class CustomSignInManager
                 Message = "Two-factor authentication required."
             };
         }
-        
+
         string host = HttpHelper.GetClientIp(httpContext) ?? "";
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,
             UserIp = host,
+            ClientId = clientId,
             Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
             CreatedAt =  DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
@@ -394,7 +396,7 @@ public class CustomSignInManager
         user.LockoutEnabled = false;
         await _userStore.UpdateUserAsync(user, true);
         await CheckPlaySessionsAsync(user, _appConfiguration.Yggdrasil.MaxActiveTokensPerUser);
-        
+
         return new LauncherSignInResult
         {
             Succeeded = true,
@@ -403,16 +405,17 @@ public class CustomSignInManager
             Message = "Sign-in successful."
         };
     }
-    
+
     /// <summary>
     /// Complete two-factor authentication for the launcher play session flow.
     /// This mirrors <see cref="TwoFactorSignInAsync"/> but uses the launcher-specific cache keys and returns a launcher result type.
     /// </summary>
     /// <param name="user">The user who is completing TFA.</param>
     /// <param name="code">The verification code supplied by the client.</param>
+    /// <param name="clientId">Client id provided by the launcher.</param>
     /// <param name="httpContext">HttpContext for host extraction.</param>
     /// <returns>A <see cref="LauncherSignInResult"/>.</returns>
-    public async Task<LauncherSignInResult> LauncherTwoFactorSignInAsync(CustomUser user, string code, HttpContext httpContext)
+    public async Task<LauncherSignInResult> LauncherTwoFactorSignInAsync(CustomUser user, string code, string? clientId, HttpContext httpContext)
     {
         if (!user.TwoFactorEnabled)
             return new LauncherSignInResult
@@ -420,14 +423,14 @@ public class CustomSignInManager
                 Succeeded = false,
                 Message = "Two-factor authentication is not enabled for this account."
             };
-        
+
         if (user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow)
             return new LauncherSignInResult
             {
                 Succeeded = false,
                 Message = $"Account locked until {user.LockoutEnd:u}. Reason: {user.LockoutReason}"
             };
-        
+
         string fingerprint = _userManager.GetMachineFingerprint(httpContext, user.Id);
         string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
         if (!_memoryCacheService.TryGetValue<string>(tokenKey, out _))
@@ -437,7 +440,7 @@ public class CustomSignInManager
                 RequiresTwoFactor = false,
                 Message = "Session token expired."
             };
-            
+
         if (!_userManager.VerifyTwoFactorCode(user, code))
         {
             user.AccessFailedCount++;
@@ -455,25 +458,26 @@ public class CustomSignInManager
                 Message = "Invalid two-factor code."
             };
         }
-        
+
         user.AccessFailedCount = 0;
         user.LockoutEnabled = false;
         await _userStore.UpdateUserAsync(user, true);
-        
+
         string host = HttpHelper.GetClientIp(httpContext) ?? "";
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,
             UserIp = host,
+            ClientId = clientId,
             Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
             CreatedAt =  DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
         }, true);
-        
+
         _memoryCacheService.RemoveValue(tokenKey);
 
         await CheckPlaySessionsAsync(user, _appConfiguration.Yggdrasil.MaxActiveTokensPerUser);
-        
+
         return new LauncherSignInResult
         {
             Succeeded = true,
@@ -500,7 +504,7 @@ public class CustomSignInManager
         await _userStore.UserTokens.RemoveAsync(userToken, true);
         return true;
     }
-    
+
     /// <summary>
     /// Remove a launcher play session based on the play session token.
     /// </summary>
@@ -514,6 +518,32 @@ public class CustomSignInManager
 
         await _userStore.UserPlaySessions.RemoveAsync(playSession);
         return true;
+    }
+
+    /// <summary>
+    /// Exchanges an active play session token for a freshly issued one, carrying over the session's user, IP and client.
+    /// The previous session token is not revoked by this operation.
+    /// </summary>
+    /// <param name="token">The play session token to refresh.</param>
+    /// <returns>The newly created play session, or null when the token is unknown or expired.</returns>
+    public async Task<UserPlaySession?> RefreshPlaySessionToken(string token)
+    {
+        UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == token);
+        if (playSession == null)
+            return null;
+
+        if (playSession.ExpiresAt < DateTimeOffset.UtcNow)
+            return null;
+
+        return await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+        {
+            UserId = playSession.UserId,
+            UserIp = playSession.UserIp,
+            ClientId = playSession.ClientId,
+            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours),
+        }, true);
     }
 
     private async Task CheckPlaySessionsAsync(CustomUser user, int toKeep = 10)
@@ -534,7 +564,7 @@ public class CustomSignInManager
                 sessionsToRemove.Add(session);
                 continue;
             }
-            
+
             shouldKeepCount++;
         }
 
