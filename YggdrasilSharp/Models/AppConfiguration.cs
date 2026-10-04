@@ -76,7 +76,9 @@ public class AppConfiguration
     {
         AllowedUsernameCharacters = configuration.GetValue<string>(Constants.ConfigurationKeys.AllowedUsernameCharacters) ?? throw new InvalidOperationException(Constants.ConfigurationKeys.AllowedUsernameCharacters);
         CertificateFingerprint = GetString(configuration, Constants.EnvironmentKeys.CertificateFingerprint);
+        ArgumentException.ThrowIfNullOrWhiteSpace(CertificateFingerprint);
         CertificatePassword = GetString(configuration, Constants.EnvironmentKeys.CertificatePassword);
+        ArgumentException.ThrowIfNullOrWhiteSpace(CertificatePassword);
 
         Proxy = new ProxyConfig(configuration);
         Database = new  DatabaseConfig(configuration);
