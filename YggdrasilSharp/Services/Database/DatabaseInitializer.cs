@@ -26,7 +26,7 @@ public static class DatabaseInitializer
     {
         // Ensures the database is created.
         await context.Database.MigrateAsync(cancellationToken);
-        
+
         // Checks if roles are empty and adds default roles.
         var roles = await userStore.Roles.QueryAsync(null, cancellationToken);
         if (!roles.Any())
@@ -38,7 +38,7 @@ public static class DatabaseInitializer
             ], true, cancellationToken);
 
             Dictionary<string, CustomRole> roleCache = new();
-                 
+
             // Adds claims to roles based on predefined role claims.
             foreach (var roleClaims in CustomRoleClaims.Claims)
             {
@@ -54,13 +54,14 @@ public static class DatabaseInitializer
             }
             await context.SaveChangesAsync(cancellationToken);
         }
-        
+
         var hasBeenUsersSetup = await userStore.ExistsUserAsync(x => x.EmailConfirmed, cancellationToken);
         if (!hasBeenUsersSetup)
         {
             string adminUsername = configuration[Constants.EnvironmentKeys.AdminUsername] ?? "admin";
             string adminEmail = configuration[Constants.EnvironmentKeys.AdminEmail] ?? "admin@localhost";
-            string adminPassword = configuration[Constants.EnvironmentKeys.AdminPassword] ?? "admin";
+            string? adminPassword = configuration[Constants.EnvironmentKeys.AdminPassword];
+            ArgumentException.ThrowIfNullOrWhiteSpace(adminPassword);
             var user = await userStore.FindUserAsync(x => x.NormalizedUserName == adminUsername.Normalize(), cancellationToken);
             if (user == null)
             {
