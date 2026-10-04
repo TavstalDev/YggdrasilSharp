@@ -29,7 +29,7 @@ namespace Tavstal.YggdrasilSharp;
 
 /// <summary>
 /// Entry point for the API application.
-/// 
+///
 /// This static class is responsible for:
 /// <br/>- Bootstrapping the application with logging and configuration
 /// <br/>- Orchestrating the setup of services, middleware, database, and Kestrel server
@@ -50,37 +50,37 @@ public static class Program
     /// Logger instance for recording startup and runtime events.
     /// </summary>
     private static ILogger? _logger;
-    
+
     private static AppConfiguration? _settings;
-    
+
     /// <summary>
     /// Indicates whether the application is running in Development environment.
     /// </summary>
     internal static bool IsDevelopment { get; set; }
-    
+
     /// <summary>
     /// Gets the content root path of the application (typically the project root directory).
     /// </summary>
     public static string ContentRoot { get; private set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets the directory path where user-uploaded files are stored.
     /// </summary>
     internal static string UploadDir { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Main entry point of the application.
     /// </summary>
     /// <param name="args">Command-line arguments passed to the application.</param>
     /// <returns>A task that represents the asynchronous lifetime of the running web application.</returns>
-    public static async Task Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         try
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             using var bootstrapFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = bootstrapFactory.CreateLogger("Program");
-            
+
             var builder = WebApplication.CreateBuilder(args);
             // 1. Load configuration
             ConfigureAppConfiguration(builder);
@@ -88,19 +88,20 @@ public static class Program
             ConfigureKestrel(builder);
             // 3. Add Services (Equivalent to Startup.ConfigureServices)
             ConfigureServices(builder);
-            
+
             // 4. Build the app
             var app = builder.Build();
 
             // 5. Configure the database
             if (!await InitializeDatabaseAsync(app))
-                return;
-            
+                return 1;
+
             // 6. Configure Middleware (Equivalent to Startup.Configure)
             ConfigureMiddleware(app);
 
             using var cts = new CancellationTokenSource();
             await app.RunAsync(cts.Token);
+            return 0;
         }
         catch (Exception ex)
         {
@@ -108,7 +109,7 @@ public static class Program
             throw;
         }
     }
-    
+
     /// <summary>
     /// Configures the application configuration by loading environment variables from a .env file.
     /// </summary>
@@ -125,8 +126,8 @@ public static class Program
 
         // IMPORTANT: Re-add environment variables to pick up what EnvLoader just set
         builder.Configuration.AddEnvironmentVariables();
-        
-        UploadDir = Path.Combine(builder.Environment.WebRootPath, builder.Configuration.GetValue<string>(Constants.ConfigurationKeys.RuntimeUploadDir) ?? "uploads");
+
+        UploadDir = Path.Combine(ContentRoot, builder.Configuration.GetValue<string>(Constants.ConfigurationKeys.RuntimeUploadDir) ?? "wwwuploads");
         if (!Directory.Exists(UploadDir))
             Directory.CreateDirectory(UploadDir);
     }
@@ -147,14 +148,14 @@ public static class Program
         var services = builder.Services;
         var configuration = builder.Configuration;
         _settings = new AppConfiguration(configuration);
-        
+
         #region Database
         // Configure identity options
         services.Configure<IdentityOptions>(x =>
         {
             x.User.AllowedUserNameCharacters = _settings.AllowedUsernameCharacters;
         });
-            
+
         string connectionString = _settings.Database.ConnectionString;
         if (string.IsNullOrEmpty(connectionString))
             throw new InvalidOperationException("Connection string is missing from the configuration.");
@@ -166,19 +167,19 @@ public static class Program
         string databaseProvider = _settings.Database.Provider;
         if (string.IsNullOrEmpty(databaseProvider))
             throw new InvalidOperationException("Database Provider is missing from the configuration.");
-        
-        
+
+
         string? databaseVersion = configuration.GetValue<string>(Constants.ConfigurationKeys.DatabaseVersion);
         if (string.IsNullOrEmpty(databaseVersion) || !Version.TryParse(databaseVersion, out Version? dbVersion))
             throw new  InvalidOperationException("Database Version is missing from the configuration.");
-        
+
         // Configure the database context
         services.AddDbContext<CustomDbContext>(options =>
         {
             switch (databaseProvider.ToLower())
             {
                 case "postgresql":
-                    options.UseNpgsql(connectionString, optionsBuilder => 
+                    options.UseNpgsql(connectionString, optionsBuilder =>
                         optionsBuilder.EnableRetryOnFailure());
                     break;
                 case "sqlite":
@@ -279,7 +280,7 @@ public static class Program
         // Configure form options
         int bodyLengthLimit = configuration.GetValue(Constants.ConfigurationKeys.RateLimitingUploadLimit, 100);
         services.Configure<FormOptions>(options => { options.MultipartBodyLengthLimit = 1024 * 1024 * bodyLengthLimit; });
-            
+
         #region Cors
         // Retrieve the CORS configuration section from the application configuration
         var corsDefault = configuration.GetSection("CORS:Default");
@@ -359,7 +360,7 @@ public static class Program
                     return $"user:{userId}";
                 return $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
             }
-            
+
             // Fixed Window
             foreach (var ruleEntry in rules.FixedWindow)
             {
@@ -374,7 +375,7 @@ public static class Program
                         QueueProcessingOrder = rule.ProcessingOrder,
                     }));
             }
-            
+
             // Sliding Window
             foreach (var ruleEntry in rules.SlidingWindow)
             {
@@ -390,7 +391,7 @@ public static class Program
                         SegmentsPerWindow = rule.SegmentsPerWindow,
                     }));
             }
-            
+
             // Concurrent
             foreach (var ruleEntry in rules.Concurrent)
             {
@@ -403,7 +404,7 @@ public static class Program
                         QueueProcessingOrder = rule.ProcessingOrder,
                     }));
             }
-            
+
             // Token Bucket
             foreach (var ruleEntry in rules.TokenBucket)
             {
@@ -456,9 +457,9 @@ public static class Program
                         // On Unix/Linux, treat thumbprint as a file path to the certificate
                         certificate = GetCertificateFromFile(thumbprint, password!);
                 }
-                else 
+                else
                     _logger?.LogWarning("No certificate configured. Server will listen on HTTP only.");
-                
+
                 serverOptions.ListenAnyIP(port, listenOptions =>
                 {
                     if (certificate != null)
@@ -472,7 +473,7 @@ public static class Program
         });
     }
 
-    
+
     /// <summary>
     /// Configures the ASP.NET Core middleware pipeline.
     /// The middleware pipeline order:
@@ -495,9 +496,7 @@ public static class Program
             _logger?.LogCritical("The configuration was not ready at middleware setup.");
             return;
         }
-        
-        app.UseHttpsRedirection();
-        
+
         if (_settings.Proxy.Enabled)
         {
             ForwardedHeadersOptions options = new ForwardedHeadersOptions
@@ -524,11 +523,13 @@ public static class Program
 
             app.UseForwardedHeaders(options);
         }
-        
+
+        app.UseHttpsRedirection();
+
         // Use developer exception page
         if (IsDevelopment)
             app.UseDeveloperExceptionPage();
-        
+
         app.Use(async (context, next) =>
         {
             // Access the current standard Trace ID
@@ -543,19 +544,21 @@ public static class Program
                 await next();
             }
         });
-        
+
         // Use Swagger for API documentation
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
+        if (IsDevelopment)
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings.Swagger.Name} v1");
-            c.RoutePrefix = "docs";
-        });
-        
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", $"{_settings.Swagger.Name} v1");
+                c.RoutePrefix = "docs";
+            });
+        }
+
         app.UseStaticFiles();
-        
         app.UseRouting();
-        
+
         // Configure CORS.
         app.UseCors("Default");
         app.Use(async (context, next) =>
@@ -563,16 +566,15 @@ public static class Program
             context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none';");
             await next();
         });
-        
-        app.UseRateLimiter();
 
         app.UseSession();
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseRateLimiter();
         app.MapControllers().RequireRateLimiting(RateLimits.DEFAULT);
     }
-    
+
     /// <summary>
     /// Initializes the application's database.
     /// </summary>
@@ -597,7 +599,7 @@ public static class Program
             return false;
         }
     }
-    
+
     /// <summary>
     /// Retrieves an X509 certificate based on the operating system platform.
     /// </summary>
@@ -619,7 +621,7 @@ public static class Program
 
         throw new PlatformNotSupportedException("Unsupported operating system platform.");
     }
-    
+
     /// <summary>
     /// Retrieves an X509 certificate from the current user's certificate store using its thumbprint.
     /// </summary>
@@ -633,15 +635,15 @@ public static class Program
     {
         using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
         store.Open(OpenFlags.ReadOnly);
-    
+
         var certs = store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, validOnly: false);
-    
-        if (certs.Count == 0) 
+
+        if (certs.Count == 0)
             throw new Exception("Certificate not found!");
-    
+
         return certs[0];
     }
-    
+
     /// <summary>
     /// Retrieves an X509 certificate from a file on the file system (Unix/Linux/macOS compatible).
     /// </summary>
@@ -655,7 +657,7 @@ public static class Program
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException("Certificate file not found.", filePath);
-        
+
         return X509CertificateLoader.LoadPkcs12FromFile(filePath, password);
     }
 }
