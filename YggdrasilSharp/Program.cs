@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -528,6 +529,21 @@ public static class Program
         if (IsDevelopment)
             app.UseDeveloperExceptionPage();
         
+        app.Use(async (context, next) =>
+        {
+            // Access the current standard Trace ID
+            var traceId = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
+
+            // Attach to response headers so clients can reference it
+            context.Response.Headers["X-Correlation-ID"] = traceId;
+
+            // Push into Serilog/NLog logging scope
+            using (_logger?.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = traceId }))
+            {
+                await next();
+            }
+        });
+        
         // Use Swagger for API documentation
         app.UseSwagger();
         app.UseSwaggerUI(c =>
@@ -568,9 +584,11 @@ public static class Program
 
         try
         {
+            var configuration =  services.GetRequiredService<IConfiguration>();
             var database = services.GetRequiredService<CustomDbContext>();
             var userStore = services.GetRequiredService<CustomUserStore>();
-            await DatabaseInitializer.InitializeAsync(database, userStore);
+            var passwordHasher = services.GetRequiredService<IPasswordHasher<CustomUser>>();
+            await DatabaseInitializer.InitializeAsync(database, userStore, passwordHasher, configuration);
             return true;
         }
         catch (Exception ex)

@@ -380,5 +380,24 @@ public static class Constants
         /// This value is required when loading certificates from encrypted PFX/PKCS#12 files.
         /// </summary>
         public const string CertificatePassword = "CERTIFICATE_PASSWORD";
+        
+        /// <summary>
+        /// Environment/config key for the username of the administrator account seeded on first startup.
+        /// Example: "admin"
+        /// </summary>
+        public const string AdminUsername = "ADMIN_USERNAME";
+        
+        /// <summary>
+        /// Environment/config key for the email address of the administrator account seeded on first startup.
+        /// Example: "admin@localhost"
+        /// </summary>
+        public const string AdminEmail = "ADMIN_EMAIL";
+        
+        /// <summary>
+        /// Environment/config key for the password of the administrator account seeded on first startup.
+        /// This value must be kept secret.
+        /// Example: "admin"
+        /// </summary>
+        public const string AdminPassword = "ADMIN_PASSWORD";
     }
 }
