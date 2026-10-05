@@ -83,6 +83,11 @@ public class RegisterController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
+            var allowedSet = new HashSet<char>(AppConfiguration.AllowedUsernameCharacters);
+            char invalidChar = request.Username.FirstOrDefault(c => !allowedSet.Contains(c));
+            if (invalidChar != 0)
+                return JsonResult(HttpStatusCode.BadRequest, $"Invalid character in username '{invalidChar}'.");
+
             if (await _userManager.IsCompromisedPasswordAsync(request.Password))
                 return JsonResult(HttpStatusCode.Forbidden, "Password is compromised.");
 
