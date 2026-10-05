@@ -303,6 +303,8 @@ public static class Program
                 options.Cookie.HttpOnly = true;
                 // Mark the session cookie as essential
                 options.Cookie.IsEssential = true;
+                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             })
             // Add CORS services with specified options
             .AddCors(options =>
@@ -333,6 +335,12 @@ public static class Program
         services.Configure<IdentityOptions>(options => options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
         // Add HTTP client factory for making HTTP requests
         services.AddHttpClient();
+        services.AddProblemDetails();
+        var healthChecks = services.AddHealthChecks();
+        healthChecks.AddDbContextCheck<CustomDbContext>(
+            name: "database",
+            tags: ["db", "ready"]
+        );
         // Add memory caching services
         services.AddMemoryCache();
         services.AddSingleton<MemoryCacheService>();
@@ -456,6 +464,9 @@ public static class Program
                              RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                         // On Unix/Linux, treat thumbprint as a file path to the certificate
                         certificate = GetCertificateFromFile(thumbprint, password!);
+
+                    if (certificate == null)
+                        throw new Exception("Failed to load certificate.");
                 }
                 else
                     _logger?.LogWarning("No certificate configured. Server will listen on HTTP only.");
@@ -476,17 +487,6 @@ public static class Program
 
     /// <summary>
     /// Configures the ASP.NET Core middleware pipeline.
-    /// The middleware pipeline order:
-    /// <br/>1. Error handling (Developer exception page in Development)
-    /// <br/>2. API documentation (Swagger)
-    /// <br/>3. HTTPS redirection
-    /// <br/>4. Static file serving
-    /// <br/>5. CORS handling
-    /// <br/>6. Routing
-    /// <br/>7. Session management
-    /// <br/>8. Authentication and Authorization
-    /// <br/>9. Forwarded headers processing
-    /// <br/>10. Endpoint mapping with rate limiting
     /// </summary>
     /// <param name="app">The WebApplication instance to configure.</param>
     private static void ConfigureMiddleware(WebApplication app)
@@ -497,6 +497,11 @@ public static class Program
             return;
         }
 
+        // 1. EXCEPTION HANDLING
+        if (IsDevelopment)
+            app.UseDeveloperExceptionPage();
+
+        // 2. FORWARDED HEADERS
         if (_settings.Proxy.Enabled)
         {
             ForwardedHeadersOptions options = new ForwardedHeadersOptions
@@ -524,12 +529,7 @@ public static class Program
             app.UseForwardedHeaders(options);
         }
 
-        app.UseHttpsRedirection();
-
-        // Use developer exception page
-        if (IsDevelopment)
-            app.UseDeveloperExceptionPage();
-
+        // 3. CORRELATION ID / LOGGING SCOPE
         app.Use(async (context, next) =>
         {
             // Access the current standard Trace ID
@@ -545,7 +545,23 @@ public static class Program
             }
         });
 
-        // Use Swagger for API documentation
+        // 4. SECURITY HEADERS & REDIRECTION
+        if (!IsDevelopment)
+            app.UseHsts();
+
+        app.UseHttpsRedirection();
+
+        // Custom Security Headers
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.Append("Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; object-src 'none';");
+            await next();
+        });
+
+        // 5. STATIC FILES & SWAGGER
+        app.UseStaticFiles();
+
         if (IsDevelopment)
         {
             app.UseSwagger();
@@ -556,22 +572,20 @@ public static class Program
             });
         }
 
-        app.UseStaticFiles();
+        // 6. ROUTING
         app.UseRouting();
 
-        // Configure CORS.
+        // 7. CORS
         app.UseCors("Default");
-        app.Use(async (context, next) =>
-        {
-            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none';");
-            await next();
-        });
 
-        app.UseSession();
+        // 8. AUTHENTICATION, SESSION & AUTHORIZATION
         app.UseAuthentication();
         app.UseAuthorization();
+        //app.UseSession();
 
+        // 9. RATE LIMITING & ENDPOINTS
         app.UseRateLimiter();
+        app.MapHealthChecks("/health");
         app.MapControllers().RequireRateLimiting(RateLimits.DEFAULT);
     }
 
