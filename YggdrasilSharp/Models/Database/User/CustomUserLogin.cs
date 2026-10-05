@@ -20,90 +20,90 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public ulong Id { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the user ID associated with the login.
     /// </summary>
     [StringLength(36)]
     public override string UserId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the key provided by the login provider.
     /// This property is ignored during JSON serialization.
     /// </summary>
-    [StringLength(255)]
+    [StringLength(36)]
     [JsonIgnore]
     public override string ProviderKey { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the display name of the login provider.
     /// </summary>
     [StringLength(32)]
     public override string? ProviderDisplayName { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the login provider name.
     /// </summary>
     [StringLength(64)]
     public override string LoginProvider { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IPv4 address of the user during login.
     /// </summary>
     [StringLength(15)]
     public string? IPv4Address { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IPv6 address of the user during login.
     /// </summary>
     [StringLength(40)]
     public string? IPv6Address { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the country of the user during login.
     /// </summary>
     [StringLength(256)]
     public string? Country { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the city of the user during login.
     /// </summary>
     [StringLength(256)]
     public string? City { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the region of the user during login.
     /// </summary>
     [StringLength(256)]
     public string? Region { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the operating system of the user during login.
     /// </summary>
     [StringLength(256)]
     public string? OperatingSystem { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the browser used by the user during login.
     /// </summary>
     [StringLength(256)]
     public string? Browser { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the creation date of the login record.
     /// </summary>
     public DateTimeOffset CreateDate { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the expiration date of the login record.
     /// </summary>
     public DateTimeOffset ExpireDate { get; set; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomUserLogin"/> class.
     /// </summary>
     public CustomUserLogin() {}
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomUserLogin"/> class with the specified properties.
     /// </summary>
@@ -136,7 +136,7 @@ public sealed class CustomUserLogin : IdentityUserLogin<string>
         CreateDate = createDate;
         ExpireDate = expireDate;
     }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomUserLogin"/> class with the specified properties.
     /// </summary>

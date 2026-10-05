@@ -18,14 +18,14 @@ public sealed class CustomUserToken : IdentityUserToken<string>
     /// </summary>
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+    public string Id { get; init; } = Guid.NewGuid().ToString();
+
     /// <summary>
     /// Gets or sets the user ID associated with the token.
     /// </summary>
     [StringLength(36)]
     public override string UserId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the name of the token.
     /// </summary>
@@ -35,26 +35,26 @@ public sealed class CustomUserToken : IdentityUserToken<string>
     /// <summary>
     /// Gets or sets the value of the token.
     /// </summary>
-    [StringLength(255)]
+    [StringLength(256)]
     [Required]
     public override string? Value { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the login provider associated with the token.
     /// </summary>
     [StringLength(32)]
     public override string LoginProvider { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the creation date of the token.
     /// </summary>
     public DateTimeOffset CreateDate { get; set; }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomUserToken"/> class.
     /// </summary>
     public CustomUserToken() { }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomUserToken"/> class with the specified properties.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class CustomUserToken : IdentityUserToken<string>
     /* ######################################################################
      *                         NAVIGATION PROPERTIES
      * ###################################################################### */
-    
+
     /// <summary>
     /// Gets or sets the user associated with the token.
     /// This property is ignored during JSON serialization.
