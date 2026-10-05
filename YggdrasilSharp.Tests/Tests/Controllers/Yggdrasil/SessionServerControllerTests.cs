@@ -26,7 +26,7 @@ public class SessionServerControllerTests : ControllerTestBase
     private readonly IRepository<ServerJoin> _serverJoinRepo;
     private readonly Mock<ILogger<SessionServerController>> _loggerMock = new();
     private readonly SessionServerController _controller;
-    
+
     /// <summary>
     /// Initializes a new instance of <see cref="SessionServerControllerTests"/>.
     /// Sets up a <see cref="SessionServerController"/> with dependencies provided by the test base.
@@ -45,7 +45,7 @@ public class SessionServerControllerTests : ControllerTestBase
             HttpContext = _controllerHttpContext
         };
     }
-    
+
     /// <summary>
     /// Tests related to retrieving the list of blocked servers.
     /// </summary>
@@ -56,7 +56,7 @@ public class SessionServerControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public BlockedServersTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Verifies that requesting the list of blocked servers returns a ContentResult containing the expected content.
         /// </summary>
@@ -70,7 +70,7 @@ public class SessionServerControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
     }
-    
+
     /// <summary>
     /// Tests for the Join endpoint, which registers a user join event for a given server.
     /// </summary>
@@ -81,7 +81,7 @@ public class SessionServerControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public JoinTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: verifies that a valid join request returns HTTP 204 No Content.
         /// </summary>
@@ -95,17 +95,17 @@ public class SessionServerControllerTests : ControllerTestBase
             {
                 UserId = user.Id,
                 UserIp = TestHelper.IpAddress,
-                Token = token,
+                Token = StringChiper.GetEncryptedHash(token, AppConfiguration.Jwt.EncryptionKey),
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true, TestContext.Current.CancellationToken);
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                AccessToken = userPlaySession.Token,
+                AccessToken = token,
                 SelectedProfile = user.Id,
                 ServerId = Guid.NewGuid().ToString()
             });
-            
+
             result.Should().BeOfType<StatusCodeResult>();
             var statusCodeResult = result as StatusCodeResult;
             statusCodeResult!.StatusCode.Should().Be(204);
@@ -134,7 +134,7 @@ public class SessionServerControllerTests : ControllerTestBase
                 SelectedProfile = Guid.NewGuid().ToString(),
                 ServerId = Guid.NewGuid().ToString()
             });
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -143,7 +143,7 @@ public class SessionServerControllerTests : ControllerTestBase
             errorResponse.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
-        
+
         /// <summary>
         /// Failure case: when the IP address from the incoming HTTP request does not match the stored session IP,
         /// the controller should return HTTP 403 Forbidden.
@@ -153,22 +153,15 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.Connection.RemoteIpAddress = IPAddress.Parse("192.168.1.100");
-            string token = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
-            {
-                UserId = user.Id,
-                UserIp = TestHelper.IpAddress,
-                Token = token,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
-            }, true, TestContext.Current.CancellationToken);
+            string rawToken = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
+            await AddPlaySessionAsync(user, TestHelper.HashToken(rawToken, AppConfiguration));
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                AccessToken = userPlaySession.Token,
+                AccessToken = rawToken,
                 SelectedProfile = user.Id,
                 ServerId = Guid.NewGuid().ToString()
             });
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -177,7 +170,7 @@ public class SessionServerControllerTests : ControllerTestBase
             errorResponse.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
-        
+
         /// <summary>
         /// Failure case: when the user play session has expired, the controller should return HTTP 401 Unauthorized.
         /// </summary>
@@ -186,21 +179,15 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
-            var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
-            {
-                UserId = user.Id,
-                UserIp = TestHelper.IpAddress,
-                Token = TokenHelper.GenerateToken(),
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(-30),
-            }, true, TestContext.Current.CancellationToken);
+            string rawToken = _userManager.CreateJwtToken(TimeSpan.FromMinutes(30));
+            await AddPlaySessionAsync(user, TestHelper.HashToken(rawToken, AppConfiguration), DateTimeOffset.UtcNow.AddMinutes(-30));
             var result = await _controller.Join(new YigJoinServerRequest
             {
-                AccessToken = userPlaySession.Token,
+                AccessToken = rawToken,
                 SelectedProfile = user.Id,
                 ServerId = Guid.NewGuid().ToString()
             });
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -210,7 +197,7 @@ public class SessionServerControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
     }
-    
+
     /// <summary>
     /// Tests for the HasJoined endpoint which checks if a specific user has joined a server.
     /// </summary>
@@ -247,15 +234,15 @@ public class SessionServerControllerTests : ControllerTestBase
                 CreatedAt =  DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
-        
+
         /// <summary>
         /// Failure: when no server join exists for the given server/user, controller should return 404 Not Found.
         /// </summary>
@@ -273,9 +260,9 @@ public class SessionServerControllerTests : ControllerTestBase
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true, TestContext.Current.CancellationToken);
             string serverId = Guid.NewGuid().ToString();
-            
+
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -284,7 +271,7 @@ public class SessionServerControllerTests : ControllerTestBase
             errorResponse.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
-        
+
         /// <summary>
         /// Regression guard for account enumeration: hasJoined is unauthenticated, so an unknown username and a
         /// known username without a matching join must return byte-identical responses.
@@ -304,7 +291,7 @@ public class SessionServerControllerTests : ControllerTestBase
             missingJoinBody.Should().NotBeNullOrEmpty();
             missingUserBody.Should().Be(missingJoinBody);
         }
-        
+
         /// <summary>
         /// Failure: when the server join has expired, the controller should return 401 Unauthorized.
         /// </summary>
@@ -330,9 +317,9 @@ public class SessionServerControllerTests : ControllerTestBase
                 CreatedAt =  DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(-30),
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -341,7 +328,7 @@ public class SessionServerControllerTests : ControllerTestBase
             errorResponse.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
-        
+
         /// <summary>
         /// Failure: when the stored ServerJoin references a different user id than the one resolved by username,
         /// the controller should return 400 Bad Request (user id mismatch).
@@ -369,9 +356,9 @@ public class SessionServerControllerTests : ControllerTestBase
                 CreatedAt =  DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(30),
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -381,7 +368,7 @@ public class SessionServerControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
     }
-    
+
     /// <summary>
     /// Tests for the GetProfile endpoint which returns a user's profile (by UUID).
     /// </summary>
@@ -402,13 +389,13 @@ public class SessionServerControllerTests : ControllerTestBase
         {
             var user = await CreateUserAsync(_controller);
             var result = await _controller.GetProfile(user.Id);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
-        
+
         /// <summary>
         /// Failure: when no user exists for the provided uuid, controller should return 404 Not Found.
         /// </summary>
@@ -416,7 +403,7 @@ public class SessionServerControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetProfile(Guid.NewGuid().ToString());
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -425,5 +412,41 @@ public class SessionServerControllerTests : ControllerTestBase
             errorResponse.Should().NotBeNull();
             _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
         }
+    }
+
+    /// <summary>
+    /// Stores a play session for the given user using the value that is persisted in the database,
+    /// which is the keyed hash of the raw access token the game client sends.
+    /// </summary>
+    /// <param name="user">The user the play session belongs to.</param>
+    /// <param name="storedToken">The token value persisted for the session.</param>
+    /// <param name="expiresAt">When the session expires; defaults to 30 minutes from now.</param>
+    /// <returns>The stored token value.</returns>
+    private async Task<string> AddPlaySessionAsync(CustomUser user, string storedToken, DateTimeOffset? expiresAt = null)
+    {
+        var session = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+        {
+            UserId = user.Id,
+            UserIp = TestHelper.IpAddress,
+            Token = storedToken,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = expiresAt ?? DateTimeOffset.UtcNow.AddMinutes(30),
+        }, true, TestContext.Current.CancellationToken);
+
+        return session.Token;
+    }
+
+    /// <summary>
+    /// Deserializes a Yggdrasil error body, failing the test when the payload is missing.
+    /// </summary>
+    /// <param name="content">The raw JSON body of the response.</param>
+    /// <returns>The deserialized error response.</returns>
+    private YigErrorResponse DeserializeError(string? content)
+    {
+        content.Should().NotBeNullOrEmpty("the controller should return a JSON body");
+        var errorResponse = JsonConvert.DeserializeObject<YigErrorResponse>(content!);
+        errorResponse.Should().NotBeNull();
+        _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
+        return errorResponse!;
     }
 }

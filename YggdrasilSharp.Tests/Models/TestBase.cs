@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
@@ -49,6 +50,12 @@ public abstract class TestBase
     /// The memory cache service scoped to the test instance.
     /// </summary>
     protected readonly MemoryCacheService _memoryCacheService;
+
+    /// <summary>
+    /// The configuration shared by the services of this test instance. Token hashing performed by the
+    /// code under test uses <c>AppConfiguration.Jwt.EncryptionKey</c> of this very instance.
+    /// </summary>
+    protected AppConfiguration AppConfiguration => _testHelper.Settings;
 
 
     /// <summary>

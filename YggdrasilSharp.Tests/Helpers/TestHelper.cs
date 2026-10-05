@@ -38,6 +38,17 @@ public class TestHelper
     public const string IpAddress = "127.0.0.1";
 
     /// <summary>
+    /// The JWT secret used by <see cref="CreateTestSettings"/>. Tokens are hashed with the same key
+    /// the production code uses, so tests must reproduce the hashing to build valid fixtures.
+    /// </summary>
+    public const string JwtSecret = "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6";
+
+    /// <summary>
+    /// The ASCII bytes of <see cref="JwtSecret"/>, the key form used for fingerprint hashes.
+    /// </summary>
+    public static readonly byte[] JwtSecretBytes = Encoding.UTF8.GetBytes(JwtSecret);
+
+    /// <summary>
     /// A fresh service provider for this helper instance. Never shared between tests so that
     /// parallel test classes cannot interfere with each other's caches or email records.
     /// </summary>
@@ -55,13 +66,19 @@ public class TestHelper
     public FakeEmailService FakeEmailService { get; }
 
     /// <summary>
+    /// The configuration shared by every service this helper builds. Tests must hash tokens with this
+    /// instance so the values match the ones the code under test computes.
+    /// </summary>
+    public AppConfiguration Settings { get; }
+
+    /// <summary>
     /// The password hasher used to create and verify password hashes inside tests.
     /// </summary>
     public IPasswordHasher<CustomUser> PasswordHasher { get; } = new PasswordHasher<CustomUser>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestHelper"/> class with a dedicated service
-    /// provider, memory cache service and fake email service.
+    /// provider, memory cache service, configuration and fake email service.
     /// </summary>
     public TestHelper()
     {
@@ -72,6 +89,7 @@ public class TestHelper
 
         MemoryCacheService = new MemoryCacheService(ServiceProvider.GetRequiredService<IMemoryCache>());
         FakeEmailService = new FakeEmailService();
+        Settings = CreateTestSettings();
     }
 
     /// <summary>
@@ -83,8 +101,20 @@ public class TestHelper
     public static string GetFingerprint(string userId)
     {
         var rawData = $"{userId}-{UserAgent}-{IpAddress}";
-        return StringChiper.GetEncryptedHash(rawData, "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6"u8.ToArray());
+        return StringChiper.GetEncryptedHash(rawData, JwtSecretBytes);
     }
+
+    /// <summary>
+    /// Computes the keyed hash the production code stores in place of a raw token. Access tokens,
+    /// play session tokens and email confirmation tokens are all persisted as this hash, so a test
+    /// that seeds the database must store the hashed form while still presenting the raw value to
+    /// the code under test.
+    /// </summary>
+    /// <param name="rawToken">The raw token value as it would be handed to a client.</param>
+    /// <param name="appConfiguration">The configuration carrying the key used to hash tokens.</param>
+    /// <returns>The hashed token value as persisted in the database.</returns>
+    public static string HashToken(string rawToken, AppConfiguration appConfiguration) =>
+        StringChiper.GetEncryptedHash(rawToken, appConfiguration.Jwt.EncryptionKey);
     
     /// <summary>
     /// Creates a <see cref="CustomDbContext"/> backed by the EF in-memory provider.
@@ -118,8 +148,6 @@ public class TestHelper
         var httpClientFactory = new Mock<IHttpClientFactory>().Object;
         var logger = NullLogger<CustomUserManager>.Instance;
 
-        var settings = CreateTestSettings();
-
         // New CustomUserManager signature: (CustomUserStore, IPasswordHasher<CustomUser>, IHttpClientFactory, ILogger<CustomUserManager>, CustomDbContext, MemoryCacheService, Settings)
         var manager = new CustomUserManager(
             userStore,
@@ -128,7 +156,7 @@ public class TestHelper
             logger,
             db,
             MemoryCacheService,
-            settings
+            Settings
         );
 
         return manager;
@@ -190,7 +218,7 @@ public class TestHelper
         return new AppConfiguration(
             "http://localhost",
             "http://localhost",
-            "QvHRAnkn2cr7fTa2PjcaWaQhKndzRNl6",
+            JwtSecret,
             "test-issuer",
             "test-audience",
             TimeSpan.FromSeconds(5),

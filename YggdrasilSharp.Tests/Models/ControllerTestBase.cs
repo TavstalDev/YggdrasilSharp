@@ -104,7 +104,7 @@ public abstract class ControllerTestBase
         _passwordHasher = _testHelper.PasswordHasher;
         _memoryCacheService = _testHelper.MemoryCacheService;
         _fakeEmailService = _testHelper.FakeEmailService;
-        AppConfiguration = TestHelper.CreateTestSettings();
+        AppConfiguration = _testHelper.Settings;
 
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
         new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>

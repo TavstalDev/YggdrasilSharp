@@ -128,6 +128,24 @@ public class LoginControllerTests
             content.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + content);
         }
+
+        /// <summary>
+        /// Success case: the response carries the raw access token while the database only stores its
+        /// keyed hash, so a database leak cannot be replayed as a bearer token.
+        /// </summary>
+        [Fact(DisplayName = "Success: Login returns the raw token and stores only its hash")]
+        public async Task ReturnsRawTokenAndStoresOnlyItsHash()
+        {
+            var loginResult = await AddMockUserAndLoginAsync();
+
+            var response = Deserialize<LoginResponse>(loginResult.content);
+            response.Token.Should().NotBeNullOrEmpty();
+
+            string storedToken = await GetStoredAccessTokenAsync(loginResult.userId);
+            storedToken.Should().Be(TestHelper.HashToken(response.Token!, _appConfiguration));
+            storedToken.Should().NotBe(response.Token, "the raw token must never be persisted");
+            (await _userManager.VerifyJwtTokenAsync(response.Token!)).Should().BeTrue();
+        }
         
         /// <summary>
         /// Redirect case: login when the user has 2FA enabled should return a redirect/2FA payload.
@@ -236,6 +254,32 @@ public class LoginControllerTests
         }
 
         /// <summary>
+        /// Success case: the token issued once the second factor is confirmed is the raw token, and only
+        /// its hash is persisted alongside the login record.
+        /// </summary>
+        [Fact(DisplayName = "Success: 2FA login returns the raw token and stores only its hash")]
+        public async Task ReturnsRawTokenAndStoresOnlyItsHash()
+        {
+            var loginResult = await AddMockUserAndLoginAsync(true);
+            _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
+
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
+            string expectedCode = new Totp(secretBytes).ComputeTotp();
+
+            IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
+            {
+                TwoFactorCode = expectedCode
+            });
+
+            var response = Deserialize<LoginResponse>((result as ContentResult)!.Content);
+            response.Token.Should().NotBeNullOrEmpty();
+
+            string storedToken = await GetStoredAccessTokenAsync(loginResult.userId);
+            storedToken.Should().Be(TestHelper.HashToken(response.Token!, _appConfiguration));
+            storedToken.Should().NotBe(response.Token, "the raw token must never be persisted");
+        }
+
+        /// <summary>
         /// Failure case: missing TFA session cookie should result in unauthorized response (401).
         /// The test clears Request.Headers.Cookie to simulate a missing cookie.
         /// </summary>
@@ -326,6 +370,24 @@ public class LoginControllerTests
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
+
+        /// <summary>
+        /// Success case: the launcher receives the raw play session token while the play session record
+        /// only stores its keyed hash.
+        /// </summary>
+        [Fact(DisplayName = "Success: Launcher login returns the raw token and stores only its hash")]
+        public async Task ReturnsRawTokenAndStoresOnlyItsHash()
+        {
+            var loginResult = await AddMockUserAndLoginLauncherAsync();
+
+            var response = Deserialize<LoginResponse>(loginResult.content);
+            response.Token.Should().NotBeNullOrEmpty();
+
+            var sessions = await _userStore.UserPlaySessions.QueryAsync(x => x.UserId == loginResult.userId, TestContext.Current.CancellationToken);
+            var session = sessions.Should().ContainSingle().Subject;
+            session.Token.Should().Be(TestHelper.HashToken(response.Token!, _appConfiguration));
+            session.Token.Should().NotBe(response.Token, "the raw play session token must never be persisted");
+        }
         
         /// <summary>
         /// Redirect case: launcher login when 2FA is enabled returns a redirect/session token.
@@ -414,6 +476,38 @@ public class LoginControllerTests
         }
 
         /// <summary>
+        /// Success case: confirming the launcher second factor hands out the raw play session token and
+        /// stores only its hash, so the launcher token stays recoverable while the database stays useless.
+        /// </summary>
+        [Fact(DisplayName = "Success: Launcher 2FA returns the raw token and stores only its hash")]
+        public async Task ReturnsRawTokenAndStoresOnlyItsHash()
+        {
+            var loginResult = await AddMockUserAndLoginLauncherAsync(true);
+            string sessionToken = Deserialize<LoginLauncherRedirectResponse>(loginResult.content).Token!;
+            sessionToken.Should().NotBeNullOrEmpty();
+            _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
+
+            byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
+            string expectedCode = new Totp(secretBytes).ComputeTotp();
+
+            IActionResult secondResult = await _controller.LoginLauncherTwoFactorAsync(
+                new LauncherLoginTFASessionRequestBody
+                {
+                    UserId = loginResult.userId,
+                    SessionToken = sessionToken,
+                    TwoFactorCode = expectedCode
+                });
+
+            var response = Deserialize<LoginResponse>((secondResult as ContentResult)!.Content);
+            response.Token.Should().NotBeNullOrEmpty();
+
+            var sessions = await _userStore.UserPlaySessions.QueryAsync(x => x.UserId == loginResult.userId, TestContext.Current.CancellationToken);
+            var session = sessions.Should().ContainSingle().Subject;
+            session.Token.Should().Be(TestHelper.HashToken(response.Token!, _appConfiguration));
+            session.Token.Should().NotBe(response.Token, "the raw play session token must never be persisted");
+        }
+
+        /// <summary>
         /// Failure case: missing or invalid session token for the launcher flow returns 401 Unauthorized.
         /// The test simulates the missing token by not performing the initial login stage.
         /// </summary>
@@ -499,38 +593,60 @@ public class LoginControllerTests
         
         /// <summary>
         /// Success case: Logout without an explicit token parameter. The controller falls back to the
-        /// "Authorization: Bearer" header, so the test seeds that header with the token issued at login.
+        /// "Authorization: Bearer" header, so the test seeds that header with the raw token issued at login.
         /// </summary>
         [Fact(DisplayName = "Success: Returns sign-out result")]
         public async Task ReturnsSignOut()
         {
             var loginResult = await AddMockUserAndLoginAsync();
-            string token = await GetAccessTokenAsync(loginResult.userId);
+            string token = await GetAccessTokenAsync(loginResult);
+            string storedTokenHash = TestHelper.HashToken(token, _appConfiguration);
             _controllerHttpContext.Request.Headers.Authorization = $"Bearer {token}";
 
             IActionResult logoutResult = await _controller.LogoutAsync(null);
             logoutResult.Should().BeOfType<SignOutResult>();
             _testOutputHelper.WriteLine("Result: " + logoutResult.GetType().Name);
 
-            (await _userStore.UserTokens.FindAsync(x => x.Value == token, TestContext.Current.CancellationToken))
+            (await _userStore.UserTokens.FindAsync(x => x.Value == storedTokenHash, TestContext.Current.CancellationToken))
                 .Should().BeNull("logout should revoke the access token");
+            (await _userStore.UserLogins.QueryAsync(x => x.UserId == loginResult.userId, TestContext.Current.CancellationToken))
+                .Should().BeEmpty("logout should revoke the login record backing the access token");
         }
         
         /// <summary>
         /// Success case: Logout with the token passed explicitly as a query parameter.
-        /// The token is the access token issued by the preceding login, read back from the token store.
+        /// The token is the raw access token issued by the preceding login, read back from the login response.
         /// </summary>
         [Fact(DisplayName = "Success: Logout when token provided as parameter")]
         public async Task ReturnsSignOut_WhenTokenProvided()
         {
             var loginResult = await AddMockUserAndLoginAsync();
-            string token = await GetAccessTokenAsync(loginResult.userId);
+            string token = await GetAccessTokenAsync(loginResult);
+            string storedTokenHash = TestHelper.HashToken(token, _appConfiguration);
 
             IActionResult logoutResult = await _controller.LogoutAsync(token);
             logoutResult.Should().BeOfType<SignOutResult>();
 
-            (await _userStore.UserTokens.FindAsync(x => x.Value == token, TestContext.Current.CancellationToken))
+            (await _userStore.UserTokens.FindAsync(x => x.Value == storedTokenHash, TestContext.Current.CancellationToken))
                 .Should().BeNull("logout should revoke the access token");
+        }
+
+        /// <summary>
+        /// Failure case: the value persisted in the database is a hash, not a token. Presenting that stored
+        /// value to the logout endpoint must be rejected instead of revoking the session, otherwise the hash
+        /// would double as a bearer credential.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Logout with the stored token hash returns bad request")]
+        public async Task ReturnsBadRequest_WhenGivenTheStoredTokenHash()
+        {
+            var loginResult = await AddMockUserAndLoginAsync();
+            string storedTokenHash = await GetStoredAccessTokenAsync(loginResult.userId);
+
+            IActionResult logoutResult = await _controller.LogoutAsync(storedTokenHash);
+
+            TestHelper.TestResponse(logoutResult, HttpStatusCode.BadRequest);
+            (await _userStore.UserTokens.FindAsync(x => x.Value == storedTokenHash, TestContext.Current.CancellationToken))
+                .Should().NotBeNull("a rejected logout must not revoke anything");
         }
 
         /// <summary>
@@ -625,16 +741,47 @@ public class LoginControllerTests
     }
     
     /// <summary>
-    /// Reads back the access token that login issued for the given user. The login response body
-    /// carries no token and no auth cookie is set on the non-2FA path, so the store is the source of truth.
+    /// Reads back the raw access token the login response handed to the client. The database only stores
+    /// the hash of that token, so the response body is the only place the raw value can be recovered.
+    /// </summary>
+    /// <param name="loginResult">The result of a completed login.</param>
+    /// <returns>The raw access token issued for the user.</returns>
+    private async Task<string> GetAccessTokenAsync((string userId, string? content) loginResult)
+    {
+        var response = Deserialize<LoginResponse>(loginResult.content);
+        string token = response.Token!;
+        token.Should().NotBeNullOrEmpty("login should return the raw access token");
+
+        // Sanity check: the value the client received must be the one that was hashed into the store.
+        string storedToken = await GetStoredAccessTokenAsync(loginResult.userId);
+        storedToken.Should().Be(TestHelper.HashToken(token, _appConfiguration));
+        return token;
+    }
+
+    /// <summary>
+    /// Reads the access token value persisted for the given user. Since tokens are stored hashed, this
+    /// value is a keyed hash and must not be used as a bearer credential.
     /// </summary>
     /// <param name="userId">The id of the user that logged in.</param>
-    /// <returns>The stored access token value.</returns>
-    private async Task<string> GetAccessTokenAsync(string userId)
+    /// <returns>The stored (hashed) access token value.</returns>
+    private async Task<string> GetStoredAccessTokenAsync(string userId)
     {
         var tokens = await _userStore.UserTokens.QueryAsync(x => x.UserId == userId && x.Name == "AccessToken");
-        var token = tokens.FirstOrDefault();
-        token.Should().NotBeNull("login should have issued an access token for the user");
+        var token = tokens.Should().ContainSingle().Subject;
         return token.Value!;
+    }
+
+    /// <summary>
+    /// Deserializes a controller response body, failing the test when the payload is missing.
+    /// </summary>
+    /// <typeparam name="T">The expected response type.</typeparam>
+    /// <param name="content">The raw JSON body of the response.</param>
+    /// <returns>The deserialized response.</returns>
+    private T Deserialize<T>(string? content)
+    {
+        content.Should().NotBeNullOrEmpty("the controller should return a JSON body");
+        var deserialized = JsonConvert.DeserializeObject<T>(content!);
+        deserialized.Should().NotBeNull();
+        return deserialized!;
     }
 }
