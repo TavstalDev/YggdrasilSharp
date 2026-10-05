@@ -164,7 +164,8 @@ public class SessionServerController : CustomControllerBase
     /// A JSON response containing the user's profile if the join is valid.
     /// </returns>
     /// <response code="200">The user has joined the server.</response>
-    /// <response code="404">User or server join not found.</response>
+    /// <response code="404">No matching server join exists. An unknown username returns this same response so the
+    /// endpoint cannot be used to enumerate accounts.</response>
     /// <response code="401">The server join has expired.</response>
     /// <response code="403">The username does not match the server join.</response>
     [HttpGet("hasJoined")]
@@ -184,15 +185,14 @@ public class SessionServerController : CustomControllerBase
 
             CustomUser? user = await UserStore.FindUserAsync(x => x.UserName == username);
             if (user == null)
-                return YigErrorResult(HttpStatusCode.NotFound, "User not found");
+                return YigErrorResult(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
 
             ServerJoin? join = await _serverJoinRepo.FindAsync(x => x.UserId == user.Id && x.ServerId == serverId &&
                                                                     ( x.UserIp == ip ||
                                                                       !_appConfiguration.Yggdrasil.EnforceIpCheckInHasJoined ||
                                                                       (_appConfiguration.Yggdrasil.AllowEmptyJoinedAddress && ip == null)));
             if (join == null)
-                return YigErrorResult(HttpStatusCode.NotFound,
-                    "No matching server join found for the provided serverId and IP address");
+                return YigErrorResult(HttpStatusCode.NotFound, "No matching server join found for the provided serverId and IP address");
 
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (now > join.ExpiresAt)

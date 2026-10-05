@@ -50,7 +50,6 @@ public class LoginController : CustomControllerBase
     /// <response code="400">Bad request. Missing or invalid input (e.g. missing token or malformed body).</response>
     /// <response code="401">Unauthorized. Authentication failed (invalid credentials, invalid session token or 2FA code).</response>
     /// <response code="403">Forbidden. Access denied (e.g. expired session token, too many attempts, or account restrictions).</response>
-    /// <response code="404">Not found. Requested resource (user, session, token) does not exist.</response>
     /// <response code="423">Locked. Account is locked; includes lockout reason and expiration when applicable.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login")]
@@ -58,7 +57,7 @@ public class LoginController : CustomControllerBase
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), JsonResponse(StatusCodes.Status302Found, typeof(LoginRedirectResponse)),
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
-     TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
+     TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LoginAsync([Required, FromBody] LoginRequestBody request)
     {
         try
@@ -180,7 +179,7 @@ public class LoginController : CustomControllerBase
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userIdCookie);
             if (user == null)
-                return JsonResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Invalid credentials.");
 
             var result = await _signInManager.TwoFactorSignInAsync(user, request.TwoFactorCode, request.RememberMe, HttpContext);
             if (!result.Succeeded)
@@ -213,14 +212,13 @@ public class LoginController : CustomControllerBase
     /// <response code="302">Redirect required for two-factor authentication. Includes session token and redirect URL.</response>
     /// <response code="401">Unauthorized. Invalid credentials or two-factor authentication code.</response>
     /// <response code="403">Forbidden. Account is locked or too many failed attempts.</response>
-    /// <response code="404">Not found. User does not exist.</response>
     /// <response code="500">Internal server error. Unexpected error occurred while processing the request.</response>
     [HttpPost("/login/launcher")]
     [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
     [Consumes("application/json")]
     [JsonResponse(StatusCodes.Status200OK, typeof(LoginResponse)), JsonResponse(StatusCodes.Status302Found, typeof(LoginLauncherRedirectResponse)),
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
-     TextResponse(StatusCodes.Status404NotFound), TextResponse(StatusCodes.Status500InternalServerError)]
+     TextResponse(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LoginLauncherAsync([Required, FromBody] LauncherLoginRequestBody request)
     {
         try
@@ -309,7 +307,7 @@ public class LoginController : CustomControllerBase
 
             CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
-                return JsonResult(HttpStatusCode.NotFound, "User not found.");
+                return JsonResult(HttpStatusCode.NotFound, "Invalid credentials.");
 
             var result = await _signInManager.LauncherTwoFactorSignInAsync(user, request.TwoFactorCode, null, HttpContext);
             if (!result.Succeeded)
