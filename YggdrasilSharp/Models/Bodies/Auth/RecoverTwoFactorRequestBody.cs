@@ -16,7 +16,7 @@ public class RecoverTwoFactorRequestBody
     [MinLength(3)]
     [MaxLength(254)]
     public required string Email { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the recovery token that was issued to the user (for example via email).
     /// This token is required and is validated to ensure the recovery request is authorized.
@@ -24,7 +24,7 @@ public class RecoverTwoFactorRequestBody
     [Required]
     [StringLength(48)]
     public required string RecoveryToken { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the backup code used to recover the two-factor authentication session.
     /// This field is required.
@@ -32,10 +32,4 @@ public class RecoverTwoFactorRequestBody
     [Required]
     [StringLength(6)]
     public required string BackupCode { get; set; }
-    
-    /// <summary>
-    /// Gets or sets a value indicating whether to log the user out of all active sessions.
-    /// This field is optional and defaults to false.
-    /// </summary>
-    public bool LogoutEverywhere { get; set; } = false;
 }
