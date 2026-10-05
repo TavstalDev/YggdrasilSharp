@@ -337,7 +337,7 @@ public class CustomUserManager(
             string cacheKey = $"pwned:{prefix}";
             if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
             {
-                _client.Timeout = TimeSpan.FromSeconds(10);
+                _client.Timeout = TimeSpan.FromSeconds(30);
                 response = await _client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
                 if (!string.IsNullOrEmpty(cacheKey))
                     memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
