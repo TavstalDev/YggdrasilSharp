@@ -32,21 +32,21 @@ public class CustomUserManager(
     {
         ValidateIssuer = true,
         ValidIssuer = appConfiguration.Jwt.Issuer,
-        
+
         ValidateAudience = true,
         ValidAudience = appConfiguration.Jwt.Audience,
-        
+
         ValidateLifetime = true,
         ClockSkew = appConfiguration.Jwt.ClockSkew,
-        
+
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
     };
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
-    
+
 
     #region Roles & Claims
-    
+
     #region Roles
     /// <summary>
     /// Checks if the user has a specific role.
@@ -76,7 +76,7 @@ public class CustomUserManager(
         var userClaim = userClaims.Claims.FirstOrDefault(x => x.Type == "userId");
         if (userClaim == null)
             return false;
-            
+
         string userid = userClaim.Value;
         CustomUser? user = await userStore.FindUserByIdAsync(userid);
         if (user == null)
@@ -87,7 +87,7 @@ public class CustomUserManager(
             return false;
         return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
-        
+
     /// <summary>
     /// Checks if the user has a specific role.
     /// </summary>
@@ -109,7 +109,7 @@ public class CustomUserManager(
     {
         if (!userClaims.HasClaim(x => x.Type == "userId"))
             return false;
-            
+
         var userClaim = userClaims.Claims.FirstOrDefault(x => x.Type == "userId");
         if (userClaim == null)
             return false;
@@ -162,7 +162,7 @@ public class CustomUserManager(
 
         return false;
     }
-        
+
     /// <summary>
     /// Gets the users with a specific role.
     /// </summary>
@@ -176,7 +176,7 @@ public class CustomUserManager(
             CustomUser? user = await userStore.FindUserByIdAsync(userRole.UserId);
             if (user == null)
                 continue;
-                
+
             if ((await GetUserCustomRolesAsync(user.Id)).Any(x => x.Level > role.Level))
                 continue;
 
@@ -186,7 +186,7 @@ public class CustomUserManager(
         return users;
     }
 
-        
+
     /// <summary>
     /// Checks if the caller has a higher role than the target.
     /// </summary>
@@ -200,7 +200,7 @@ public class CustomUserManager(
 
         return (await GetUserHighestRoleAsync(caller.Id)).Level > (await GetUserHighestRoleAsync(target.Id)).Level;
     }
-        
+
     /// <summary>
     /// Gets the custom roles for a user.
     /// </summary>
@@ -279,7 +279,7 @@ public class CustomUserManager(
         await userStore.UserClaims.UpdateAsync(localClaim, true);
     }
     #endregion
-        
+
     /// <summary>
     /// Checks if the user has a specific permission.
     /// </summary>
@@ -292,7 +292,7 @@ public class CustomUserManager(
         var roleClaim = await userStore.UserClaims.FindAsync(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
         if (roleClaim != null)
             return true;
-        
+
         List<CustomRole> roles = await GetUserCustomRolesAsync(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
@@ -332,15 +332,23 @@ public class CustomUserManager(
         string prefix = hashString.Substring(0, 5);
         string suffix = hashString.Substring(5);
 
-        string cacheKey = $"pwned:{prefix}";
-        if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
+        try
         {
-            response = await _client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
-            if (!string.IsNullOrEmpty(cacheKey))
-                memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
+            string cacheKey = $"pwned:{prefix}";
+            if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
+            {
+                _client.Timeout = TimeSpan.FromSeconds(10);
+                response = await _client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
+                if (!string.IsNullOrEmpty(cacheKey))
+                    memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
+            }
+            return !string.IsNullOrEmpty(response) && response.Contains(suffix);
         }
-        
-        return !string.IsNullOrEmpty(response) && response.Contains(suffix);
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "An error occured during compromised password check.");
+            return false;
+        }
     }
 
     /// <summary>
@@ -353,11 +361,11 @@ public class CustomUserManager(
     {
         var handler = new JwtSecurityTokenHandler();
         var token = handler.CreateJwtSecurityToken(
-            appConfiguration.Jwt.Issuer, 
-            appConfiguration.Jwt.Audience, 
-            claims, 
-            DateTime.UtcNow, 
-            DateTime.UtcNow.Add(duration), 
+            appConfiguration.Jwt.Issuer,
+            appConfiguration.Jwt.Audience,
+            claims,
+            DateTime.UtcNow,
+            DateTime.UtcNow.Add(duration),
             DateTime.UtcNow,
             new SigningCredentials(
                 new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
@@ -380,7 +388,7 @@ public class CustomUserManager(
         CustomUser? user = await userStore.FindUserAsync(x => x.NormalizedEmail == normalizedUsername || x.NormalizedUserName == normalizedUsername);
         if (user == null)
             return null;
-        
+
         var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         switch (result)
         {
@@ -400,7 +408,7 @@ public class CustomUserManager(
                 await userStore.UpdateUserAsync(user, true);
                 break;
         }
-        
+
         return user;
     }
 
@@ -425,7 +433,7 @@ public class CustomUserManager(
 
         return await userStore.FindUserByIdAsync(userToken.UserId);
     }
-    
+
     /// <summary>
     /// Validate a JWT token's signature, lifetime and configured claims (issuer, audience).
     /// </summary>
@@ -446,7 +454,7 @@ public class CustomUserManager(
             return false;
         }
     }
-    
+
     /// <summary>
     /// Produce a machine-specific fingerprint for tying short-lived sessions (e.g. TFA flows) to a client.
     /// </summary>
@@ -459,7 +467,7 @@ public class CustomUserManager(
         var ipAddress = HttpHelper.GetClientIp(httpContext);
         if (string.IsNullOrEmpty(ipAddress))
             ipAddress = "unknown";
-    
+
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
         return StringChiper.GetEncryptedHash(rawData, appConfiguration.Jwt.FingerprintKey);
@@ -483,7 +491,7 @@ public class CustomUserManager(
         await userStore.UpdateUserAsync(user, true);
         return token;
     }
-    
+
     /// <summary>
     /// Verify a TOTP code against the stored (encrypted) TOTP secret for a user.
     /// </summary>
@@ -494,12 +502,12 @@ public class CustomUserManager(
     {
         if (string.IsNullOrEmpty(user.TwoFactorSecret))
             return false;
-        
+
         string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.TwoFactorEncryptionKey);
         var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
         return totp.VerifyTotp(code, out _, new VerificationWindow(1));
     }
-    
+
     /// <summary>
     /// Generate a fresh set of one-time recovery codes for the user and persist them as hashed values.
     /// </summary>
