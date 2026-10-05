@@ -286,6 +286,26 @@ public class SessionServerControllerTests : ControllerTestBase
         }
         
         /// <summary>
+        /// Regression guard for account enumeration: hasJoined is unauthenticated, so an unknown username and a
+        /// known username without a matching join must return byte-identical responses.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unknown username is indistinguishable from missing join")]
+        public async Task ReturnsIdenticalResponse_WhenUserMissingVsJoinMissing()
+        {
+            var user = await CreateUserAsync(_controller);
+            _controllerHttpContext.HttpContext.Request.Host = new HostString(TestHelper.IpAddress);
+            string serverId = Guid.NewGuid().ToString();
+
+            var missingJoin = await _controller.HasJoined(serverId, user.UserName, TestHelper.IpAddress);
+            var missingUser = await _controller.HasJoined(serverId, "NoSuchPlayer", TestHelper.IpAddress);
+
+            var missingJoinBody = (missingJoin as ContentResult)?.Content;
+            var missingUserBody = (missingUser as ContentResult)?.Content;
+            missingJoinBody.Should().NotBeNullOrEmpty();
+            missingUserBody.Should().Be(missingJoinBody);
+        }
+        
+        /// <summary>
         /// Failure: when the server join has expired, the controller should return 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Join expired")]

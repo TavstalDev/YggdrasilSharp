@@ -68,15 +68,16 @@ public class RecoveryControllerTests : ControllerTestBase
         }
 
         /// <summary>
-        /// Failure case: requesting recovery for a non-existent email returns NotFound.
-        /// Expected result: <see cref="ContentResult"/> with HTTP status 404 Not Found.
+        /// Failure case: requesting recovery for a non-existent email must not reveal that the account is missing.
+        /// A 401 with the same body as every other credential failure prevents account enumeration.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 401 Unauthorized.
         /// </summary>
-        [Fact(DisplayName = "Failure: User not found")]
-        public async Task ReturnsNotFound_WhenUserMissing()
+        [Fact(DisplayName = "Failure: Unknown user does not leak existence")]
+        public async Task ReturnsUnauthorized_WhenUserMissing()
         {
             IActionResult result = await _controller.RequestRecoveryAsync("noone@example.com");
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
         }
 
         /// <summary>
@@ -152,9 +153,9 @@ public class RecoveryControllerTests : ControllerTestBase
 
         /// <summary>
         /// Failure case: provided recovery token is invalid for the user.
-        /// No attempt counter is seeded for the fingerprint, so the endpoint short-circuits
-        /// with an "invalid or expired token" error before comparing the token itself.
-        /// Expected result: <see cref="ContentResult"/> with HTTP status 400 Bad Request.
+        /// No attempt counter is seeded for the fingerprint, so the endpoint short-circuits before comparing the
+        /// token itself. The response must stay identical to the unknown-user response to prevent enumeration.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid recovery token")]
         public async Task ReturnsUnauthorized_ForInvalidToken()
@@ -168,19 +169,19 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
         }
 
         /// <summary>
         /// Failure case: recovery token has expired (not present in cache or expired).
-        /// Expected result: <see cref="ContentResult"/> with HTTP status 400 Bad Request.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Expired recovery token")]
-        public async Task ReturnsBadRequest_WhenTokenExpired()
+        public async Task ReturnsUnauthorized_WhenTokenExpired()
         {
             await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             string token = TokenHelper.GenerateRecoverySessionToken();
-            
+
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
             {
                 Email = _userMock.Email,
@@ -189,9 +190,9 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
         }
-        
+
         /// <summary>
         /// Failure case: too many recovery attempts were made for this fingerprint; the endpoint should return forbidden.
         /// The test pre-populates the attempts counter in the cache to simulate this.
@@ -205,7 +206,7 @@ public class RecoveryControllerTests : ControllerTestBase
             string fingerprint = TestHelper.GetFingerprint(user.Id);
             _memoryCacheService.SetValue($"recovery:{fingerprint}:password:token", token, TimeSpan.FromMinutes(15));
             _memoryCacheService.SetValue($"recovery:{fingerprint}:password:attempt", 4, TimeSpan.FromMinutes(15));
-            
+
             IActionResult result = await _controller.RecoverPasswordAsync(new RecoverPasswordRequestBody
             {
                 Email = _userMock.Email,
@@ -229,7 +230,7 @@ public class RecoveryControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RequestTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) {}
-        
+
         /// <summary>
         /// Success case: when user exists and email is confirmed, a TFA recovery email should be sent.
         /// Expected: <see cref="ContentResult"/> with HTTP 201 Created.
@@ -243,16 +244,17 @@ public class RecoveryControllerTests : ControllerTestBase
 
             TestHelper.TestResponse(result, HttpStatusCode.Created);
         }
-        
+
         /// <summary>
-        /// Failure case: requesting TFA recovery for an unknown email returns 404 Not Found.
+        /// Failure case: requesting TFA recovery for an unknown email must not reveal that the account is missing.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 401 Unauthorized.
         /// </summary>
-        [Fact(DisplayName = "Failure: User not found")]
-        public async Task ReturnsNotFound_WhenUserMissing()
+        [Fact(DisplayName = "Failure: Unknown user does not leak existence")]
+        public async Task ReturnsUnauthorized_WhenUserMissing()
         {
             IActionResult result = await _controller.RequestTFARecoveryAsync("noone@example.com");
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
         }
 
         /// <summary>
@@ -329,8 +331,7 @@ public class RecoveryControllerTests : ControllerTestBase
             {
                 Email = _userMock.Email,
                 BackupCode = backup,
-                RecoveryToken = token,
-                LogoutEverywhere = true
+                RecoveryToken = token
             });
 
             TestHelper.TestResponse(result, HttpStatusCode.OK);
@@ -355,8 +356,7 @@ public class RecoveryControllerTests : ControllerTestBase
             {
                 Email = _userMock.Email,
                 BackupCode = "wrong-backup",
-                RecoveryToken = token,
-                LogoutEverywhere = false
+                RecoveryToken = token
             });
 
             TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
@@ -382,29 +382,56 @@ public class RecoveryControllerTests : ControllerTestBase
             {
                 Email = _userMock.Email,
                 RecoveryToken = "",
-                BackupCode = "anything",
-                LogoutEverywhere = false
+                BackupCode = "anything"
             });
 
             TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
 
         /// <summary>
-        /// Failure case: attempting TFA recovery for a non-existing user results in NotFound.
-        /// Expected result: <see cref="ContentResult"/> with HTTP status 404 Not Found.
+        /// Failure case: attempting TFA recovery for a non-existing user must not reveal that the account is missing.
+        /// Expected result: <see cref="ContentResult"/> with HTTP status 401 Unauthorized.
         /// </summary>
-        [Fact(DisplayName = "Failure: User not found")]
-        public async Task ReturnsNotFound_WhenUserMissing()
+        [Fact(DisplayName = "Failure: Unknown user does not leak existence")]
+        public async Task ReturnsUnauthorized_WhenUserMissing()
         {
             IActionResult result = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
             {
                 Email = "noone@example.com",
                 RecoveryToken = "",
-                BackupCode = "any",
-                LogoutEverywhere = false
+                BackupCode = "any"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
+        }
+
+        /// <summary>
+        /// Regression guard for account enumeration: an unknown user and a known user with no issued recovery
+        /// session must produce byte-identical responses, otherwise the endpoint leaks account existence.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unknown user is indistinguishable from missing recovery session")]
+        public async Task ReturnsIdenticalResponse_WhenUserMissingVsNoSession()
+        {
+            IActionResult missingUser = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
+            {
+                Email = "noone@example.com",
+                RecoveryToken = "any",
+                BackupCode = "any"
+            });
+
+            _userMock.TwoFactorEnabled = true;
+            await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
+            IActionResult noSession = await _controller.RecoverTwoFactorAsync(new RecoverTwoFactorRequestBody
+            {
+                Email = _userMock.Email,
+                RecoveryToken = "any",
+                BackupCode = "any"
+            });
+
+            var missingUserBody = (missingUser as ContentResult)?.Content;
+            var noSessionBody = (noSession as ContentResult)?.Content;
+            missingUserBody.Should().NotBeNullOrEmpty();
+            missingUserBody.Should().Be(noSessionBody);
         }
     }
 }
