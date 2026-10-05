@@ -17,33 +17,59 @@ namespace Tavstal.YggdrasilSharp.Services.Database;
 /// <summary>
 /// Initializes a new instance of the <see cref="CustomUserManager"/> class.
 /// </summary>
-public class CustomUserManager(
-    CustomUserStore userStore,
-    IPasswordHasher<CustomUser> passwordHasher,
-    IHttpClientFactory httpClientFactory,
-    ILogger<CustomUserManager> logger,
-    CustomDbContext context,
-    MemoryCacheService memoryCacheService,
-    AppConfiguration appConfiguration)
+public class CustomUserManager
 {
-    private static readonly HttpClient _client = new();
+    private readonly CustomUserStore _userStore;
+    private readonly IPasswordHasher<CustomUser> _passwordHasher;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<CustomUserManager> _logger;
+    private readonly CustomDbContext _context;
+    private readonly MemoryCacheService _memoryCacheService;
+    private readonly AppConfiguration _appConfiguration;
+    private readonly HttpClient _client;
     private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
-    private readonly TokenValidationParameters _tokenValidationParameters = new()
-    {
-        ValidateIssuer = true,
-        ValidIssuer = appConfiguration.Jwt.Issuer,
-
-        ValidateAudience = true,
-        ValidAudience = appConfiguration.Jwt.Audience,
-
-        ValidateLifetime = true,
-        ClockSkew = appConfiguration.Jwt.ClockSkew,
-
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
-    };
+    private readonly TokenValidationParameters _tokenValidationParameters;
     private readonly TimeSpan CompPassTTL = TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CustomUserManager"/> class.
+    /// </summary>
+    /// <param name="userStore">The user store used to read and persist users, roles and claims.</param>
+    /// <param name="passwordHasher">The hasher used to verify and rehash user passwords.</param>
+    /// <param name="httpClientFactory">The factory used to create outbound HTTP clients.</param>
+    /// <param name="logger">The logger used to report failures.</param>
+    /// <param name="context">The database context used for direct persistence operations.</param>
+    /// <param name="memoryCacheService">The in-memory cache used for short-lived data.</param>
+    /// <param name="appConfiguration">The application configuration (JWT settings, keys, lockout policy).</param>
+    public CustomUserManager(CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IHttpClientFactory httpClientFactory,
+        ILogger<CustomUserManager> logger, CustomDbContext context, MemoryCacheService memoryCacheService,
+        AppConfiguration appConfiguration)
+    {
+        _userStore = userStore;
+        _passwordHasher = passwordHasher;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
+        _context = context;
+        _memoryCacheService = memoryCacheService;
+        _appConfiguration = appConfiguration;
+        _client = new HttpClient();
+        _client.Timeout = TimeSpan.FromSeconds(10);
+
+        _tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = _appConfiguration.Jwt.Issuer,
+
+            ValidateAudience = true,
+            ValidAudience = _appConfiguration.Jwt.Audience,
+
+            ValidateLifetime = true,
+            ClockSkew = _appConfiguration.Jwt.ClockSkew,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(_appConfiguration.Jwt.EncryptionKey),
+        };
+    }
 
     #region Roles & Claims
 
@@ -56,10 +82,10 @@ public class CustomUserManager(
     /// <returns>True if the user has the role, otherwise false.</returns>
     public async Task<bool> HasRoleAsync(CustomUser user, string roleName)
     {
-        var role = await userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
+        var role = await _userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
-        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
+        return await _userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -78,14 +104,14 @@ public class CustomUserManager(
             return false;
 
         string userid = userClaim.Value;
-        CustomUser? user = await userStore.FindUserByIdAsync(userid);
+        CustomUser? user = await _userStore.FindUserByIdAsync(userid);
         if (user == null)
             return false;
 
-        var role = await userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
+        var role = await _userStore.Roles.FindAsync(x => x.NormalizedName == roleName.Normalize());
         if (role == null)
             return false;
-        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
+        return await _userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -96,7 +122,7 @@ public class CustomUserManager(
     /// <returns>True if the user has the role, otherwise false.</returns>
     public async Task<bool> HasRoleAsync(CustomUser user, CustomRole role)
     {
-        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
+        return await _userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -115,11 +141,11 @@ public class CustomUserManager(
             return false;
 
         string userid = userClaim.Value;
-        CustomUser? user = await userStore.FindUserByIdAsync(userid);
+        CustomUser? user = await _userStore.FindUserByIdAsync(userid);
         if (user == null)
             return false;
 
-        return await userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
+        return await _userStore.UserRoles.ExistsAsync(x => x.RoleId == role.Id && x.UserId == user.Id);
     }
 
     /// <summary>
@@ -132,10 +158,10 @@ public class CustomUserManager(
     {
         foreach (var role in rolenames)
         {
-            var r = await userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
+            var r = await _userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
             if (r == null)
                 return false;
-            if (!await userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
+            if (!await _userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
                 return false;
         }
 
@@ -152,10 +178,10 @@ public class CustomUserManager(
     {
         foreach (var role in rolenames)
         {
-            var r = await userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
+            var r = await _userStore.Roles.FindAsync(x => x.Name.ToLower() == role.ToLower());
             if (r != null)
             {
-                if (await userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
+                if (await _userStore.UserRoles.ExistsAsync(x => x.UserId == user.Id && x.RoleId == r.Id))
                     return true;
             }
         }
@@ -171,9 +197,9 @@ public class CustomUserManager(
     public async Task<List<CustomUser>> GetUsersByRoleAsync(CustomRole role)
     {
         List<CustomUser> users = [];
-        foreach (var userRole in await userStore.UserRoles.QueryAsync(x => x.RoleId == role.Id))
+        foreach (var userRole in await _userStore.UserRoles.QueryAsync(x => x.RoleId == role.Id))
         {
-            CustomUser? user = await userStore.FindUserByIdAsync(userRole.UserId);
+            CustomUser? user = await _userStore.FindUserByIdAsync(userRole.UserId);
             if (user == null)
                 continue;
 
@@ -208,11 +234,11 @@ public class CustomUserManager(
     /// <returns>A list of custom roles.</returns>
     private async Task<List<CustomRole>> GetUserCustomRolesAsync(string userid)
     {
-        var userRoles = await userStore.UserRoles.QueryAsync(x => x.UserId == userid);
+        var userRoles = await _userStore.UserRoles.QueryAsync(x => x.UserId == userid);
         List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = await userStore.Roles.FindAsync(x => x.Id == role.RoleId);
+            var r = await _userStore.Roles.FindAsync(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -226,11 +252,11 @@ public class CustomUserManager(
     /// <returns>The highest role.</returns>
     public async Task<CustomRole> GetUserHighestRoleAsync(string userid)
     {
-        var userRoles = await userStore.UserRoles.QueryAsync(x => x.UserId == userid);
+        var userRoles = await _userStore.UserRoles.QueryAsync(x => x.UserId == userid);
         List<CustomRole> roles = [];
         foreach (var role in userRoles)
         {
-            var r = await userStore.Roles.FindAsync(x => x.Id == role.RoleId);
+            var r = await _userStore.Roles.FindAsync(x => x.Id == role.RoleId);
             if (r != null)
                 roles.Add(r);
         }
@@ -249,7 +275,7 @@ public class CustomUserManager(
         List<CustomRole> roles = await GetUserCustomRolesAsync(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
-            claims.AddRange(await  userStore.RoleClaims.QueryAsync(x => x.RoleId == role.Id));
+            claims.AddRange(await  _userStore.RoleClaims.QueryAsync(x => x.RoleId == role.Id));
         }
         return claims;
     }
@@ -263,10 +289,10 @@ public class CustomUserManager(
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SetUserClaimAsync(CustomUser user, string claim, string value)
     {
-        var localClaim = await userStore.UserClaims.FindAsync(x => x.UserId == user.Id && x.ClaimType == claim);
+        var localClaim = await _userStore.UserClaims.FindAsync(x => x.UserId == user.Id && x.ClaimType == claim);
         if (localClaim == null)
         {
-            await userStore.UserClaims.AddAsync(new CustomUserClaim
+            await _userStore.UserClaims.AddAsync(new CustomUserClaim
             {
                 UserId = user.Id,
                 ClaimType = claim,
@@ -276,7 +302,7 @@ public class CustomUserManager(
         }
 
         localClaim.ClaimValue = value;
-        await userStore.UserClaims.UpdateAsync(localClaim, true);
+        await _userStore.UserClaims.UpdateAsync(localClaim, true);
     }
     #endregion
 
@@ -289,14 +315,14 @@ public class CustomUserManager(
     /// <returns>True if the user has the permission, otherwise false.</returns>
     public async Task<bool> HasPermissionAsync(string userid, string claim, string value = "true")
     {
-        var roleClaim = await userStore.UserClaims.FindAsync(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
+        var roleClaim = await _userStore.UserClaims.FindAsync(x => x.UserId == userid && x.ClaimType == claim && x.ClaimValue == value);
         if (roleClaim != null)
             return true;
 
         List<CustomRole> roles = await GetUserCustomRolesAsync(userid);
         foreach (var role in roles.OrderByDescending(x => x.Level))
         {
-            if (await userStore.RoleClaims.ExistsAsync(x => x.RoleId == role.Id && x.ClaimType == claim && x.ClaimValue == value))
+            if (await _userStore.RoleClaims.ExistsAsync(x => x.RoleId == role.Id && x.ClaimType == claim && x.ClaimValue == value))
                 return true;
         }
         return false;
@@ -335,18 +361,17 @@ public class CustomUserManager(
         try
         {
             string cacheKey = $"pwned:{prefix}";
-            if (!memoryCacheService.TryGetValue(cacheKey, out string? response))
+            if (!_memoryCacheService.TryGetValue(cacheKey, out string? response))
             {
-                _client.Timeout = TimeSpan.FromSeconds(30);
                 response = await _client.GetStringAsync($"https://api.pwnedpasswords.com/range/{prefix}");
                 if (!string.IsNullOrEmpty(cacheKey))
-                    memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
+                    _memoryCacheService.SetValue(cacheKey, response, CompPassTTL);
             }
             return !string.IsNullOrEmpty(response) && response.Contains(suffix);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An error occured during compromised password check.");
+            _logger.LogError(ex, "An error occured during compromised password check.");
             return false;
         }
     }
@@ -361,14 +386,14 @@ public class CustomUserManager(
     {
         var handler = new JwtSecurityTokenHandler();
         var token = handler.CreateJwtSecurityToken(
-            appConfiguration.Jwt.Issuer,
-            appConfiguration.Jwt.Audience,
+            _appConfiguration.Jwt.Issuer,
+            _appConfiguration.Jwt.Audience,
             claims,
             DateTime.UtcNow,
             DateTime.UtcNow.Add(duration),
             DateTime.UtcNow,
             new SigningCredentials(
-                new SymmetricSecurityKey(appConfiguration.Jwt.EncryptionKey),
+                new SymmetricSecurityKey(_appConfiguration.Jwt.EncryptionKey),
                 SecurityAlgorithms.HmacSha256)
             );
         return handler.WriteToken(token);
@@ -385,27 +410,27 @@ public class CustomUserManager(
     public async Task<CustomUser?> VerifyPasswordAsync(string username, string password)
     {
         string normalizedUsername = username.Normalize();
-        CustomUser? user = await userStore.FindUserAsync(x => x.NormalizedEmail == normalizedUsername || x.NormalizedUserName == normalizedUsername);
+        CustomUser? user = await _userStore.FindUserAsync(x => x.NormalizedEmail == normalizedUsername || x.NormalizedUserName == normalizedUsername);
         if (user == null)
             return null;
 
-        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         switch (result)
         {
             case PasswordVerificationResult.Failed:
                 user.AccessFailedCount++;
-                if (user.AccessFailedCount > appConfiguration.Jwt.LockoutMaxAttempts)
+                if (user.AccessFailedCount > _appConfiguration.Jwt.LockoutMaxAttempts)
                 {
                     user.LockoutEnabled = true;
-                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(appConfiguration.Jwt.LockoutDuration);
+                    user.LockoutEnd = DateTimeOffset.UtcNow.Add(_appConfiguration.Jwt.LockoutDuration);
                     user.LockoutReason = "Too many failed login attempts.";
                 }
-                await userStore.UpdateUserAsync(user, true);
+                await _userStore.UpdateUserAsync(user, true);
                 return null;
             case PasswordVerificationResult.SuccessRehashNeeded:
-                user.PasswordHash = passwordHasher.HashPassword(user, password);
+                user.PasswordHash = _passwordHasher.HashPassword(user, password);
                 user.SecurityStamp = Guid.NewGuid().ToString();
-                await userStore.UpdateUserAsync(user, true);
+                await _userStore.UpdateUserAsync(user, true);
                 break;
         }
 
@@ -423,16 +448,16 @@ public class CustomUserManager(
         if (!await VerifyJwtTokenAsync(token))
             return null;
 
-        string hashedToken = StringChiper.GetEncryptedHash(token, appConfiguration.Jwt.EncryptionKey);
-        CustomUserToken? userToken = await userStore.UserTokens.FindAsync(x => x.Value == hashedToken);
+        string hashedToken = StringChiper.GetEncryptedHash(token, _appConfiguration.Jwt.EncryptionKey);
+        CustomUserToken? userToken = await _userStore.UserTokens.FindAsync(x => x.Value == hashedToken);
         if (userToken == null)
             return null;
 
-        CustomUserLogin? userLogin = await userStore.UserLogins.FindAsync(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
+        CustomUserLogin? userLogin = await _userStore.UserLogins.FindAsync(x => x.UserId == userToken.UserId && x.ProviderKey == userToken.Id && x.ExpireDate > DateTimeOffset.UtcNow);
         if (userLogin == null)
             return null;
 
-        return await userStore.FindUserByIdAsync(userToken.UserId);
+        return await _userStore.FindUserByIdAsync(userToken.UserId);
     }
 
     /// <summary>
@@ -451,7 +476,7 @@ public class CustomUserManager(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An error occurred while verifying the token.");
+            _logger.LogError(ex, "An error occurred while verifying the token.");
             return false;
         }
     }
@@ -471,7 +496,7 @@ public class CustomUserManager(
 
         // Combine traits and hash them
         var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
-        return StringChiper.GetEncryptedHash(rawData, appConfiguration.Jwt.FingerprintKey);
+        return StringChiper.GetEncryptedHash(rawData, _appConfiguration.Jwt.FingerprintKey);
     }
     #endregion
 
@@ -487,9 +512,9 @@ public class CustomUserManager(
     {
         var key = KeyGeneration.GenerateRandomKey(20);
         string token = Encoding.UTF8.GetString(key);
-        user.TwoFactorSecret = token.EncryptSelf(appConfiguration.Jwt.TwoFactorEncryptionKey);
+        user.TwoFactorSecret = token.EncryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey);
         user.SecurityStamp  = Guid.NewGuid().ToString();
-        await userStore.UpdateUserAsync(user, true);
+        await _userStore.UpdateUserAsync(user, true);
         return token;
     }
 
@@ -504,7 +529,7 @@ public class CustomUserManager(
         if (string.IsNullOrEmpty(user.TwoFactorSecret))
             return false;
 
-        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(appConfiguration.Jwt.TwoFactorEncryptionKey);
+        string decryptedSecret = user.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey);
         var totp = new Totp(Encoding.UTF8.GetBytes(decryptedSecret));
         return totp.VerifyTotp(code, out _, new VerificationWindow(1));
     }
@@ -517,23 +542,23 @@ public class CustomUserManager(
     /// <returns>A collection of plaintext recovery codes (display these to the user once); or <c>null</c> on failure.</returns>
     public async Task<IEnumerable<string>?> GenerateNewTwoFactorRecoveryCodesAsync(CustomUser user, int number)
     {
-        var existingCodes = await userStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
+        var existingCodes = await _userStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
         foreach (var code in existingCodes)
-            await userStore.UserBackupCodes.RemoveAsync(code);
-        await context.SaveChangesAsync();
+            await _userStore.UserBackupCodes.RemoveAsync(code);
+        await _context.SaveChangesAsync();
         List<string> newCodes = [];
         for (int i = 0; i < number; i++)
         {
             string code = TokenHelper.GenerateRandomString(length: 10);
             newCodes.Add(code);
-            await userStore.UserBackupCodes.AddAsync(new UserBackupCode
+            await _userStore.UserBackupCodes.AddAsync(new UserBackupCode
             {
                 UserId = user.Id,
-                HashedCode = StringChiper.GetEncryptedHash(code, appConfiguration.Jwt.TwoFactorEncryptionKey),
+                HashedCode = StringChiper.GetEncryptedHash(code, _appConfiguration.Jwt.TwoFactorEncryptionKey),
                 CreateAt = DateTime.UtcNow
             });
         }
-        await context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
         return newCodes;
     }
     #endregion
