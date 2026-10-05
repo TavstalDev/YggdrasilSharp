@@ -166,11 +166,12 @@ public class CustomSignInManager
 
         var lifeSpan = rememberMe ? _rememberMeLogin : _regularLogin;
         DateTimeOffset expireDate = DateTimeOffset.UtcNow.Add(lifeSpan);
+        string rawToken = _userManager.CreateJwtToken(lifeSpan);
         var userToken = await _userStore.UserTokens.AddAsync(
             new CustomUserToken(
                 user.Id,
                 "AccessToken",
-                _userManager.CreateJwtToken(lifeSpan),
+                StringChiper.GetEncryptedHash(rawToken, _appConfiguration.Jwt.EncryptionKey),
                 "Default",
                 DateTimeOffset.UtcNow
             ), true);
@@ -192,6 +193,7 @@ public class CustomSignInManager
         {
             Succeeded = true,
             User = user,
+            RawToken = rawToken,
             UserLogin = userLogin,
             UserToken = userToken,
             Message = "Sign-in successful."
@@ -260,11 +262,12 @@ public class CustomSignInManager
 
         var lifeSpan = rememberMe ? _rememberMeLogin : _regularLogin;
         DateTimeOffset expireDate = DateTimeOffset.UtcNow.Add(lifeSpan);
+        string rawToken = _userManager.CreateJwtToken(lifeSpan);
         var userToken = await _userStore.UserTokens.AddAsync(
             new CustomUserToken(
                 user.Id,
                 "AccessToken",
-                _userManager.CreateJwtToken(lifeSpan),
+                StringChiper.GetEncryptedHash(rawToken, _appConfiguration.Jwt.EncryptionKey),
                 "Default",
                 DateTimeOffset.UtcNow
             ), true);
@@ -289,6 +292,7 @@ public class CustomSignInManager
         {
             Succeeded = true,
             User = user,
+            RawToken = rawToken,
             UserLogin = userLogin,
             UserToken = userToken,
             Message = "Sign-in successful."
@@ -382,12 +386,13 @@ public class CustomSignInManager
         }
 
         string host = HttpHelper.GetClientIp(httpContext) ?? "";
+        var rawToken = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours));
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,
             UserIp = host,
             ClientId = clientId,
-            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
+            Token = StringChiper.GetEncryptedHash(rawToken, _appConfiguration.Jwt.EncryptionKey),
             CreatedAt =  DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
         }, true);
@@ -401,6 +406,7 @@ public class CustomSignInManager
         {
             Succeeded = true,
             User = user,
+            RawToken = rawToken,
             UserPlaySession = userPlaySession,
             Message = "Sign-in successful."
         };
@@ -464,12 +470,13 @@ public class CustomSignInManager
         await _userStore.UpdateUserAsync(user, true);
 
         string host = HttpHelper.GetClientIp(httpContext) ?? "";
+        string rawToken = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours));
         var userPlaySession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = user.Id,
             UserIp = host,
             ClientId = clientId,
-            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
+            Token = StringChiper.GetEncryptedHash(rawToken, _appConfiguration.Jwt.EncryptionKey),
             CreatedAt =  DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours)
         }, true);
@@ -482,6 +489,7 @@ public class CustomSignInManager
         {
             Succeeded = true,
             User = user,
+            RawToken = rawToken,
             UserPlaySession = userPlaySession,
             Message = "Sign-in successful."
         };
@@ -490,11 +498,12 @@ public class CustomSignInManager
     /// <summary>
     /// Remove an access token and its associated login record.
     /// </summary>
-    /// <param name="token">The access token value to revoke.</param>
+    /// <param name="token">The raw access token value to revoke.</param>
     /// <returns>True if token was found and removed, false otherwise.</returns>
     public async Task<bool> SignOutAsync(string token)
     {
-        CustomUserToken? userToken = await _userStore.UserTokens.FindAsync(x => x.Value == token);
+        string hashedToken =  StringChiper.GetEncryptedHash(token, _appConfiguration.Jwt.EncryptionKey);
+        CustomUserToken? userToken = await _userStore.UserTokens.FindAsync(x => x.Value == hashedToken);
         if (userToken == null)
             return false;
 
@@ -508,11 +517,12 @@ public class CustomSignInManager
     /// <summary>
     /// Remove a launcher play session based on the play session token.
     /// </summary>
-    /// <param name="playSessionToken">The play session token to revoke.</param>
+    /// <param name="playSessionToken">The raw play session token to revoke.</param>
     /// <returns>True if the session was found and removed, false otherwise.</returns>
     public async Task<bool> LauncherSignOutAsync(string playSessionToken)
     {
-        UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == playSessionToken);
+        string hashedToken =  StringChiper.GetEncryptedHash(playSessionToken, _appConfiguration.Jwt.EncryptionKey);
+        UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == hashedToken);
         if (playSession == null)
             return false;
 
@@ -524,26 +534,33 @@ public class CustomSignInManager
     /// Exchanges an active play session token for a freshly issued one, carrying over the session's user, IP and client.
     /// The previous session token is not revoked by this operation.
     /// </summary>
-    /// <param name="token">The play session token to refresh.</param>
-    /// <returns>The newly created play session, or null when the token is unknown or expired.</returns>
-    public async Task<UserPlaySession?> RefreshPlaySessionToken(string token)
+    /// <param name="token">The raw play session token to refresh.</param>
+    /// <returns>
+    /// The newly created play session together with the raw token that was issued for it, or <c>null</c>
+    /// when the token is unknown or expired.
+    /// </returns>
+    public async Task<(UserPlaySession Session, string RawToken)?> RefreshPlaySessionToken(string token)
     {
-        UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == token);
+        string hashedToken =  StringChiper.GetEncryptedHash(token, _appConfiguration.Jwt.EncryptionKey);
+        UserPlaySession? playSession = await _userStore.UserPlaySessions.FindAsync(x => x.Token == hashedToken);
         if (playSession == null)
             return null;
 
         if (playSession.ExpiresAt < DateTimeOffset.UtcNow)
             return null;
 
-        return await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
+        string rawToken = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours));
+        var newSession = await _userStore.UserPlaySessions.AddAsync(new UserPlaySession
         {
             UserId = playSession.UserId,
             UserIp = playSession.UserIp,
             ClientId = playSession.ClientId,
-            Token = _userManager.CreateJwtToken(TimeSpan.FromHours(_appConfiguration.Yggdrasil.TokenTtlHours)),
+            Token = StringChiper.GetEncryptedHash(rawToken, _appConfiguration.Jwt.EncryptionKey),
             CreatedAt = DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddHours(_appConfiguration.Yggdrasil.TokenTtlHours),
         }, true);
+
+        return (newSession, rawToken);
     }
 
     private async Task CheckPlaySessionsAsync(CustomUser user, int toKeep = 10)

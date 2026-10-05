@@ -123,7 +123,8 @@ public class SessionServerController : CustomControllerBase
             if (!await _userManager.VerifyJwtTokenAsync(request.AccessToken))
                 return YigErrorResult(HttpStatusCode.Unauthorized, "Invalid access token");
 
-            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.UserId == user.Id && x.Token == request.AccessToken);
+            string hashedAccessToken = StringChiper.GetEncryptedHash(request.AccessToken, _appConfiguration.Jwt.EncryptionKey);
+            UserPlaySession? session = await UserStore.UserPlaySessions.FindAsync(x => x.UserId == user.Id && x.Token == hashedAccessToken);
             if (session == null)
                 return YigErrorResult(HttpStatusCode.NotFound,
                     "No active session found for the provided access token");

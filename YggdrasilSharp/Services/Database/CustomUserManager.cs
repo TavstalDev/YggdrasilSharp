@@ -423,7 +423,8 @@ public class CustomUserManager(
         if (!await VerifyJwtTokenAsync(token))
             return null;
 
-        CustomUserToken? userToken = await userStore.UserTokens.FindAsync(x => x.Value == token);
+        string hashedToken = StringChiper.GetEncryptedHash(token, appConfiguration.Jwt.EncryptionKey);
+        CustomUserToken? userToken = await userStore.UserTokens.FindAsync(x => x.Value == hashedToken);
         if (userToken == null)
             return null;
 

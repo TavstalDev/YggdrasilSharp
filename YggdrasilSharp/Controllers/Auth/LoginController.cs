@@ -126,6 +126,7 @@ public class LoginController : CustomControllerBase
                 StatusCode = HttpStatusCode.OK,
                 Message = "Login successful.",
                 UserId = userToken.UserId,
+                Token = result.RawToken!,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -193,7 +194,7 @@ public class LoginController : CustomControllerBase
                 StatusCode = HttpStatusCode.OK,
                 Message = "Login successful.",
                 UserId = userToken.UserId,
-                Token = userToken.Value!,
+                Token = result.RawToken!,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -260,7 +261,7 @@ public class LoginController : CustomControllerBase
                 StatusCode = HttpStatusCode.OK,
                 Message = "Login successful",
                 UserId = userPlaySession.UserId,
-                Token = userPlaySession.Token,
+                Token = result.RawToken,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
             });
         }
@@ -319,7 +320,7 @@ public class LoginController : CustomControllerBase
                 StatusCode = HttpStatusCode.OK,
                 Message = "Login successful",
                 UserId = userPlaySession.UserId,
-                Token = userPlaySession.Token,
+                Token = result.RawToken,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
             });
         }

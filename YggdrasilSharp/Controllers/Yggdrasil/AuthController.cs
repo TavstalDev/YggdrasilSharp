@@ -9,6 +9,7 @@ using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.RateLimiting.Constants;
 using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
 using Tavstal.YggdrasilSharp.Services.Database;
+using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 
@@ -81,7 +82,7 @@ public class AuthController  : CustomControllerBase
 
             YigLoginResponse response = new YigLoginResponse
             {
-                AccessToken = result.UserPlaySession!.Token!,
+                AccessToken = result.RawToken!,
                 ClientToken = request.ClientToken ?? string.Empty,
                 SelectedProfile = profile,
                 AvailableProfiles = [ profile ]
@@ -131,13 +132,15 @@ public class AuthController  : CustomControllerBase
             if (!AppConfiguration.Yggdrasil.EnableLegacyAuth)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Legacy authentication is disabled on this server.");
 
-            UserPlaySession? playSession = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.AccessToken && x.ClientId == request.ClientToken);
+            UserPlaySession? playSession = await FindPlaySessionAsync(request.AccessToken, request.ClientToken);
             if (playSession == null)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Not allowed.");
 
-            UserPlaySession? newSession = await _signInManager.RefreshPlaySessionToken(playSession.Token);
-            if (newSession == null)
+            var refreshed = await _signInManager.RefreshPlaySessionToken(request.AccessToken);
+            if (refreshed == null)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Not allowed.");
+
+            UserPlaySession newSession = refreshed.Value.Session;
 
             var user = await UserStore.FindUserAsync(x => x.Id == newSession.UserId);
             if (user == null)
@@ -153,7 +156,7 @@ public class AuthController  : CustomControllerBase
 
             YigLoginResponse response = new YigLoginResponse
             {
-                AccessToken = newSession.Token,
+                AccessToken = refreshed.Value.RawToken,
                 ClientToken = request.ClientToken ?? string.Empty,
                 SelectedProfile = profile,
                 AvailableProfiles = [ profile ]
@@ -202,7 +205,7 @@ public class AuthController  : CustomControllerBase
             if (!AppConfiguration.Yggdrasil.EnableLegacyAuth)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Legacy authentication is disabled on this server.");
 
-            UserPlaySession? playSession = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.AccessToken && x.ClientId == request.ClientToken);
+            UserPlaySession? playSession = await FindPlaySessionAsync(request.AccessToken, request.ClientToken);
             if (playSession == null)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Not allowed.");
 
@@ -240,7 +243,7 @@ public class AuthController  : CustomControllerBase
             if (!AppConfiguration.Yggdrasil.EnableLegacyAuth)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Legacy authentication is disabled on this server.");
 
-            UserPlaySession? playSession = await UserStore.UserPlaySessions.FindAsync(x => x.Token == request.AccessToken && x.ClientId == request.ClientToken);
+            UserPlaySession? playSession = await FindPlaySessionAsync(request.AccessToken, request.ClientToken);
             if (playSession == null)
                 return YigErrorResult(HttpStatusCode.Forbidden, "Not allowed.");
 
@@ -294,5 +297,18 @@ public class AuthController  : CustomControllerBase
             Logger.LogCritical(ex, "Unexpected error occurred while processing the request.");
             return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
+    }
+
+    /// <summary>
+    /// Resolves a play session from the raw access token supplied by the client. Play session tokens are
+    /// stored as keyed hashes, so the incoming token is hashed before it is matched against the store.
+    /// </summary>
+    /// <param name="accessToken">The raw access token sent by the client.</param>
+    /// <param name="clientToken">The client token the play session must have been created with.</param>
+    /// <returns>The matching <see cref="UserPlaySession"/>, or <c>null</c> when no session matches.</returns>
+    private async Task<UserPlaySession?> FindPlaySessionAsync(string accessToken, string? clientToken)
+    {
+        string hashedAccessToken = StringChiper.GetEncryptedHash(accessToken, AppConfiguration.Jwt.EncryptionKey);
+        return await UserStore.UserPlaySessions.FindAsync(x => x.Token == hashedAccessToken && x.ClientId == clientToken);
     }
 }

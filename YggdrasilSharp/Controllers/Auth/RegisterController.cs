@@ -82,19 +82,19 @@ public class RegisterController : CustomControllerBase
 
                 return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
-            if (await _userManager.IsCompromisedPasswordAsync(request.Password)) 
+
+            if (await _userManager.IsCompromisedPasswordAsync(request.Password))
                 return JsonResult(HttpStatusCode.Forbidden, "Password is compromised.");
-            
+
             if (!request.EmailAddress.IsValidEmail())
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid email address.");
-                
+
             var normalizedEmail = request.EmailAddress.Normalize();
             var normalizedUsername = request.Username.Normalize();
             CustomUser? user = await UserStore.FindUserAsync(x => x.NormalizedEmail == normalizedEmail || x.NormalizedUserName == normalizedUsername);
             if (user != null)
                 return JsonResult(HttpStatusCode.Conflict, "User already exists.");
-            
+
             FileData? avatarData = null;
             if (request.Avatar is { Length: > 0 })
             {
@@ -103,10 +103,10 @@ public class RegisterController : CustomControllerBase
                 byte[] hashBytes = await sha256.ComputeHashAsync(stream);
                 string fileHash = Convert.ToHexStringLower(hashBytes);
                 stream.Position = 0;
-                
+
                 if (!await SkiaHelper.IsValidFormatAsync(stream, SKEncodedImageFormat.Png, Logger))
                     return JsonResult(HttpStatusCode.BadRequest, "Invalid image format (not a real PNG).");
-                
+
                 FileData fd = new FileData
                 {
                     Hash = fileHash,
@@ -117,25 +117,25 @@ public class RegisterController : CustomControllerBase
                 var uploadResult = await fd.SaveFileAsync(stream);
                 if (!uploadResult.Success)
                     return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-                
+
                 avatarData = await _fileDataRepo.AddAsync(fd, true);
             }
 
             var newUser = new CustomUser(request.Username, normalizedUsername, request.EmailAddress, normalizedEmail,
                 "", ESkinType.WIDE,
                 null, string.Empty, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-            
+
             // Hash the password
             newUser.PasswordHash = _passwordHasher.HashPassword(newUser, request.Password);
             newUser.SecurityStamp = Guid.NewGuid().ToString();
-            
+
             user = await UserStore.AddUserAsync(newUser, true);
             if (avatarData != null)
             {
                 avatarData.UserId = user.Id;
                 await _fileDataRepo.UpdateAsync(avatarData);
             }
-            
+
             // Add the user to the default role
             var defaultRole = await UserStore.Roles.FindAsync(x => x.NormalizedName == "DEFAULT");
             if (defaultRole != null)
@@ -146,7 +146,7 @@ public class RegisterController : CustomControllerBase
             await UserStore.UserClaims.AddAsync(new CustomUserClaim { UserId = user.Id, ClaimType = ClaimTypes.Role, ClaimValue = "default" });
             // Save changes
             await _dbContext.SaveChangesAsync();
-            
+
             // Send registration confirmation email
             try
             {
@@ -165,7 +165,7 @@ public class RegisterController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, "Unexpected error occurred");
         }
     }
-    
+
     /// <summary>
     /// Confirms a user's registration using a confirmation token.
     /// </summary>
@@ -193,7 +193,7 @@ public class RegisterController : CustomControllerBase
 
                 return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
+
             // Find the user by ID
             CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
@@ -208,9 +208,10 @@ public class RegisterController : CustomControllerBase
             if (confirmationToken == null)
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
 
-            if (confirmationToken.Value != request.ConfirmationToken)
+            string hashedToken = StringChiper.GetEncryptedHash(request.ConfirmationToken, AppConfiguration.Jwt.EncryptionKey);
+            if (confirmationToken.Value != hashedToken)
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid confirmation token");
-            
+
             await UserStore.UserTokens.RemoveAsync(confirmationToken);
             user.EmailConfirmed = true;
             await UserStore.UpdateUserAsync(user);
@@ -238,29 +239,30 @@ public class RegisterController : CustomControllerBase
     {
         if (string.IsNullOrEmpty(user.Email))
             return;
-        
+
         var confirmationToken = await UserStore.UserTokens.FindAsync(x => x.UserId == user.Id && x.Name == "EmailConfirmationToken");
         if (confirmationToken != null)
             await UserStore.UserTokens.RemoveAsync(confirmationToken, true);
 
-        confirmationToken = await UserStore.UserTokens.AddAsync(new CustomUserToken
+        string rawToken = TokenHelper.GenerateAccountConfirmationToken();
+        await UserStore.UserTokens.AddAsync(new CustomUserToken
         {
             Name = "EmailConfirmationToken",
             LoginProvider = "Default",
-            Value = TokenHelper.GenerateAccountConfirmationToken(),
+            Value = StringChiper.GetEncryptedHash(rawToken, AppConfiguration.Jwt.EncryptionKey),
             CreateDate = DateTimeOffset.UtcNow,
             UserId = user.Id
         }, true);
-        
+
         var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
         {
             Path = "/register/confirm",
-            Query = $"userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(confirmationToken.Value!)}"
+            Query = $"userId={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(rawToken)}"
         };
         string confirmationLink = uriBuilder.ToString();
         await _emailService.SendEmailAsync(user.Email, user.UserName, "Registration Confirmation",
-            $"Confirm your account by clicking the button below, or by copying and pasting the following link into your browser: {confirmationLink}<br/><br/>", 
-            confirmationLink, 
+            $"Confirm your account by clicking the button below, or by copying and pasting the following link into your browser: {confirmationLink}<br/><br/>",
+            confirmationLink,
             "Confirm Account");
     }
 }
