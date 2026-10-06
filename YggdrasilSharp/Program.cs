@@ -342,7 +342,11 @@ public static class Program
             tags: ["db", "ready"]
         );
         // Add memory caching services
-        services.AddMemoryCache();
+        services.AddMemoryCache(options =>
+        {
+            options.SizeLimit = 1024;
+            options.CompactionPercentage = 0.25;
+        });
         services.AddSingleton<MemoryCacheService>();
         // Configure IP rate limiting
         #region Rate Limiting
