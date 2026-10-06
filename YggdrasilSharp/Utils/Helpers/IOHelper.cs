@@ -19,9 +19,11 @@ public static class IOHelper
     /// <param name="filePath">The path where the file will be saved.</param>
     /// <param name="stream">The stream containing the file data to save.</param>
     /// <param name="acceptedMimeTypes">An optional array of accepted MIME types for validation.</param>
+    /// <param name="logger">An optional logger.</param>
     /// <returns>A task that represents the asynchronous operation. The task result describes the outcome of the save.</returns>
-    public static async Task<FileSaveResult> SaveFileAsync(string filePath, Stream stream, string[]? acceptedMimeTypes = null)
+    public static async Task<FileSaveResult> SaveFileAsync(string filePath, Stream stream, string[]? acceptedMimeTypes = null, ILogger? logger = null)
     {
+        var tempPath = Path.GetTempFileName();
         try
         {
             if (acceptedMimeTypes != null && !VerifyMimeType(stream, acceptedMimeTypes))
@@ -32,12 +34,11 @@ public static class IOHelper
                     Message = "Invalid MIME type."
                 };
 
-            var tempPath = Path.GetTempFileName();
             await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
             await stream.CopyToAsync(fileStream);
             fileStream.Close();
             if (await IsFileInfectedAsync(tempPath))
-                return new FileSaveResult 
+                return new FileSaveResult
                 {
                     Success = false,
                     StatusCode = HttpStatusCode.BadRequest,
@@ -45,7 +46,7 @@ public static class IOHelper
                 };
 
             File.Move(tempPath, filePath);
-            return new FileSaveResult 
+            return new FileSaveResult
             {
                 Success = true,
                 StatusCode = HttpStatusCode.OK,
@@ -54,7 +55,9 @@ public static class IOHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving file: {ex.Message}");
+            logger?.LogError(ex, "Error saving file");
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
             return new FileSaveResult
             {
                 Success = false,
@@ -63,7 +66,7 @@ public static class IOHelper
             };
         }
     }
-    
+
     /// <summary>
     /// Verifies the MIME type of the given file content against the expected MIME types.
     /// </summary>
@@ -85,7 +88,7 @@ public static class IOHelper
 
         return expectedMimeTypes.Contains(mimeTypeString);
     }
-    
+
     /// <summary>
     /// Checks if a file is infected by scanning it using the ClamAV antivirus tool.
     /// </summary>
