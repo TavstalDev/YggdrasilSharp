@@ -32,7 +32,7 @@ public class SkinsControllerTests : ControllerTestBase
     public SkinsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new SkinsController(_loggerMock.Object, _userManager, _userStore, _memoryCacheService, _fileDataRepo, AppConfiguration);
+        _controller = new SkinsController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _memoryCacheService, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -95,7 +95,7 @@ public class SkinsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             var result = await _controller.GetSkin();
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
         
         /// <summary>
@@ -107,7 +107,7 @@ public class SkinsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.GetSkin();
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No skin found for the user");
         }
     }
     
@@ -138,7 +138,7 @@ public class SkinsControllerTests : ControllerTestBase
             
             var result = await _controller.UploadSkin(file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Skin uploaded successfully");
 
             stream.Position = 0;
             using var sha256 = SHA256.Create();
@@ -163,7 +163,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkin(file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
         
         /// <summary>
@@ -181,7 +181,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkin(file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         }
         
         /// <summary>
@@ -200,7 +200,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkin(file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
         }
     }
     
@@ -240,7 +240,7 @@ public class SkinsControllerTests : ControllerTestBase
             {
                 var result = await _controller.DeleteSkin();
 
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "Skin deleted successfully");
             }
             finally
             {
@@ -256,7 +256,7 @@ public class SkinsControllerTests : ControllerTestBase
         {
             var result = await _controller.DeleteSkin();
             
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ public class SkinsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.DeleteSkin();
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No skin found for the user");
         }
     }
     
@@ -325,13 +325,13 @@ public class SkinsControllerTests : ControllerTestBase
         /// Failure case: if the caller lacks admin permissions, GetSkinAdmin should return 403 Forbidden.
         /// </summary>
         [Fact(DisplayName = "Failure: No permissions")]
-        public async Task ReturnsUnauthorized()
+        public async Task ReturnsForbidden()
         {
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.GetSkinAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
         
         /// <summary>
@@ -344,7 +344,7 @@ public class SkinsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.GetSkinAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No skin found for the user");
         }
     }
     
@@ -376,7 +376,7 @@ public class SkinsControllerTests : ControllerTestBase
             
             var result = await _controller.UploadSkinAdmin(user.Id, file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Skin uploaded successfully");
 
             stream.Position = 0;
             using var sha256 = SHA256.Create();
@@ -403,7 +403,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
         
         /// <summary>
@@ -422,7 +422,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         }
         
         /// <summary>
@@ -441,7 +441,7 @@ public class SkinsControllerTests : ControllerTestBase
             };
             var result = await _controller.UploadSkinAdmin(user.Id, file);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
         }
     }
     
@@ -483,7 +483,7 @@ public class SkinsControllerTests : ControllerTestBase
             {
                 var result = await _controller.DeleteSkinAdmin(user.Id);
 
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "Skin deleted successfully");
             }
             finally
             {
@@ -501,7 +501,7 @@ public class SkinsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.DeleteSkinAdmin(user.Id);
            
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
 
         /// <summary>
@@ -514,7 +514,7 @@ public class SkinsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.DeleteSkinAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No skin found for the user");
         }
     }
 }

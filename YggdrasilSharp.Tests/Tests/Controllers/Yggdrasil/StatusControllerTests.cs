@@ -13,7 +13,7 @@ public class StatusControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<StatusController>> _loggerMock = new();
     private readonly StatusController _controller;
-    
+
     /// <summary>
     /// Initializes a new instance of <see cref="StatusControllerTests"/>.
     /// Constructs the <see cref="StatusController"/> with the test database, custom user manager, memory cache service, mock logger and test settings.
@@ -22,7 +22,7 @@ public class StatusControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base class for logging test output.</param>
     public StatusControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new StatusController(_loggerMock.Object, _userStore, _memoryCacheService, AppConfiguration);
+        _controller = new StatusController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -53,7 +53,7 @@ public class StatusControllerTests : ControllerTestBase
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
     }
-    
+
     /// <summary>
     /// Tests for the public keys endpoint which exposes server public keys.
     /// </summary>
@@ -64,7 +64,7 @@ public class StatusControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public PublicKeysTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: calling <c>GetPublicKeys</c> should return a <see cref="ContentResult"/> containing the public keys.
         /// </summary>

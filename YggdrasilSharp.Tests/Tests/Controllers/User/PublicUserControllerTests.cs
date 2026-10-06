@@ -31,7 +31,7 @@ public class PublicUserControllerTests : ControllerTestBase
     public PublicUserControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new PublicUserController(_loggerMock.Object, _userStore, _fileDataRepo, AppConfiguration);
+        _controller = new PublicUserController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -48,7 +48,7 @@ public class PublicUserControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetUserInfoTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: when a user exists in the test database the controller should
         /// return a <see cref="ContentResult"/> containing the serialized public user info.
@@ -57,15 +57,15 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             var user =await CreateUserAsync(_controller);
-            
+
             IActionResult result = await _controller.GetUserInfo(user.Id);
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine(contentResult.Content!);
         }
-        
+
         /// <summary>
         /// Failure case: when the requested user id does not exist the controller should
         /// return an <see cref="ObjectResult"/> with HTTP status 404 (Not Found).
@@ -74,11 +74,11 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             IActionResult result = await _controller.GetUserInfo("nonexistent-id");
-            
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "User not found.");
         }
     }
-    
+
     /// <summary>
     /// Tests for the <see cref="PublicUserController.GetAvatar"/> endpoint.
     /// </summary>
@@ -89,7 +89,7 @@ public class PublicUserControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GetAvatarTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: when a user has an avatar stored in FileData the controller should
         /// return a <see cref="FileStreamResult"/> containing the avatar stream and correct content type.
@@ -127,7 +127,7 @@ public class PublicUserControllerTests : ControllerTestBase
                 fd.DeleteFile();
             }
         }
-        
+
         /// <summary>
         /// Failure case: requesting an avatar for a non-existent user id should return
         /// an <see cref="ObjectResult"/> with HTTP status 404 (Not Found).
@@ -136,10 +136,10 @@ public class PublicUserControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenUserNotFound()
         {
             IActionResult result = await _controller.GetAvatar("no-such-user");
-            
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "User not found.");
         }
-        
+
         /// <summary>
         /// Failure case: when the user exists but no avatar is associated, the controller should
         /// return an <see cref="ObjectResult"/> with HTTP status 404 (Not Found).
@@ -150,8 +150,8 @@ public class PublicUserControllerTests : ControllerTestBase
             var user = await CreateUserAsync(_controller);
 
             IActionResult result = await _controller.GetAvatar(user.Id);
-            
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No avatar found.");
         }
     }
 }

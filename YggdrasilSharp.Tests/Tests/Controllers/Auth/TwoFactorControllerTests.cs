@@ -31,7 +31,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         {
             // Controller now expects (logger, userManager, userStore, settings)
             var signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, AppConfiguration);
-            _controller = new TwoFactorController(_loggerMock.Object, signInManager, _userManager, _userStore, AppConfiguration);
+            _controller = new TwoFactorController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, signInManager);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

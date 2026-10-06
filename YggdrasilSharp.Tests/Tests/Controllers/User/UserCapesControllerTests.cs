@@ -33,7 +33,7 @@ public class UserCapesControllerTests : ControllerTestBase
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
         _capeRepo = new Repository<Cape>(_dbContext);
-        _controller = new UserCapesController(_loggerMock.Object, _userManager, _userStore, _memoryCacheService, AppConfiguration);
+        _controller = new UserCapesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -62,7 +62,7 @@ public class UserCapesControllerTests : ControllerTestBase
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCape(db.cape.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Cape selected successfully");
         }
         
         /// <summary>
@@ -76,7 +76,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _controller.SelectCape(db.cape.Id);
             var result = await _controller.SelectCape(db.cape.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Cape is already selected");
         }
         
         /// <summary>
@@ -88,7 +88,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.SelectCape(1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Cape not found for the user");
         }
         
         /// <summary>
@@ -99,7 +99,7 @@ public class UserCapesControllerTests : ControllerTestBase
         {
             var result = await _controller.SelectCape(1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -126,20 +126,20 @@ public class UserCapesControllerTests : ControllerTestBase
             await _userStore.UserCapes.UpdateAsync(db.userCape, true, TestContext.Current.CancellationToken);
             var result = await _controller.ClearSelectedCape();
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         
         /// <summary>
         /// Failure case: no cape is currently selected for the user.
         /// </summary>
         [Fact(DisplayName = "Failure: No cape selected")]
-        public async Task ReturnsBadRequest()
+        public async Task ReturnsNotFound()
         {
             var user =  await CreateUserAsync(_controller);
             await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCape();
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No cape is currently selected for the user");
         }
         
         /// <summary>
@@ -150,7 +150,7 @@ public class UserCapesControllerTests : ControllerTestBase
         {
             var result = await _controller.ClearSelectedCape();
             
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -176,7 +176,7 @@ public class UserCapesControllerTests : ControllerTestBase
             var db = await FillDatabase(user.Id);
             var result = await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Cape selected successfully");
         }
         
         /// <summary>
@@ -191,7 +191,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             var result = await _controller.SelectCapeAdmin(user.Id, db.cape.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Cape is already selected");
         }
         
         /// <summary>
@@ -204,7 +204,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Cape not found for the user");
         }
         
         /// <summary>
@@ -217,7 +217,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.SelectCapeAdmin(user.Id, 1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
     
@@ -245,21 +245,21 @@ public class UserCapesControllerTests : ControllerTestBase
             await _userStore.UserCapes.UpdateAsync(db.userCape, true, TestContext.Current.CancellationToken);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Selected cape cleared successfully");
         }
         
         /// <summary>
         /// Failure case: target user has no cape selected.
         /// </summary>
         [Fact(DisplayName = "Failure: No cape selected")]
-        public async Task ReturnsBadRequest()
+        public async Task ReturnsNotFound()
         {
             var user = await CreateUserAsync(_controller, _userMock2, false);
             await CreateUserAsync(_controller);
             await FillDatabase(user.Id);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No cape is currently selected for the user");
         }
         
         /// <summary>
@@ -272,7 +272,7 @@ public class UserCapesControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             var result = await _controller.ClearSelectedCapeAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 

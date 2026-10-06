@@ -94,13 +94,15 @@ public class TestHelper
 
     /// <summary>
     /// Computes the device fingerprint the server derives for a user, using the same
-    /// <see cref="UserAgent"/> and <see cref="IpAddress"/> values the tests send.
+    /// <see cref="UserAgent"/> value the tests send. Must match
+    /// <c>CustomUserManager.GetMachineFingerprint</c>, which seeds the hash with the user id and
+    /// the request's User-Agent header.
     /// </summary>
     /// <param name="userId">The identifier of the user the fingerprint belongs to.</param>
     /// <returns>The encrypted fingerprint of the user.</returns>
     public static string GetFingerprint(string userId)
     {
-        var rawData = $"{userId}-{UserAgent}-{IpAddress}";
+        var rawData = $"{userId}-{UserAgent}";
         return StringChiper.GetEncryptedHash(rawData, JwtSecretBytes);
     }
 

@@ -37,7 +37,7 @@ public class LauncherControllerTests : ControllerTestBase
             _launcherVersionRepo = new Repository<LauncherVersion>(_dbContext);
             _launcherVersionDataRepo = new Repository<LauncherVersionData>(_dbContext);
             _fileDataRepo = new Repository<FileData>(_dbContext);
-            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo, AppConfiguration);
+            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -84,7 +84,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLauncherVersions();
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No launcher versions found.");
         }
     }
 
@@ -128,7 +128,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLatestLauncherVersion();
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No launcher versions found.");
         }
     }
 
@@ -196,7 +196,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound()
         {
             var result = await _controller.GetLauncherVersionDetails(1);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version not found.");
         }
     }
 
@@ -288,7 +288,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsNotFound_WhenVersionDoesNotExist()
         {
             var result = await _controller.DownloadLauncherVersion(999, ELauncherOs.WINDOWS);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version not found.");
         }
 
         /// <summary>
@@ -307,7 +307,7 @@ public class LauncherControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
 
             var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version data not found.");
         }
     }
 
@@ -335,7 +335,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Release 1.0"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Launcher version created successfully.");
         }
 
         /// <summary>
@@ -361,7 +361,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Duplicate"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "A launcher version with the same version number already exists.");
         }
 
         /// <summary>
@@ -376,7 +376,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Initial"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -392,7 +392,7 @@ public class LauncherControllerTests : ControllerTestBase
                 VersionType = EVersionType.RELEASE,
                 Changelog = "Initial"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 
@@ -429,7 +429,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Version = "1.0.1",
                 Changelog = "Patch"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.OK, testOutputHelper: _testOutputHelper);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Launcher version updated successfully.", testOutputHelper: _testOutputHelper);
         }
 
         /// <summary>
@@ -445,7 +445,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Version = "1.0.1",
                 Changelog = "Patch"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version not found.");
         }
 
         /// <summary>
@@ -478,7 +478,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "A launcher version with the same version number already exists.");
         }
 
         /// <summary>
@@ -500,7 +500,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -524,7 +524,7 @@ public class LauncherControllerTests : ControllerTestBase
             {
                 Version = "1.0.1"
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 
@@ -557,7 +557,7 @@ public class LauncherControllerTests : ControllerTestBase
             }, true, TestContext.Current.CancellationToken);
 
             var result = await _controller.DeleteLauncherVersion(version.Id);
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Launcher version deleted successfully.");
         }
 
         /// <summary>
@@ -569,7 +569,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
 
             var result = await _controller.DeleteLauncherVersion(1);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version not found.");
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
 
             var result = await _controller.DeleteLauncherVersion(1);
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 
@@ -628,7 +628,7 @@ public class LauncherControllerTests : ControllerTestBase
             };
 
             var result = await _controller.AddLauncherVersionData(version.Id, request);
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Launcher version data added successfully.");
         }
 
         /// <summary>
@@ -654,7 +654,7 @@ public class LauncherControllerTests : ControllerTestBase
             };
 
             var result = await _controller.AddLauncherVersionData(1, request);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version not found.");
         }
 
         /// <summary>
@@ -676,7 +676,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Os = ELauncherOs.WINDOWS,
                 File = formFile
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -700,7 +700,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Os = ELauncherOs.WINDOWS,
                 File = formFile
             });
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 
@@ -760,7 +760,7 @@ public class LauncherControllerTests : ControllerTestBase
                 }, true, TestContext.Current.CancellationToken);
 
                 var result = await _controller.DeleteLauncherVersionData(version.Id, versionData.Id);
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "Launcher version data added successfully.");
             }
             finally
             {
@@ -777,7 +777,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
 
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Launcher version data not found.");
         }
 
         /// <summary>
@@ -787,7 +787,7 @@ public class LauncherControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized_WhenNoUser()
         {
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -799,7 +799,7 @@ public class LauncherControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
 
             var result = await _controller.DeleteLauncherVersionData(1, 1);
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 }

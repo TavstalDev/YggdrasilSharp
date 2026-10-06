@@ -35,7 +35,7 @@ public class NewsControllerTests : ControllerTestBase
     {
         _newsRepo = new Repository<News>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new NewsController(_loggerMock.Object, _userManager, _userStore, _newsRepo, _fileDataRepo, _memoryCacheService, AppConfiguration);
+        _controller = new NewsController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _newsRepo, _fileDataRepo, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -270,7 +270,7 @@ public class NewsControllerTests : ControllerTestBase
             
             var result = await _controller.GetNewsById(5);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "News article not found.");
         }
     }
 
@@ -292,7 +292,7 @@ public class NewsControllerTests : ControllerTestBase
         /// and asserts a 201 Created response in an <see cref="ObjectResult"/>.
         /// </summary>
         [Fact(DisplayName = "Success: Creates news with banner")]
-        public async Task ReturnsOk()
+        public async Task ReturnsCreated()
         {
             await CreateUserAsync(_controller);
             
@@ -310,7 +310,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
             
-            TestHelper.TestResponse(result, HttpStatusCode.Created);
+            TestHelper.TestResponse(result, HttpStatusCode.Created, "News article created successfully.");
             
             // Clean-up
             stream.Position = 0;
@@ -345,7 +345,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
 
         /// <summary>
@@ -371,7 +371,7 @@ public class NewsControllerTests : ControllerTestBase
                 Banner = file
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Only PNG files are allowed.");
         }
     }
     
@@ -423,7 +423,7 @@ public class NewsControllerTests : ControllerTestBase
                     Title = "Updated Title"
                 });
                 
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "News article updated successfully.");
             }
             finally
             {
@@ -468,7 +468,7 @@ public class NewsControllerTests : ControllerTestBase
                     Title = "Updated Title"
                 });
               
-                TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+                TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
             }
             finally
             {
@@ -490,7 +490,7 @@ public class NewsControllerTests : ControllerTestBase
                 Title = "Updated Title"
             });
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "News article not found.");
         }
     }
     
@@ -537,7 +537,7 @@ public class NewsControllerTests : ControllerTestBase
             
             var result = await _controller.DeleteNews(news.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "News article deleted successfully.");
         }
 
         /// <summary>
@@ -574,7 +574,7 @@ public class NewsControllerTests : ControllerTestBase
 
                 var result = await _controller.DeleteNews(news.Id);
                 
-                TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+                TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
             }
             finally
             {
@@ -592,7 +592,7 @@ public class NewsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             
             var result = await _controller.DeleteNews(1);
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "News article not found.");
         }
     }
 }

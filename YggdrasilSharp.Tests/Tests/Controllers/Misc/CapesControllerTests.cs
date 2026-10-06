@@ -36,7 +36,7 @@ public class CapesControllerTests : ControllerTestBase
     {
         _capeRepo = new Repository<Cape>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new CapesController(_loggerMock.Object, _userManager, _dbContext, _userStore, _capeRepo, _fileDataRepo, AppConfiguration);
+        _controller = new CapesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _dbContext, _capeRepo, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -79,7 +79,7 @@ public class CapesControllerTests : ControllerTestBase
                 fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "Cape uploaded successfully");
             }
             finally
             {
@@ -105,7 +105,7 @@ public class CapesControllerTests : ControllerTestBase
             };
             
             var result = await _controller.UploadCape(file);
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Only PNG files are allowed.");
         }
         
         /// <summary>
@@ -124,7 +124,7 @@ public class CapesControllerTests : ControllerTestBase
             };
 
             var result = await _controller.UploadCape(file);
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ public class CapesControllerTests : ControllerTestBase
             };
             
             var result = await _controller.UploadCape(file);
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         }
 
         /// <summary>
@@ -171,11 +171,11 @@ public class CapesControllerTests : ControllerTestBase
                 fileHash = Convert.ToHexStringLower(hashBytes);
 
                 var result = await _controller.UploadCape(file);
-                TestHelper.TestResponse(result, HttpStatusCode.OK);
+                TestHelper.TestResponse(result, HttpStatusCode.OK, "Cape uploaded successfully");
                 
                 
                 result = await _controller.UploadCape(file);
-                TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+                TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Cape with the same content already exists.");
             }
             finally
             {
@@ -203,7 +203,7 @@ public class CapesControllerTests : ControllerTestBase
             };
 
             var result = await _controller.UploadCape(file);
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 
@@ -251,7 +251,7 @@ public class CapesControllerTests : ControllerTestBase
             
             var result = await _controller.DeleteCape(cape.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Cape deleted successfully");
         }
         
         /// <summary>
@@ -264,7 +264,7 @@ public class CapesControllerTests : ControllerTestBase
             
             var result = await _controller.DeleteCape(123);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
 
         /// <summary>
@@ -277,7 +277,7 @@ public class CapesControllerTests : ControllerTestBase
             
             var result = await _controller.DeleteCape(123);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Cape not found");
         }
     }
 }

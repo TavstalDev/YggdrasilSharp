@@ -40,7 +40,7 @@ public class RegisterControllerTests
         _emailService = testHelper.FakeEmailService;
         var settings = TestHelper.CreateTestSettings();
         var fileDataRepo = new Repository<FileData>(dbContext);
-        _controller = new RegisterController(loggerMock.Object, userManager, dbContext, userStore, passwordHasher, _emailService, fileDataRepo, settings);
+        _controller = new RegisterController(loggerMock.Object, userManager, userStore, settings, dbContext, passwordHasher, _emailService, fileDataRepo);
         
         var controllerHttpContext = new DefaultHttpContext
         {

@@ -33,7 +33,7 @@ public class AvatarControllerTests : ControllerTestBase
     public AvatarControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new AvatarController(_loggerMock.Object, _userManager, _userStore, _fileDataRepo, _memoryCacheService, AppConfiguration);
+        _controller = new AvatarController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -83,7 +83,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.GetAvatar();
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.GetAvatar();
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No avatar found.");
         }
     }
     
@@ -133,7 +133,7 @@ public class AvatarControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatar(file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Avatar uploaded successfully.");
 
             var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
@@ -150,7 +150,7 @@ public class AvatarControllerTests : ControllerTestBase
             _controller.ModelState.AddModelError("file", "File is required.");
             IActionResult result = await _controller.UploadAvatar(null!);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File is required.");
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         }
         
         /// <summary>
@@ -190,7 +190,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Only PNG files are allowed.");
         }
         
         /// <summary>
@@ -209,7 +209,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatar(file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -249,7 +249,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DeleteAvatar();
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         
         /// <summary>
@@ -261,7 +261,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.DeleteAvatar();
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No avatar found to delete.");
         }
         
         /// <summary>
@@ -272,7 +272,7 @@ public class AvatarControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.DeleteAvatar();
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -308,7 +308,7 @@ public class AvatarControllerTests : ControllerTestBase
             string fileHash = Convert.ToHexStringLower(hashBytes);
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Avatar uploaded successfully.");
 
             var fds = await _fileDataRepo.QueryAsync(x => x.Hash == fileHash && x.Type == EFileDataType.PROFILE_PICTURE, TestContext.Current.CancellationToken);
             foreach (var fd in fds)
@@ -326,7 +326,7 @@ public class AvatarControllerTests : ControllerTestBase
             _controller.ModelState.AddModelError("file", "File is required.");
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, null!);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File is required.");
         }
 
         /// <summary>
@@ -346,7 +346,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "File size exceeds the 500 KB limit.");
         }
         
         /// <summary>
@@ -366,7 +366,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Only PNG files are allowed.");
         }
         
         /// <summary>
@@ -386,7 +386,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.UploadAvatarAdmin(user.Id, file);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
     
@@ -426,7 +426,7 @@ public class AvatarControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         
         /// <summary>
@@ -439,7 +439,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "No avatar found to delete.");
         }
         
         /// <summary>
@@ -452,7 +452,7 @@ public class AvatarControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.DeleteAvatarAdmin(user.Id);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 }

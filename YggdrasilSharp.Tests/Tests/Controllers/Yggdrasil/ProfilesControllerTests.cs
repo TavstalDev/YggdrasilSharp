@@ -13,7 +13,7 @@ public class ProfilesControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<ProfilesController>> _loggerMock = new();
     private readonly ProfilesController _controller;
-    
+
     /// <summary>
     /// Constructs a new <see cref="ProfilesControllerTests"/> instance.
     /// Sets up the controller with a mock logger, test database and settings, and assigns a test HttpContext.
@@ -21,7 +21,7 @@ public class ProfilesControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">XUnit test output helper forwarded to the base test class.</param>
     public ProfilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new ProfilesController(_loggerMock.Object, _userStore, AppConfiguration);
+        _controller = new ProfilesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -37,14 +37,14 @@ public class ProfilesControllerTests : ControllerTestBase
     {
         var user1 = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
         var user2 = await _userStore.AddUserAsync(_userMock2, true, TestContext.Current.CancellationToken);
-        
+
         var result = await _controller.MinecraftProfile([user1.UserName, user2.UserName]);
         result.Should().BeOfType<ContentResult>();
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
         _testOutputHelper.WriteLine("Result: " + contentResult.Content);
     }
-    
+
     /// <summary>
     /// Failure: verifies that the controller returns a 404 <see cref="ObjectResult"/>
     /// when requesting profiles for usernames that do not exist in the database.

@@ -24,7 +24,7 @@ public class SessionsControllerTests : ControllerTestBase
     /// <param name="testOutputHelper">xUnit test output helper used to capture test logs.</param>
     public SessionsControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _controller = new SessionsController(_loggerMock.Object, _userManager, _dbContext, _userStore, AppConfiguration);
+        _controller = new SessionsController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _dbContext);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -64,7 +64,7 @@ public class SessionsControllerTests : ControllerTestBase
         public async Task ReturnsUnauthorized()
         {
             IActionResult result = await _controller.GetSessions();
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -103,7 +103,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSession(session.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Session revoked successfully.");
         }
         
         /// <summary>
@@ -116,7 +116,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSession(0);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid session ID");
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ public class SessionsControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.RevokeSession(1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
         
         /// <summary>
@@ -139,7 +139,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeSession(9999);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Session not found.");
         }
     }
     
@@ -163,7 +163,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeAllSessions();
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "All sessions revoked successfully.");
         }
         
         /// <summary>
@@ -174,7 +174,7 @@ public class SessionsControllerTests : ControllerTestBase
         {
             IActionResult result = await _controller.RevokeAllSessions();
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "User not authenticated");
         }
     }
     
@@ -214,7 +214,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.GetSessionsAdmin(user.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
     
@@ -254,7 +254,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, session.Id);
             
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Session revoked successfully.");
         }
         
         /// <summary>
@@ -269,7 +269,7 @@ public class SessionsControllerTests : ControllerTestBase
             
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 0);
             
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid session ID");
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 1);
             
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
 
         /// <summary>
@@ -295,7 +295,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeSessionAdmin(user.Id, 9999);
             
-            TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+            TestHelper.TestResponse(result, HttpStatusCode.NotFound, "Session not found.");
         }
     }
     
@@ -320,7 +320,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "All sessions revoked successfully.");
         }
         
         /// <summary>
@@ -333,7 +333,7 @@ public class SessionsControllerTests : ControllerTestBase
             await CreateUserAsync(_controller, givePermissions: false);
             IActionResult result = await _controller.RevokeAllSessionsAdmin(user.Id);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Permission denied.");
         }
     }
 }

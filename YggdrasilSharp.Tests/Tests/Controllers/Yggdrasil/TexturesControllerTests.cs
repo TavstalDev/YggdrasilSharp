@@ -20,7 +20,7 @@ public class TexturesControllerTests : ControllerTestBase
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly Mock<ILogger<TexturesController>> _loggerMock = new();
     private readonly TexturesController _controller;
-    
+
     /// <summary>
     /// Initializes a new instance of <see cref="TexturesControllerTests"/>.
     /// Constructs the controller with the mock logger, test database context, memory cache service and test settings.
@@ -30,13 +30,13 @@ public class TexturesControllerTests : ControllerTestBase
     public TexturesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new TexturesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, AppConfiguration);
+        _controller = new TexturesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
         };
     }
-    
+
     /// <summary>
     /// Success case: When the memory cache already contains the file bytes and content type for the requested hash.
     /// </summary>
@@ -59,7 +59,7 @@ public class TexturesControllerTests : ControllerTestBase
         etag.Should().Be('"' + hash + '"');
         _testOutputHelper.WriteLine("Result: " + fileResult.ContentType);
     }
-    
+
     /// <summary>
     /// Success case: If the incoming request contains an If-None-Match header that matches the file ETag.
     /// </summary>
@@ -84,7 +84,7 @@ public class TexturesControllerTests : ControllerTestBase
         etag.Should().Be('"' + hash + '"');
         _testOutputHelper.WriteLine("Returned 304 with ETag: " + etag);
     }
-    
+
     /// <summary>
     /// Failure case: When the model state is invalid (e.g. missing or invalid hash).
     /// </summary>
@@ -103,7 +103,7 @@ public class TexturesControllerTests : ControllerTestBase
         errorResponse.Should().NotBeNull();
         _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
     }
-    
+
     /// <summary>
     /// Failure case: When neither the memory cache nor the database contains a file record for the requested hash.
     /// </summary>
@@ -123,7 +123,7 @@ public class TexturesControllerTests : ControllerTestBase
         errorResponse.Should().NotBeNull();
         _testOutputHelper.WriteLine($"Result: \n{errorResponse.Error}\n{errorResponse.ErrorMessage}\n{errorResponse.Cause}");
     }
-    
+
     /// <summary>
     /// Failure case: When the database contains a FileData record for the requested hash but the actual file bytes are missing on disk/storage.
     /// </summary>

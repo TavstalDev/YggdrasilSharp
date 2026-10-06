@@ -37,7 +37,7 @@ public class FilesControllerTests : ControllerTestBase
     public FilesControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new FilesController(_loggerMock.Object, _userStore, _fileDataRepo, _memoryCacheService, AppConfiguration);
+        _controller = new FilesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -106,7 +106,7 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(null!);
 
-        TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+        TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Hash is required.");
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(hash);
 
-        TestHelper.TestResponse(result, HttpStatusCode.NotFound);
+        TestHelper.TestResponse(result, HttpStatusCode.NotFound, "File not found.");
     }
 
     /// <summary>
@@ -144,6 +144,6 @@ public class FilesControllerTests : ControllerTestBase
 
         IActionResult result = await _controller.GetFile(hash);
 
-        TestHelper.TestResponse(result, HttpStatusCode.InternalServerError);
+        TestHelper.TestResponse(result, HttpStatusCode.InternalServerError, "Failed to retrieve file data.");
     }
 }

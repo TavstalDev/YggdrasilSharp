@@ -33,8 +33,8 @@ public class RecoveryControllerTests : ControllerTestBase
     public RecoveryControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         // Controller expects: (logger, dbContext, userStore, passwordHasher, emailService, memoryCacheService, settings)
-        _controller = new RecoveryController(_loggerMock.Object, _dbContext, _userStore, _passwordHasher,
-            _fakeEmailService, _memoryCacheService, AppConfiguration);
+        _controller = new RecoveryController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _dbContext, _passwordHasher,
+            _fakeEmailService, _memoryCacheService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -58,13 +58,13 @@ public class RecoveryControllerTests : ControllerTestBase
         /// Expected result: <see cref="ContentResult"/> with HTTP status 201 Created.
         /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
-        public async Task ReturnsOk()
+        public async Task ReturnsCreated()
         {
             _userMock.EmailConfirmed = true;
             await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Created);
+            TestHelper.TestResponse(result, HttpStatusCode.Created, "Recovery email sent successfully.");
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ public class RecoveryControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Email is not confirmed.");
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ public class RecoveryControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.RequestRecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
         }
     }
 
@@ -148,7 +148,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = true
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "Password reset successful.");
         }
 
         /// <summary>
@@ -215,7 +215,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 LogoutEverywhere = false
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
         }
     }
 
@@ -236,13 +236,13 @@ public class RecoveryControllerTests : ControllerTestBase
         /// Expected: <see cref="ContentResult"/> with HTTP 201 Created.
         /// </summary>
         [Fact(DisplayName = "Success: Send recovery email")]
-        public async Task ReturnsOk()
+        public async Task ReturnsCreated()
         {
             _userMock.EmailConfirmed = true;
              await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Created);
+            TestHelper.TestResponse(result, HttpStatusCode.Created, "Recovery email sent successfully.");
         }
 
         /// <summary>
@@ -269,7 +269,7 @@ public class RecoveryControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Email is not confirmed.");
         }
 
         /// <summary>
@@ -287,7 +287,7 @@ public class RecoveryControllerTests : ControllerTestBase
 
             IActionResult result = await _controller.RequestTFARecoveryAsync(_userMock.Email);
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "You must wait before requesting another recovery email.");
         }
     }
 
@@ -334,14 +334,14 @@ public class RecoveryControllerTests : ControllerTestBase
                 RecoveryToken = token
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.OK);
+            TestHelper.TestResponse(result, HttpStatusCode.OK, "2FA reset successful.");
         }
 
         /// <summary>
         /// Failure case: backup code provided by user is invalid — expect HTTP 400 Bad Request.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid backup code")]
-        public async Task ReturnsUnauthorized_ForInvalidBackupCode()
+        public async Task ReturnsBadRequest_ForInvalidBackupCode()
         {
             _userMock.TwoFactorEnabled = true;
             var user = await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
@@ -359,7 +359,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 RecoveryToken = token
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Backup code is invalid.");
         }
 
         /// <summary>
@@ -385,7 +385,7 @@ public class RecoveryControllerTests : ControllerTestBase
                 BackupCode = "anything"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
+            TestHelper.TestResponse(result, HttpStatusCode.Forbidden, "Too many recovery attempts. Please try again later.");
         }
 
         /// <summary>
@@ -427,6 +427,9 @@ public class RecoveryControllerTests : ControllerTestBase
                 RecoveryToken = "any",
                 BackupCode = "any"
             });
+
+            TestHelper.TestResponse(missingUser, HttpStatusCode.Unauthorized, "Invalid credentials.");
+            TestHelper.TestResponse(noSession, HttpStatusCode.Unauthorized, "Invalid credentials.");
 
             var missingUserBody = (missingUser as ContentResult)?.Content;
             var noSessionBody = (noSession as ContentResult)?.Content;

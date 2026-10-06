@@ -12,6 +12,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses;
 using Tavstal.YggdrasilSharp.Models.Responses.Auth;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
@@ -69,7 +70,7 @@ public class LoginControllerTests
         _appConfiguration = TestHelper.CreateTestSettings();
         var memoryCache = _testHelper.MemoryCacheService;
         _signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, _appConfiguration);
-        _controller = new LoginController(loggerMock.Object, _signInManager, _userStore, memoryCache, _appConfiguration);
+        _controller = new LoginController(loggerMock.Object, _userManager, _userStore, _appConfiguration, _signInManager, memoryCache);
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection =
@@ -146,7 +147,7 @@ public class LoginControllerTests
             storedToken.Should().NotBe(response.Token, "the raw token must never be persisted");
             (await _userManager.VerifyJwtTokenAsync(response.Token!)).Should().BeTrue();
         }
-        
+
         /// <summary>
         /// Redirect case: login when the user has 2FA enabled should return a redirect/2FA payload.
         /// Expected: ContentResult containing redirect/2FA session info.
@@ -161,7 +162,7 @@ public class LoginControllerTests
         }
 
         /// <summary>
-        /// Failure case: attempting to login for a non-existent user returns 404 NotFound.
+        /// Failure case: attempting to login for a non-existent user returns 400 BadRequest.
         /// </summary>
         [Fact(DisplayName = "Failure: Non-existent user")]
         public async Task ReturnsBadRequest_WhenUserDoesNotExist()
@@ -172,11 +173,11 @@ public class LoginControllerTests
                 Password = _passwordMock
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid credentials.");
         }
-        
+
         /// <summary>
-        /// Failure case: existing user with incorrect password should return 401 Unauthorized.
+        /// Failure case: existing user with incorrect password should return 400 BadRequest.
         /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsBadRequest_WhenPasswordIncorrect()
@@ -188,9 +189,9 @@ public class LoginControllerTests
                 Password = "This%Valid_And#Pass%mock-2027"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid credentials.");
         }
-        
+
         /// <summary>
         /// Failure case: locked out user attempt — verifies controller handles lockout state.
         /// Expected behaviour: login returns a ContentResult (controller may return lockout-specific response).
@@ -202,7 +203,7 @@ public class LoginControllerTests
             _userMock.LockoutEnd = DateTime.UtcNow.AddDays(30);
             _userMock.LockoutReason = "Too many failed login attempts";
             await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
-            
+
             IActionResult result = await _controller.LoginAsync(new LoginRequestBody
             {
                 Email = _userMock.Email,
@@ -224,7 +225,7 @@ public class LoginControllerTests
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: after the initial login redirect, the TFA cookies are present and submitting the correct TOTP returns success.
         /// Expected: ContentResult with final login payload.
@@ -245,12 +246,16 @@ public class LoginControllerTests
             {
                 TwoFactorCode = expectedCode
             });
-            
+
             result.Should().BeOfType<ContentResult>();
 
             ContentResult? contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
+
+            var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(contentResult.Content!);
+            errorResponse!.StatusCode.Should().Be(HttpStatusCode.OK);
+            errorResponse.Message.Should().Be("Login successful.");
         }
 
         /// <summary>
@@ -292,32 +297,32 @@ public class LoginControllerTests
             {
                 TwoFactorCode = "000000"
             });
-            
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
         }
 
         /// <summary>
         /// Failure case: submitting an invalid TFA code returns 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid TFA code")]
-        public async Task ReturnsBadRequest_ForInvalidCode()
+        public async Task ReturnsUnauthorized_ForInvalidCode()
         {
             await AddMockUserAndLoginAsync(true);
-            
+
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
                 TwoFactorCode = "000000"
             });
-            
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid two-factor code.");
         }
 
         /// <summary>
-        /// Failure case: expired TFA session (token removed from cache) should return 401 or 403 depending on controller behavior.
+        /// Failure case: expired TFA session (token removed from cache) should return 401 Unauthorized.
         /// This test explicitly removes the stored token to simulate expiration.
         /// </summary>
         [Fact(DisplayName = "Failure: Expired TFA session")]
-        public async Task ReturnsForbidden_ForExpiredSession()
+        public async Task ReturnsUnauthorized_ForExpiredSession()
         {
             var loginResult = await AddMockUserAndLoginAsync(true);
             var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
@@ -329,16 +334,42 @@ public class LoginControllerTests
             string tokenKey = $"auth:{fingerprint}:tfa:token";
             if (memoryCacheService.TryGetValue(tokenKey, out string? _))
                 memoryCacheService.RemoveValue(tokenKey);
-            
+
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
                 TwoFactorCode = "000000"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
+        }
+
+        /// <summary>
+        /// Failure case: a valid TFA session cookie paired with a <c>ysharp-userId</c> cookie that refers to a
+        /// user that does not exist. The cached session token check passes for the unknown id, but the user
+        /// lookup fails, so the controller returns 400 BadRequest.
+        /// </summary>
+        [Fact(DisplayName = "Failure: Unknown user id with valid session cookie")]
+        public async Task ReturnsBadRequest_ForUnknownUserId()
+        {
+            await AddMockUserAndLoginAsync(true);
+
+            const string nonExistentUserId = "11111111-1111-1111-1111-111111111111";
+            string sessionCookie = _controllerHttpContext.Request.Cookies["ysharp-twofactor-session"]!;
+            sessionCookie.Should().NotBeNullOrEmpty();
+            _controllerHttpContext.Request.Headers.Cookie = $"ysharp-twofactor-session={sessionCookie}; ysharp-userId={nonExistentUserId}";
+
+            string tokenKey = $"auth:{TestHelper.GetFingerprint(nonExistentUserId)}:tfa:token";
+            _testHelper.MemoryCacheService.SetValue(tokenKey, sessionCookie, TimeSpan.FromMinutes(5));
+
+            IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
+            {
+                TwoFactorCode = "000000"
+            });
+
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid credentials.");
         }
     }
-    
+
     /// <summary>
     /// Tests for the launcher-specific login endpoints and launcher TFA flow.
     /// The launcher flows use a different endpoint/payload format and session token handling.
@@ -350,21 +381,21 @@ public class LoginControllerTests
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LoginLauncherTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: launcher login with valid credentials returns a non-null content payload.
         /// Expected: ContentResult containing launcher-specific token/payload.
         /// </summary>
         [Fact(DisplayName = "Success: Launcher login with valid credentials")]
         public async Task ReturnsOk()
-        { 
+        {
             await _userStore.AddUserAsync(_userMock, true, TestContext.Current.CancellationToken);
             IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
             {
                 Username = _userMock.UserName,
                 Password = _passwordMock
             });
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -388,7 +419,7 @@ public class LoginControllerTests
             session.Token.Should().Be(TestHelper.HashToken(response.Token!, _appConfiguration));
             session.Token.Should().NotBe(response.Token, "the raw play session token must never be persisted");
         }
-        
+
         /// <summary>
         /// Redirect case: launcher login when 2FA is enabled returns a redirect/session token.
         /// Expected: ContentResult containing session token used for launcher TFA confirmation.
@@ -404,7 +435,7 @@ public class LoginControllerTests
                 Username = _userMock.UserName,
                 Password = _passwordMock
             });
-            
+
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
@@ -412,7 +443,7 @@ public class LoginControllerTests
         }
 
         /// <summary>
-        /// Failure case: launcher login with incorrect password returns 401 Unauthorized.
+        /// Failure case: launcher login with incorrect password returns 400 BadRequest.
         /// </summary>
         [Fact(DisplayName = "Failure: Incorrect password")]
         public async Task ReturnsBadRequest_ForIncorrectPassword()
@@ -423,8 +454,8 @@ public class LoginControllerTests
                 Username = _userMock.UserName,
                 Password = "wrong-password"
             });
-            
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid credentials.");
         }
     }
 
@@ -522,11 +553,11 @@ public class LoginControllerTests
                 TwoFactorCode = "000000"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid or expired session token.");
         }
 
         /// <summary>
-        /// Failure case: invalid two-factor code for launcher confirmation returns 401 Unauthorized.
+        /// Failure case: invalid two-factor code for launcher confirmation returns 400 BadRequest.
         /// </summary>
         [Fact(DisplayName = "Failure: Invalid two-factor code")]
         public async Task ReturnsBadRequest_ForInvalidCode()
@@ -546,15 +577,15 @@ public class LoginControllerTests
                     TwoFactorCode = "000000"
                 });
 
-            TestHelper.TestResponse(secondResult, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(secondResult, HttpStatusCode.BadRequest, "Invalid two-factor code.");
         }
 
         /// <summary>
         /// Failure case: expired launcher session token: the test removes the cached token to simulate expiration.
-        /// Expected: the controller should return 401 (or 403 depending on implementation); test asserts 401.
+        /// Expected: the controller returns 401 Unauthorized.
         /// </summary>
         [Fact(DisplayName = "Failure: Expired session token")]
-        public async Task ReturnsForbidden_ForExpiredLauncherSession()
+        public async Task ReturnsUnauthorized_ForExpiredLauncherSession()
         {
             var loginResult = await AddMockUserAndLoginLauncherAsync(true);
             var content = loginResult.content;
@@ -576,7 +607,7 @@ public class LoginControllerTests
                     TwoFactorCode = "000000"
                 });
 
-            TestHelper.TestResponse(secondResult, HttpStatusCode.Unauthorized);
+            TestHelper.TestResponse(secondResult, HttpStatusCode.Unauthorized, "Invalid or expired session token.");
         }
     }
 
@@ -590,7 +621,7 @@ public class LoginControllerTests
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public LogoutTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: Logout without an explicit token parameter. The controller falls back to the
         /// "Authorization: Bearer" header, so the test seeds that header with the raw token issued at login.
@@ -612,7 +643,7 @@ public class LoginControllerTests
             (await _userStore.UserLogins.QueryAsync(x => x.UserId == loginResult.userId, TestContext.Current.CancellationToken))
                 .Should().BeEmpty("logout should revoke the login record backing the access token");
         }
-        
+
         /// <summary>
         /// Success case: Logout with the token passed explicitly as a query parameter.
         /// The token is the raw access token issued by the preceding login, read back from the login response.
@@ -644,7 +675,7 @@ public class LoginControllerTests
 
             IActionResult logoutResult = await _controller.LogoutAsync(storedTokenHash);
 
-            TestHelper.TestResponse(logoutResult, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(logoutResult, HttpStatusCode.BadRequest, "Invalid token.");
             (await _userStore.UserTokens.FindAsync(x => x.Value == storedTokenHash, TestContext.Current.CancellationToken))
                 .Should().NotBeNull("a rejected logout must not revoke anything");
         }
@@ -656,10 +687,10 @@ public class LoginControllerTests
         public async Task ReturnsBadRequest_ForInvalidToken()
         {
             IActionResult result = await _controller.LogoutAsync("invalid-token");
-            TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
+            TestHelper.TestResponse(result, HttpStatusCode.BadRequest, "Invalid token.");
         }
     }
-    
+
     /// <summary>
     /// Helper that creates the user in DB and performs a web login (standard LoginAsync).
     /// It optionally enables 2FA and optionally performs the login stage (performLogin).
@@ -676,7 +707,7 @@ public class LoginControllerTests
 
         if (!performLogin)
             return (user.Id, null);
-        
+
         IActionResult result = await _controller.LoginAsync(new LoginRequestBody
         {
             Email = _userMock.Email,
@@ -686,7 +717,7 @@ public class LoginControllerTests
         result.Should().BeOfType<ContentResult>();
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
-        
+
         var setCookies = _controllerHttpContext.Response.Headers.SetCookie;
         if (setCookies.Count > 0)
         {
@@ -694,12 +725,12 @@ public class LoginControllerTests
                 .Select(c => c?.Split(';')[0].Trim());
             _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
-        
+
         var authHeader = _controllerHttpContext.Response.Headers.Authorization;
         _controllerHttpContext.Request.Headers.Authorization = authHeader;
         return (user.Id, contentResult.Content);
     }
-    
+
     /// <summary>
     /// Helper that creates the user in DB and performs a launcher login (LoginLauncherAsync).
     /// It optionally enables 2FA and optionally performs the login stage (performLogin).
@@ -715,8 +746,8 @@ public class LoginControllerTests
             await _userManager.GenerateTwoFactorTokenAsync(user);
 
         if (!performLogin)
-            return (user.Id, null); 
-        
+            return (user.Id, null);
+
         IActionResult result = await _controller.LoginLauncherAsync(new LauncherLoginRequestBody
         {
             Username = _userMock.UserName,
@@ -726,7 +757,7 @@ public class LoginControllerTests
         result.Should().BeOfType<ContentResult>();
         var contentResult = result as ContentResult;
         contentResult.Should().NotBeNull();
-        
+
         var setCookies = _controllerHttpContext.Response.Headers.SetCookie;
         if (setCookies.Count > 0)
         {
@@ -734,12 +765,12 @@ public class LoginControllerTests
                 .Select(c => c?.Split(';')[0].Trim());
             _controllerHttpContext.Request.Headers.Cookie = string.Join("; ", cookiePairs);
         }
-        
+
         var authHeader = _controllerHttpContext.Response.Headers.Authorization;
         _controllerHttpContext.Request.Headers.Authorization = authHeader;
         return (user.Id, contentResult.Content);
     }
-    
+
     /// <summary>
     /// Reads back the raw access token the login response handed to the client. The database only stores
     /// the hash of that token, so the response body is the only place the raw value can be recovered.

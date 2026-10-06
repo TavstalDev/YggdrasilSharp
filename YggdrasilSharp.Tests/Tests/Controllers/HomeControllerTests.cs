@@ -12,7 +12,7 @@ namespace Tavstal.YggdrasilSharp.Tests.Tests.Controllers;
 public class HomeControllerTests : ControllerTestBase
 {
     private readonly HomeController _controller;
-    
+
     /// <summary>
     /// Creates a new instance of <see cref="HomeControllerTests"/>.
     /// Constructs the <see cref="HomeController"/> with the test user store, mock logger and test settings.
@@ -25,7 +25,7 @@ public class HomeControllerTests : ControllerTestBase
     public HomeControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         var loggerMock = new Mock<ILogger<HomeController>>();
-        _controller = new HomeController(loggerMock.Object, _userStore, AppConfiguration);
+        _controller = new HomeController(loggerMock.Object, _userManager, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
