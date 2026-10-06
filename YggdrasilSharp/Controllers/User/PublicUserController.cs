@@ -22,7 +22,7 @@ public class PublicUserController : CustomControllerBase
 {
     private readonly AppConfiguration _appConfiguration;
     private readonly IRepository<FileData> _fileDataRepository;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PublicUserController"/> class.
     /// </summary>
@@ -66,7 +66,7 @@ public class PublicUserController : CustomControllerBase
             string avatarUrl = string.Empty;
             if (user.Avatar != null && !string.IsNullOrEmpty(_appConfiguration.Misc.ApiUrl))
                 avatarUrl = user.Avatar.GetUrl(_appConfiguration.Misc.ApiUrl);
-            
+
             return JsonResult(new UserInfoResponse
             {
                 UserId = user.Id,
@@ -124,8 +124,7 @@ public class PublicUserController : CustomControllerBase
                 return CodeResult(HttpStatusCode.NotModified);
             }
 
-            Response.Headers.CacheControl =
-                "public,max-age=3600,immutable";
+            Response.Headers.CacheControl = "public,no-cache";
             return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, existingAvatar.FileName,
                 enableRangeProcessing: true);
         }

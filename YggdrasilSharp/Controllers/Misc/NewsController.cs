@@ -101,7 +101,7 @@ public class NewsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Retrieves the latest news articles.
     /// </summary>
@@ -121,7 +121,7 @@ public class NewsController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
+
             if (count < 1)
                 count = 1;
             else if (count > 20)
@@ -282,8 +282,8 @@ public class NewsController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
-            
+
+
             fd = await _fileDataRepo.AddAsync(fd, true);
 
             await _newsRepo.AddAsync(new News
@@ -294,6 +294,7 @@ public class NewsController : CustomControllerBase
                 CreatedAt = DateTimeOffset.UtcNow
             }, true);
 
+            InvalidateNewsCache();
             return JsonResult(HttpStatusCode.Created, "News article created successfully.");
         }
         catch (Exception ex)
@@ -385,12 +386,13 @@ public class NewsController : CustomControllerBase
                 var uploadResult = await fd.SaveFileAsync(stream);
                 if (!uploadResult.Success)
                     return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-                
+
                 fd = await _fileDataRepo.AddAsync(fd, true);
                 news.BannerId = fd.Id;
             }
 
             await _newsRepo.UpdateAsync(news, true);
+            InvalidateNewsCache(id);
             return JsonResult(HttpStatusCode.OK, "News article updated successfully.");
         }
         catch (Exception ex)
@@ -446,6 +448,7 @@ public class NewsController : CustomControllerBase
             }
 
             await _newsRepo.RemoveAsync(news, true);
+            InvalidateNewsCache(id);
             return JsonResult(HttpStatusCode.OK, "News article deleted successfully.");
         }
         catch (Exception ex)
@@ -455,4 +458,16 @@ public class NewsController : CustomControllerBase
         }
     }
     #endregion
+
+    /// <summary>
+    /// Evicts all cached news responses, optionally including the cached entry for a specific article.
+    /// </summary>
+    /// <param name="id">The news article id whose individual cache entry should also be evicted.</param>
+    private void InvalidateNewsCache(ulong? id = null)
+    {
+        _cacheService.RemoveValue("news:all");
+        _cacheService.RemoveValue("news:latest");
+        if (id.HasValue)
+            _cacheService.RemoveValue($"news:{id.Value}");
+    }
 }

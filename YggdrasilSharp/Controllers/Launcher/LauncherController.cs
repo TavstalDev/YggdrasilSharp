@@ -437,7 +437,7 @@ public class LauncherController : CustomControllerBase
             FileData fd = new FileData
             {
                 Hash = fileHash,
-                FileName = $"{Guid.NewGuid():N}.{request.File.FileName.Split('.').Last()}",
+                FileName = $"{Guid.NewGuid():N}.{request.File.FileName.Split('.').Last().Trim()}",
                 ContentType = request.File.ContentType,
                 Type = EFileDataType.LAUNCHER
             };

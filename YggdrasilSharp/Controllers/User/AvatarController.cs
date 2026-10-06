@@ -322,11 +322,11 @@ public class AvatarController : CustomControllerBase
             {
                 existingAvatar.DeleteFile();
                 await _fileDataRepo.RemoveAsync(existingAvatar, true);
-                _memoryCache.RemoveValue("avatar:" + user.Id);
+                _memoryCache.RemoveValue("avatar:" + targetUser.Id);
             }
-            
+
             await _fileDataRepo.AddAsync(fd, true);
-            
+
             return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
         catch (Exception ex)
@@ -388,7 +388,7 @@ public class AvatarController : CustomControllerBase
 
             existingAvatar.DeleteFile();
             await _fileDataRepo.RemoveAsync(existingAvatar, true);
-            _memoryCache.RemoveValue($"avatar:{user.Id}");
+            _memoryCache.RemoveValue($"avatar:{targetUser.Id}");
             return JsonResult(HttpStatusCode.OK, "Avatar deleted successfully.");
         }
         catch (Exception ex)
