@@ -39,6 +39,28 @@ public class CustomSignInManager
     }
 
     /// <summary>
+    /// Verifies a user's password, transparently rehashing and persisting it when the hasher reports that the stored hash is outdated.
+    /// </summary>
+    /// <param name="user">The user whose stored password hash will be verified.</param>
+    /// <param name="password">The plain-text password provided by the client.</param>
+    /// <returns><c>true</c> if the password is valid; otherwise, <c>false</c>.</returns>
+    public async Task<bool> VerifyPasswordAsync(CustomUser user, string password)
+    {
+        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        switch (result)
+        {
+            case PasswordVerificationResult.Failed:
+                return false;
+            case PasswordVerificationResult.SuccessRehashNeeded:
+                user.PasswordHash = _passwordHasher.HashPassword(user, password);
+                user.SecurityStamp = Guid.NewGuid().ToString();
+                await _userStore.UpdateUserAsync(user, true);
+                break;
+        }
+        return true;
+    }
+
+    /// <summary>
     /// Sign-in using a username and password.
     /// </summary>
     /// <param name="username">Plain username provided by the client.</param>
@@ -298,7 +320,6 @@ public class CustomSignInManager
             Message = "Sign-in successful."
         };
     }
-
 
     /// <summary>
     /// Sign in specifically for the desktop launcher flow (returns a play session token).
