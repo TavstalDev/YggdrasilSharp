@@ -17,6 +17,7 @@ public class StatusController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
     private readonly AppConfiguration _appConfiguration;
+    private readonly string _signature;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusController"/> class.
@@ -29,8 +30,12 @@ public class StatusController : CustomControllerBase
     {
         _cacheService = cacheService;
         _appConfiguration = appConfiguration;
+        var cert = Program.GetCertificate(_appConfiguration.CertificateFingerprint, _appConfiguration.CertificatePassword);
+        var rsa = cert.GetRSAPrivateKey();
+        ArgumentNullException.ThrowIfNull(rsa);
+        _signature = rsa.ExportSubjectPublicKeyInfoPem();
     }
-    
+
     /// <summary>
     /// Retrieves the root status information, including skin domains, public key signature, and metadata.
     /// </summary>
@@ -39,22 +44,15 @@ public class StatusController : CustomControllerBase
     /// </returns>
     /// <response code="200">Returns the root status information.</response>
     /// <response code="500">Failed to load the RSA private key from the certificate.</response>
-    [HttpGet] 
+    [HttpGet]
     public IActionResult Root()
     {
         try
         {
-            var cert = Program.GetCertificate(_appConfiguration.CertificateFingerprint, _appConfiguration.CertificatePassword);
-            var rsa = cert.GetRSAPrivateKey();
-            if (rsa == null)
-                return YigErrorResult(HttpStatusCode.InternalServerError,
-                    "Failed to load RSA private key from certificate");
-
-            string signature = rsa.ExportSubjectPublicKeyInfoPem();
             return JsonResult(new
             {
                 skinDomains = _appConfiguration.Yggdrasil.SkinDomains,
-                signaturePublickey = signature,
+                signaturePublickey = _signature,
                 meta = new Dictionary<string, object>
                 {
                     { "serverName", _appConfiguration.Yggdrasil.ServerName },
@@ -75,7 +73,7 @@ public class StatusController : CustomControllerBase
             return YigErrorResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Retrieves the public keys for profile verification.
     /// </summary>
