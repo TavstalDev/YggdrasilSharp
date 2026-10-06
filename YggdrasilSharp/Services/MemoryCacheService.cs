@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Tavstal.YggdrasilSharp.Services;
@@ -37,12 +38,16 @@ public class MemoryCacheService
     /// <param name="key">The cache key.</param>
     /// <param name="value">The value to store.</param>
     /// <param name="absoluteExpirationRelativeToNow">The optional expiration time relative to now.</param>
-    public void SetValue<T>(string key, T value, TimeSpan? absoluteExpirationRelativeToNow = null)
+    /// <param name="slidingExpiration">The optional expiration time compared to the last access time.</param>
+    public void SetValue<T>(string key, T value, TimeSpan? absoluteExpirationRelativeToNow = null, TimeSpan? slidingExpiration = null)
     {
+        ArgumentNullException.ThrowIfNull(key);
         var options = new MemoryCacheEntryOptions();
         if (absoluteExpirationRelativeToNow.HasValue)
             options.SetAbsoluteExpiration(absoluteExpirationRelativeToNow.Value);
-
+        if (slidingExpiration.HasValue)
+            options.SetSlidingExpiration(slidingExpiration.Value);
+        options.SetSize(1);
         _cache.Set(key, value, options);
     }
 
