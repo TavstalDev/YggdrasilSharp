@@ -165,7 +165,7 @@ public class RecoveryController : CustomControllerBase
             if (!_memoryCacheService.TryGetValue(recoveryTokenKey, out string? cachedToken) ||
                 string.IsNullOrEmpty(cachedToken) || cachedToken != request.RecoveryToken)
             {
-                _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1);
+                _memoryCacheService.SetValue(recoveryAttemptKey, attempts + 1, TimeSpan.FromMinutes(15));
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid credentials.");
             }
 
