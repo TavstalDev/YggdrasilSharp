@@ -30,11 +30,12 @@ public class AuthController  : CustomControllerBase
     /// Initializes a new instance of the <see cref="AuthController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
-    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public AuthController(ILogger<ProfilesController> logger, CustomSignInManager signInManager, CustomUserStore userStore,
-        AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    public AuthController(ILogger<AuthController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomSignInManager signInManager) : base(logger, userManager, userStore, appConfiguration)
     {
         _signInManager = signInManager;
     }

@@ -15,10 +15,12 @@ public class HomeController : CustomControllerBase
     /// Initializes a new instance of the <see cref="HomeController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public HomeController(ILogger<HomeController> logger, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration) { }
-    
+    public HomeController(ILogger<HomeController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration)
+        : base(logger, userManager, userStore, appConfiguration) { }
+
     /// <summary>
     /// Handles the root endpoint ("/") and returns an HTTP 200 OK response.
     /// This endpoint is ignored in the API documentation.

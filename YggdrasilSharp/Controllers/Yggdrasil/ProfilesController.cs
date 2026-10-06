@@ -20,9 +20,11 @@ public class ProfilesController : CustomControllerBase
     /// Initializes a new instance of the <see cref="ProfilesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public ProfilesController(ILogger<ProfilesController> logger, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration) {}
+    public ProfilesController(ILogger<ProfilesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration)
+        : base(logger, userManager, userStore, appConfiguration) {}
 
     /// <summary>
     /// Retrieves Minecraft profiles for the specified list of usernames.

@@ -21,20 +21,19 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class SessionsController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SessionsController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
-    /// <param name="dbContext">The database context.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="dbContext">The database context.</param>
+    public SessionsController(ILogger<SessionsController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomDbContext dbContext) : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _dbContext = dbContext;
     }
 
@@ -55,7 +54,7 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.View.Sessions))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == user.Id);
@@ -98,7 +97,7 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Session))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == user.Id);
@@ -133,7 +132,7 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Sessions))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Sessions))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             await _dbContext.ClearUserLoginsAsync(user.Id, true);
@@ -145,7 +144,7 @@ public class SessionsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     #region Admin Endpoints
     /// <summary>
     /// Retrieves the active sessions for a specific user (admin only).
@@ -177,14 +176,14 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.View.SessionsOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == targetUser.Id);
@@ -228,14 +227,14 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             var userLogin = await UserStore.UserLogins.FindAsync(x => x.Id == sessionId && x.UserId == targetUser.Id);
@@ -282,14 +281,14 @@ public class SessionsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.SessionsOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             await _dbContext.ClearUserLoginsAsync(targetUser.Id, true);

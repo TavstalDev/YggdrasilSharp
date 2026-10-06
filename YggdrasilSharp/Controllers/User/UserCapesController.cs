@@ -23,23 +23,21 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 public class UserCapesController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
-    private readonly CustomUserManager _userManager;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="UserCapesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="cacheService">The memory cache service for caching data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomUserStore userStore, MemoryCacheService cacheService,
-        AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="cacheService">The memory cache service for caching data.</param>
+    public UserCapesController(ILogger<UserCapesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        MemoryCacheService cacheService) : base(logger, userManager, userStore, appConfiguration)
     {
         _cacheService = cacheService;
-        _userManager = userManager;
     }
-    
+
     /// <summary>
     /// Selects a cape for the current user.
     /// </summary>
@@ -74,7 +72,7 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.Select))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == user.Id && x.CapeId == capeId);
@@ -91,7 +89,7 @@ public class UserCapesController : CustomControllerBase
                 currentlySelectedCape.IsSelected = false;
                 await UserStore.UserCapes.UpdateAsync(currentlySelectedCape);
             }
-            
+
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{user.Id}:signed");
             _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
@@ -128,7 +126,7 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.Unselect))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             UserCape? currentlySelectedCape =
@@ -139,7 +137,7 @@ public class UserCapesController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{user.Id}:signed");
             _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
-            
+
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return JsonResult(HttpStatusCode.OK, "Selected cape cleared successfully");
@@ -188,14 +186,14 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.SelectOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? cape = await UserStore.UserCapes.FindAsync(x => x.UserId == targetUser.Id && x.CapeId == capeId);
@@ -216,12 +214,12 @@ public class UserCapesController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
             _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
-            
+
             cape.IsSelected = true;
             await UserStore.UserCapes.UpdateAsync(cape, true);
             return JsonResult(HttpStatusCode.OK, "Cape selected successfully");
         }
-        catch (Exception ex) 
+        catch (Exception ex)
         {
             Logger.LogCritical(ex, "Error while selecting cape for another user.");
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
@@ -261,14 +259,14 @@ public class UserCapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.UnselectOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             UserCape? currentlySelectedCape =
@@ -279,7 +277,7 @@ public class UserCapesController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
             _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
-            
+
             currentlySelectedCape.IsSelected = false;
             await UserStore.UserCapes.UpdateAsync(currentlySelectedCape, true);
             return JsonResult(HttpStatusCode.OK, "Selected cape cleared successfully");

@@ -28,7 +28,6 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 [Route("/news")]
 public class NewsController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<News> _newsRepo;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly AppConfiguration _appConfiguration;
@@ -41,14 +40,14 @@ public class NewsController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="newsRepo">Repository for managing news entities.</param>
     /// <param name="fileDataRepo">Repository for managing file data (news banners).</param>
     /// <param name="cacheService">Service for caching news data.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomUserStore userStore,
-        IRepository<News> newsRepo, IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public NewsController(ILogger<NewsController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<News> newsRepo, IRepository<FileData> fileDataRepo, MemoryCacheService cacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _newsRepo = newsRepo;
         _fileDataRepo = fileDataRepo;
         _appConfiguration = appConfiguration;
@@ -254,7 +253,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Create))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.News.Create))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (requestBody.Banner.Length > 1024 * 500)
@@ -337,7 +336,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Update))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.News.Update))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _newsRepo.FindByIdAsync(id);
@@ -432,7 +431,7 @@ public class NewsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.News.Delete))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             News? news = await _newsRepo.FindByIdAsync(id);

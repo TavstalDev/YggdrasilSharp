@@ -26,7 +26,6 @@ namespace Tavstal.YggdrasilSharp.Controllers.Launcher;
 [Route("/launcher")]
 public class LauncherController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<LauncherVersion> _launcherVersionRepo;
     private readonly IRepository<LauncherVersionData> _launcherVersionDataRepo;
     private readonly IRepository<FileData> _fileDataRepository;
@@ -37,14 +36,14 @@ public class LauncherController : CustomControllerBase
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="launcherVersionRepo">Repository for <see cref="LauncherVersion"/> entities.</param>
     /// <param name="launcherVersionDataRepo">Repository for <see cref="LauncherVersionData"/> entities.</param>
     /// <param name="fileDataRepository">Repository for <see cref="FileData"/> entities.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<LauncherVersion> launcherVersionRepo, IRepository<LauncherVersionData> launcherVersionDataRepo,
-       IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<LauncherVersion> launcherVersionRepo, IRepository<LauncherVersionData> launcherVersionDataRepo, IRepository<FileData> fileDataRepository)
+        : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _launcherVersionRepo = launcherVersionRepo;
         _launcherVersionDataRepo = launcherVersionDataRepo;
         _fileDataRepository = fileDataRepository;
@@ -222,7 +221,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? existingVersion = await _launcherVersionRepo.FindAsync(x => x.Version == request.Version);
@@ -281,7 +280,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Launcher.UpdateVersion))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
@@ -345,7 +344,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
@@ -407,7 +406,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Launcher.CreateVersion))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersion? version = await _launcherVersionRepo.FindByIdAsync(id);
@@ -494,7 +493,7 @@ public class LauncherController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Launcher.DeleteVersion))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             LauncherVersionData? versionData =

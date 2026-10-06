@@ -33,13 +33,16 @@ public class RecoveryController : CustomControllerBase
     /// Initializes a new instance of the <see cref="RecoveryController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
-    /// <param name="dbContext">Database context for accessing user data.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
+    /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="memoryCacheService">Service for caching launcher data.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public RecoveryController(ILogger<RecoveryController> logger, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public RecoveryController(ILogger<RecoveryController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomDbContext dbContext, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, MemoryCacheService memoryCacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
@@ -82,7 +85,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.EmailConfirmed)
                 return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
-            string fingerprint = GetMachineFingerprint(user.Id);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
 
@@ -152,7 +155,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.EmailConfirmed)
                 return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
-            string fingerprint = GetMachineFingerprint(user.Id);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:password:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:password:attempt";
 
@@ -223,7 +226,7 @@ public class RecoveryController : CustomControllerBase
             if (!user.EmailConfirmed)
                 return JsonResult(HttpStatusCode.Forbidden, "Email is not confirmed.");
 
-            string fingerprint = GetMachineFingerprint(user.Id);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
 
@@ -289,7 +292,7 @@ public class RecoveryController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid credentials.");
 
-            string fingerprint = GetMachineFingerprint(user.Id);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, user.Id);
             string recoveryTokenKey = $"recovery:{fingerprint}:tfa:token";
             string recoveryAttemptKey = $"recovery:{fingerprint}:tfa:attempt";
 

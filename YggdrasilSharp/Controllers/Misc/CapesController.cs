@@ -25,30 +25,29 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class CapesController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<Cape> _capeRepo;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly CustomDbContext _dbContext;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CapesController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
-    /// <param name="dbContext">Database context for accessing cape data.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
+    /// <param name="dbContext">Database context for accessing cape data.</param>
     /// <param name="capeRepo">Repository for <see cref="Cape"/> entities.</param>
     /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo, AppConfiguration appConfiguration) 
-        : base(logger, userStore, appConfiguration)
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomDbContext dbContext, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo)
+        : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _capeRepo = capeRepo;
         _fileDataRepo = fileDataRepo;
         _dbContext = dbContext;
     }
-    
+
     /// <summary>
     /// Uploads a new cape for the authenticated user.
     /// </summary>
@@ -60,7 +59,7 @@ public class CapesController : CustomControllerBase
     [HttpPost]
     [EnableRateLimiting(RateLimits.FixedWindow.UPLOAD)]
     [Consumes("multipart/form-data")]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadCape([BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
@@ -80,7 +79,7 @@ public class CapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.Create))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500)
@@ -114,9 +113,9 @@ public class CapesController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             fd = await _fileDataRepo.AddAsync(fd, true);
-            
+
             Cape cape = await _capeRepo.AddAsync(new Cape
             {
                 Name = file.FileName.Split('.')[0],
@@ -141,7 +140,7 @@ public class CapesController : CustomControllerBase
         }
     }
 
-    
+
     /// <summary>
     /// Deletes a cape by its ID.
     /// </summary>
@@ -153,7 +152,7 @@ public class CapesController : CustomControllerBase
     /// <response code="404">Cape not found.</response>
     [HttpDelete("{capeId}")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
-        [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), 
+        [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
         TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCape([BindRequired, FromRoute] ulong capeId)
@@ -174,7 +173,7 @@ public class CapesController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Capes.Delete))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             Cape? cape = await _capeRepo.FindAsync(x => x.Id == capeId);
@@ -187,11 +186,11 @@ public class CapesController : CustomControllerBase
                 fileData.DeleteFile();
                 await _fileDataRepo.RemoveAsync(fileData);
             }
-            
+
             var userCapes = await UserStore.UserCapes.QueryAsync(x => x.CapeId == capeId);
             foreach (var userCape in userCapes)
                 await UserStore.UserCapes.RemoveAsync(userCape);
-            
+
             await _capeRepo.RemoveAsync(cape);
 
             await _dbContext.SaveChangesAsync();

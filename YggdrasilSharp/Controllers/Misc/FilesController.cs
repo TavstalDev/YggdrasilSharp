@@ -22,22 +22,24 @@ public class FilesController : CustomControllerBase
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="FilesController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="fileDataRepo">Repository for managing file data.</param>
     /// <param name="memoryCache">Service for caching file data.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public FilesController(ILogger<FilesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache, AppConfiguration appConfiguration) :
-        base(logger, userStore, appConfiguration)
+    public FilesController(ILogger<FilesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache) :
+        base(logger, userManager, userStore, appConfiguration)
     {
         _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;
     }
-    
+
     /// <summary>
     /// Retrieves a file by its hash.
     /// </summary>

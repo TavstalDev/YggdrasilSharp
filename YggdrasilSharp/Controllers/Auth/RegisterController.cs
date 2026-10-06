@@ -29,7 +29,6 @@ namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 [Tags("Authentication: Registration")]
 public class RegisterController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
     private readonly IRepository<FileData> _fileDataRepo;
@@ -40,16 +39,17 @@ public class RegisterController : CustomControllerBase
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
-    /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
+    /// <param name="dbContext">Database context for accessing user data.</param>
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="fileDataRepo">Repository for managing file data, such as user avatars.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomDbContext dbContext, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomDbContext dbContext, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo)
+        : base(logger, userManager, userStore, appConfiguration)
     {
         _dbContext = dbContext;
-        _userManager = userManager;
         _emailService = emailService;
         _passwordHasher = passwordHasher;
         _fileDataRepo = fileDataRepo;
@@ -88,7 +88,7 @@ public class RegisterController : CustomControllerBase
             if (invalidChar != 0)
                 return JsonResult(HttpStatusCode.BadRequest, $"Invalid character in username '{invalidChar}'.");
 
-            if (await _userManager.IsCompromisedPasswordAsync(request.Password))
+            if (await UserManager.IsCompromisedPasswordAsync(request.Password))
                 return JsonResult(HttpStatusCode.Forbidden, "Password is compromised.");
 
             if (!request.EmailAddress.IsValidEmail())

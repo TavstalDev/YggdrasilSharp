@@ -28,23 +28,21 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 public class SkinsController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<FileData> _fileDataRepository;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SkinsController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="userManager">The custom user manager.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="memoryCacheService">The memory cache service for caching data.</param>
     /// <param name="fileDataRepository">Repository for managing file data (skins).</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public SkinsController(ILogger<SkinsController > logger, CustomUserManager userManager, CustomUserStore userStore, MemoryCacheService memoryCacheService,
-        IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public SkinsController(ILogger<SkinsController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        MemoryCacheService memoryCacheService, IRepository<FileData> fileDataRepository) : base(logger, userManager, userStore, appConfiguration)
     {
         _cacheService = memoryCacheService;
-        _userManager = userManager;
         _fileDataRepository = fileDataRepository;
     }
 
@@ -65,7 +63,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.View))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? skin =
@@ -87,7 +85,7 @@ public class SkinsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Uploads a new skin for the current user.
     /// </summary>
@@ -100,7 +98,7 @@ public class SkinsController : CustomControllerBase
     [HttpPut("skin")]
     [EnableRateLimiting(RateLimits.FixedWindow.UPLOAD)]
     [Consumes("multipart/form-data")]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UploadSkin([BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
@@ -120,7 +118,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.Upload))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500)
@@ -138,7 +136,7 @@ public class SkinsController : CustomControllerBase
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-            
+
             FileData fd = new FileData
             {
                 Hash = fileHash,
@@ -150,7 +148,7 @@ public class SkinsController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin != null)
@@ -158,11 +156,11 @@ public class SkinsController : CustomControllerBase
                 existingSkin.DeleteFile();
                 await _fileDataRepository.RemoveAsync(existingSkin, true);
             }
-            
+
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{user.Id}:signed");
             _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
-            
+
             await _fileDataRepository.AddAsync(fd, true);
             return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
         }
@@ -172,7 +170,7 @@ public class SkinsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Deletes the current user's skin.
     /// </summary>
@@ -183,7 +181,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="404">No skin found for the user.</response>
     [HttpDelete("skin")]
     [EnableRateLimiting(RateLimits.FixedWindow.WRITE)]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkin()
     {
@@ -193,7 +191,7 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.Delete))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingSkin =
@@ -204,7 +202,7 @@ public class SkinsController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{user.Id}:signed");
             _cacheService.RemoveValue($"profile:{user.Id}:unsigned");
-            
+
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
             return JsonResult(HttpStatusCode.OK, "Skin deleted successfully");
@@ -229,7 +227,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="404">No skin found for the user.</response>
     [HttpGet("{userId}/skin")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
@@ -249,14 +247,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.ViewOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? skin =
@@ -281,7 +279,7 @@ public class SkinsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Uploads a new skin for a specific user (admin only).
     /// </summary>
@@ -296,7 +294,7 @@ public class SkinsController : CustomControllerBase
     [HttpPut("{userId}/skin")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [Consumes("multipart/form-data")]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
@@ -316,14 +314,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.UploadOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500)
@@ -341,7 +339,7 @@ public class SkinsController : CustomControllerBase
             if (!await SkiaHelper.IsValidSkinAsync(stream, Logger))
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid image format or dimensions. Expected dimensions: 64x32, 64x64, 512x256, or 512x512.");
-            
+
             FileData fd = new FileData
             {
                 Hash = fileHash,
@@ -353,7 +351,7 @@ public class SkinsController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             FileData? existingSkin =
                 await _fileDataRepository.FindAsync(x => x.UserId == targetUser.Id && x.Type == EFileDataType.SKIN);
             if (existingSkin != null)
@@ -365,7 +363,7 @@ public class SkinsController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
             _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
-            
+
             await _fileDataRepository.AddAsync(fd, true);
 
             return JsonResult(HttpStatusCode.OK, "Skin uploaded successfully");
@@ -376,7 +374,7 @@ public class SkinsController : CustomControllerBase
             return JsonResult(HttpStatusCode.InternalServerError, Program.IsDevelopment ? ex.ToString() : "An unknown error occurred while processing the request.");
         }
     }
-    
+
     /// <summary>
     /// Deletes the skin of a specific user (admin only).
     /// </summary>
@@ -388,7 +386,7 @@ public class SkinsController : CustomControllerBase
     /// <response code="404">No skin found for the user.</response>
     [HttpDelete("{userId}/skin")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
-    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), 
+    [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
     {
@@ -408,14 +406,14 @@ public class SkinsController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Skins.DeleteOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingSkin =
@@ -426,7 +424,7 @@ public class SkinsController : CustomControllerBase
             // Remove profile cache
             _cacheService.RemoveValue($"profile:{targetUser.Id}:signed");
             _cacheService.RemoveValue($"profile:{targetUser.Id}:unsigned");
-            
+
             existingSkin.DeleteFile();
             await _fileDataRepository.RemoveAsync(existingSkin, true);
             return JsonResult(HttpStatusCode.OK, "Skin deleted successfully");

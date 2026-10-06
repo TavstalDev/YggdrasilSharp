@@ -27,10 +27,13 @@ public class PublicUserController : CustomControllerBase
     /// Initializes a new instance of the <see cref="PublicUserController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="fileDataRepository">Repository for managing file data.</param>
     /// <param name="appConfiguration">The application settings.</param>
-    public PublicUserController(ILogger<PublicUserController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="fileDataRepository">Repository for managing file data.</param>
+    public PublicUserController(ILogger<PublicUserController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<FileData> fileDataRepository)
+        : base(logger, userManager, userStore, appConfiguration)
     {
         _appConfiguration = appConfiguration;
         _fileDataRepository = fileDataRepository;

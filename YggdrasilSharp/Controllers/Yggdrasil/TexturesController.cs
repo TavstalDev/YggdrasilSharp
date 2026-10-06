@@ -28,17 +28,18 @@ public class TexturesController : CustomControllerBase
     /// Initializes a new instance of the <see cref="TexturesController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
     /// <param name="memoryCache">The memory cache service for caching texture data.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public TexturesController(ILogger<TexturesController> logger, CustomUserStore userStore, IRepository<FileData> fileDataRepo,
-        MemoryCacheService memoryCache, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public TexturesController(ILogger<TexturesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<FileData> fileDataRepo, MemoryCacheService memoryCache) : base(logger, userManager, userStore, appConfiguration)
     {
         _fileDataRepo = fileDataRepo;
         _memoryCache = memoryCache;
     }
-    
+
     /// <summary>
     /// Retrieves texture data based on the provided hash.
     /// </summary>

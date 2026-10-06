@@ -23,10 +23,12 @@ public class StatusController : CustomControllerBase
     /// Initializes a new instance of the <see cref="StatusController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging information.</param>
+    /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The <see cref="CustomUserStore"/> used by the base controller for user operations.</param>
-    /// <param name="cacheService">Service for caching data in memory.</param>
     /// <param name="appConfiguration">The application settings.</param>
-    public StatusController(ILogger<StatusController> logger, CustomUserStore userStore, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="cacheService">Service for caching data in memory.</param>
+    public StatusController(ILogger<StatusController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration, MemoryCacheService cacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
         _cacheService = cacheService;
         _appConfiguration = appConfiguration;

@@ -28,28 +28,27 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class AvatarController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
     private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AvatarController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
     /// <param name="userManager">Service for managing users.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">Application settings.</param>
     /// <param name="fileDataRepo">Repository for managing file data (avatars).</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
-    /// <param name="appConfiguration">Application settings.</param>
-    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomUserStore userStore,
-        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _fileDataRepo = fileDataRepo;
         _memoryCache = cacheService;
     }
-    
+
     /// <summary>
     /// Retrieves the current user's avatar.
     /// </summary>
@@ -73,7 +72,7 @@ public class AvatarController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.View.Avatar))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.View.Avatar))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             string cacheKey = $"avatar:{user.Id}";
@@ -144,7 +143,7 @@ public class AvatarController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Create.Avatar))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             if (file.Length > 1024 * 500)
@@ -173,7 +172,7 @@ public class AvatarController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             FileData? existingAvatar =
                 await _fileDataRepo.FindAsync(x => x.UserId == user.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
@@ -182,7 +181,7 @@ public class AvatarController : CustomControllerBase
                 await _fileDataRepo.RemoveAsync(existingAvatar, true);
                 _memoryCache.RemoveValue("avatar:" + user.Id);
             }
-            
+
             await _fileDataRepo.AddAsync(fd, true);
             return JsonResult(HttpStatusCode.OK, "Avatar uploaded successfully.");
         }
@@ -217,7 +216,7 @@ public class AvatarController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Avatar))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.Avatar))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             FileData? existingAvatar =
@@ -238,7 +237,7 @@ public class AvatarController : CustomControllerBase
     }
 
     #region Admin Endpoints
-    
+
     /// <summary>
     /// Uploads an avatar for another user (admin only).
     /// </summary>
@@ -279,14 +278,14 @@ public class AvatarController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Create.AvatarOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             if (file.Length > 1024 * 500)
@@ -315,7 +314,7 @@ public class AvatarController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>
                 x.UserId == targetUser.Id && x.Type == EFileDataType.PROFILE_PICTURE);
             if (existingAvatar != null)
@@ -371,14 +370,14 @@ public class AvatarController : CustomControllerBase
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
 
-            if (!await _userManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
+            if (!await UserManager.HasPermissionAsync(user, CustomPermissions.Account.Delete.AvatarOther))
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             CustomUser? targetUser = await UserStore.FindUserByIdAsync(userId);
             if (targetUser == null)
                 return JsonResult(HttpStatusCode.NotFound, "Target user not found");
 
-            if (!await _userManager.HasHigherRoleThanAsync(user, targetUser))
+            if (!await UserManager.HasHigherRoleThanAsync(user, targetUser))
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             FileData? existingAvatar = await _fileDataRepo.FindAsync(x =>

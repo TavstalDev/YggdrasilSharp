@@ -31,11 +31,14 @@ public class LoginController : CustomControllerBase
     /// Initializes a new instance of the <see cref="LoginController"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for logging operations.</param>
-    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    /// <param name="userManager">The user manager for accessing user data.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
-    /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="appConfiguration">The application settings.</param>
-    public LoginController(ILogger<LoginController> logger, CustomSignInManager signInManager, CustomUserStore userStore, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    /// <param name="memoryCacheService">Service for caching launcher data.</param>
+    public LoginController(ILogger<LoginController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomSignInManager signInManager, MemoryCacheService memoryCacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
         _signInManager = signInManager;
         _memoryCacheService = memoryCacheService;
@@ -173,18 +176,18 @@ public class LoginController : CustomControllerBase
             if (!Request.Cookies.TryGetValue("ysharp-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
 
-            string fingerprint = GetMachineFingerprint(userIdCookie);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, userIdCookie);
             string tokenKey = $"auth:{fingerprint}:tfa:token";
-            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != sessionCookie)
-                return JsonResult(HttpStatusCode.Unauthorized, "Invalid or expired session token.");
+            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || cachedSessionToken != sessionCookie)
+                return JsonResult(HttpStatusCode.Unauthorized, $"Invalid credentials.");
 
             CustomUser? user = await UserStore.FindUserByIdAsync(userIdCookie);
             if (user == null)
-                return JsonResult(HttpStatusCode.NotFound, "Invalid credentials.");
+                return JsonResult(HttpStatusCode.BadRequest, "Invalid credentials.");
 
             var result = await _signInManager.TwoFactorSignInAsync(user, request.TwoFactorCode, request.RememberMe, HttpContext);
             if (!result.Succeeded)
-                return JsonResult(HttpStatusCode.BadRequest, result.Message ?? "Invalid two-factor code.");
+                return JsonResult(HttpStatusCode.Unauthorized, result.Message ?? "Invalid credentials.");
 
             var userToken = result.UserToken!;
             var userLogin = result.UserLogin!;
@@ -301,7 +304,7 @@ public class LoginController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            string fingerprint = GetMachineFingerprint(request.UserId);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, request.UserId);
             string tokenKey = $"auth:{fingerprint}:tfa-launcher:token";
             if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || string.IsNullOrEmpty(cachedSessionToken) || cachedSessionToken != request.SessionToken)
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid or expired session token.");

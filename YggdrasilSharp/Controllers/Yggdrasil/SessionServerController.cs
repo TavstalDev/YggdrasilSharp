@@ -28,7 +28,6 @@ namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
 [Tags("Yggdrasil")]
 public class SessionServerController : CustomControllerBase
 {
-    private readonly CustomUserManager _userManager;
     private readonly IRepository<Cape> _capeRepo;
     private readonly IRepository<FileData> _fileDataRepository;
     private readonly IRepository<ServerJoin> _serverJoinRepo;
@@ -44,15 +43,15 @@ public class SessionServerController : CustomControllerBase
     /// <param name="logger">The logger instance for logging information.</param>
     /// <param name="userManager">The user manager for handling user-related operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
+    /// <param name="appConfiguration">The application settings.</param>
     /// <param name="serverJoinRepo">Repository for recording server join events.</param>
     /// <param name="fileDataRepository">Repository for managing file data (skins, capes, etc.).</param>
     /// <param name="capeRepo">Repository for managing cape entities.</param>
     /// <param name="cacheService">The memory cache service for caching data.</param>
-    /// <param name="appConfiguration">The application settings.</param>
-    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<ServerJoin> serverJoinRepo,
-        IRepository<FileData> fileDataRepository, IRepository<Cape> capeRepo, MemoryCacheService cacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    public SessionServerController(ILogger<SessionServerController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        IRepository<ServerJoin> serverJoinRepo, IRepository<FileData> fileDataRepository, IRepository<Cape> capeRepo, MemoryCacheService cacheService)
+        : base(logger, userManager, userStore, appConfiguration)
     {
-        _userManager = userManager;
         _fileDataRepository = fileDataRepository;
         _capeRepo = capeRepo;
         _serverJoinRepo = serverJoinRepo;
@@ -120,7 +119,7 @@ public class SessionServerController : CustomControllerBase
                 return YigErrorResult(HttpStatusCode.NotFound,
                     "User not found for the provided selectedProfile UUID");
 
-            if (!await _userManager.VerifyJwtTokenAsync(request.AccessToken))
+            if (!await UserManager.VerifyJwtTokenAsync(request.AccessToken))
                 return YigErrorResult(HttpStatusCode.Unauthorized, "Invalid access token");
 
             string hashedAccessToken = StringChiper.GetEncryptedHash(request.AccessToken, _appConfiguration.Jwt.EncryptionKey);

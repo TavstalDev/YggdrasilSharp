@@ -284,7 +284,6 @@ public static class Program
         #region Cors
         // Retrieve the CORS configuration section from the application configuration
         var corsDefault = configuration.GetSection("CORS:Default");
-        // Add distributed memory cache services
 
         var allowAnyOrigin = corsDefault.GetValue<bool>("AllowAnyOrigin");
         var allowAnyMethod = corsDefault.GetValue<bool>("AllowAnyMethod");
@@ -293,6 +292,7 @@ public static class Program
             _logger?.LogWarning("CORS configuration allows any origin and any header, which may have security implications. Ensure this is intentional.");
 
         int idleTimeout = configuration.GetValue(Constants.ConfigurationKeys.CorsIdleTimeout, 300);
+        // Add distributed memory cache services
         services.AddDistributedMemoryCache()
             // Add session services with specified options
             .AddSession(options =>

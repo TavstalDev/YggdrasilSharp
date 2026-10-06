@@ -23,22 +23,20 @@ namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 [EnableRateLimiting(RateLimits.FixedWindow.AUTH_LOGIN)]
 public class TwoFactorController : CustomControllerBase
 {
-
     private readonly CustomSignInManager _signInManager;
-    private readonly CustomUserManager _userManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TwoFactorController"/> class.
     /// </summary>
     /// <param name="logger">Logger instance for logging.</param>
-    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
     /// <param name="userManager">Custom user manager for user operations.</param>
     /// <param name="userStore">The user store for accessing user data.</param>
     /// <param name="appConfiguration">Application settings.</param>
-    public TwoFactorController(ILogger<TwoFactorController> logger, CustomSignInManager signInManager, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+    /// <param name="signInManager">The sign-in manager for handling authentication flows.</param>
+    public TwoFactorController(ILogger<TwoFactorController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+        CustomSignInManager signInManager) : base(logger, userManager, userStore, appConfiguration)
     {
         _signInManager = signInManager;
-        _userManager = userManager;
     }
 
     /// <summary>
@@ -72,7 +70,7 @@ public class TwoFactorController : CustomControllerBase
             if (user.TwoFactorEnabled)
                 return JsonResult(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
-            if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
+            if (!UserManager.VerifyTwoFactorCode(user, twoFactorCode))
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
 
             user.TwoFactorEnabled = true;
@@ -118,7 +116,7 @@ public class TwoFactorController : CustomControllerBase
             if (!user.TwoFactorEnabled)
                 return JsonResult(HttpStatusCode.Forbidden, "Two-factor authentication is not enabled.");
 
-            if (!_userManager.VerifyTwoFactorCode(user, twoFactorCode))
+            if (!UserManager.VerifyTwoFactorCode(user, twoFactorCode))
                 return JsonResult(HttpStatusCode.Unauthorized, "Invalid two-factor code.");
 
             user.TwoFactorEnabled = false;
@@ -155,7 +153,7 @@ public class TwoFactorController : CustomControllerBase
             if (user.TwoFactorEnabled)
                 return JsonResult(HttpStatusCode.Forbidden, "Two-factor authentication is already enabled.");
 
-            string rawSecret = await _userManager.GenerateTwoFactorTokenAsync(user);
+            string rawSecret = await UserManager.GenerateTwoFactorTokenAsync(user);
 
             return JsonResult(new TwoFactorSecretResponse
             {
@@ -199,7 +197,7 @@ public class TwoFactorController : CustomControllerBase
             var recoveryCodes = await UserStore.UserBackupCodes.QueryAsync(x => x.UserId == user.Id);
             foreach (var code in recoveryCodes)
                 await UserStore.UserBackupCodes.RemoveAsync(code);
-            var newCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 6);
+            var newCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 6);
 
             return JsonResult(new TwoFactorCodeResponse
             {
