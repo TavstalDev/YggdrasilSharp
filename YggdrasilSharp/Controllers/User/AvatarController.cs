@@ -31,7 +31,7 @@ public class AvatarController : CustomControllerBase
     private readonly CustomUserManager _userManager;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
+    private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
     
     /// <summary>
     /// Initializes a new instance of the <see cref="AvatarController"/> class.
@@ -88,7 +88,7 @@ public class AvatarController : CustomControllerBase
                 if (bytes == null)
                     return JsonResult(HttpStatusCode.InternalServerError, "Failed to retrieve avatar data.");
 
-                _memoryCache.SetValue(cacheKey, (bytes, existingAvatar.ContentType, existingAvatar.Hash), CacheTtl);
+                _memoryCache.SetValue(cacheKey, (bytes, existingAvatar.ContentType, existingAvatar.Hash), slidingExpiration: CacheSlidingTtl);
                 Response.Headers.ETag = $"\"{existingAvatar.Hash}\"";
                 Response.Headers.CacheControl = "public,max-age=3600,immutable";
                 return File(existingAvatar.GetFileStream(), existingAvatar.ContentType, enableRangeProcessing: true);

@@ -22,7 +22,7 @@ public class TexturesController : CustomControllerBase
 {
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
+    private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TexturesController"/> class.
@@ -78,7 +78,7 @@ public class TexturesController : CustomControllerBase
                 if (bytes == null)
                     return YigErrorResult(HttpStatusCode.InternalServerError, "Failed to retrieve texture data.");
                 contentType = fileData.ContentType;
-                _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
+                _memoryCache.SetValue(cacheKey, (bytes, contentType), slidingExpiration: CacheSlidingTtl);
             }
             else
             {

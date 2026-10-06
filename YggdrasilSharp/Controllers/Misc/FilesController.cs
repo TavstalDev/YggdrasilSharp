@@ -21,7 +21,7 @@ public class FilesController : CustomControllerBase
 {
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromDays(1);
+    private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
     
     /// <summary>
     /// Initializes a new instance of the <see cref="FilesController"/> class.
@@ -79,7 +79,7 @@ public class FilesController : CustomControllerBase
                 if (bytes == null)
                     return JsonResult(HttpStatusCode.InternalServerError, "Failed to retrieve file data.");
                 contentType = fileData.ContentType;
-                _memoryCache.SetValue(cacheKey, (bytes, contentType), CacheTtl);
+                _memoryCache.SetValue(cacheKey, (bytes, contentType), slidingExpiration: CacheSlidingTtl);
             }
             else
             {

@@ -13,7 +13,6 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Models.Database.User;
-using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
@@ -31,9 +30,7 @@ public class LauncherController : CustomControllerBase
     private readonly IRepository<LauncherVersion> _launcherVersionRepo;
     private readonly IRepository<LauncherVersionData> _launcherVersionDataRepo;
     private readonly IRepository<FileData> _fileDataRepository;
-    private readonly MemoryCacheService _memoryCacheService;
-    private readonly TimeSpan CacheTTL = TimeSpan.FromHours(1);
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="LauncherController"/> class.
     /// </summary>
@@ -43,16 +40,14 @@ public class LauncherController : CustomControllerBase
     /// <param name="launcherVersionRepo">Repository for <see cref="LauncherVersion"/> entities.</param>
     /// <param name="launcherVersionDataRepo">Repository for <see cref="LauncherVersionData"/> entities.</param>
     /// <param name="fileDataRepository">Repository for <see cref="FileData"/> entities.</param>
-    /// <param name="memoryCacheService">Service for caching launcher data.</param>
     /// <param name="appConfiguration">Application settings.</param>
     public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, IRepository<LauncherVersion> launcherVersionRepo, IRepository<LauncherVersionData> launcherVersionDataRepo,
-       IRepository<FileData> fileDataRepository, MemoryCacheService memoryCacheService, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
+       IRepository<FileData> fileDataRepository, AppConfiguration appConfiguration) : base(logger, userStore, appConfiguration)
     {
         _userManager = userManager;
         _launcherVersionRepo = launcherVersionRepo;
         _launcherVersionDataRepo = launcherVersionDataRepo;
         _fileDataRepository = fileDataRepository;
-        _memoryCacheService = memoryCacheService;
     }
 
     /// <summary>
@@ -94,7 +89,7 @@ public class LauncherController : CustomControllerBase
                 return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
 
             var version = versions.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
-            
+
             if (version == null)
                 return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
             return JsonResult(version);
@@ -132,7 +127,7 @@ public class LauncherController : CustomControllerBase
             var version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
                 return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
-            
+
             var versionDetails = await _launcherVersionDataRepo.QueryAsync(x => x.VersionId == version.Id);
             return JsonResult(versionDetails);
         }
@@ -168,10 +163,6 @@ public class LauncherController : CustomControllerBase
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            string cacheKey = $"launcher_version:{id}:download_{os}";
-            if (_memoryCacheService.TryGetValue(cacheKey, out (byte[], string) cachedVersion))
-                return File(cachedVersion.Item1, cachedVersion.Item2);
-
             var version = await _launcherVersionRepo.FindByIdAsync(id);
             if (version == null)
                 return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
@@ -189,7 +180,6 @@ public class LauncherController : CustomControllerBase
             if (bytes == null)
                 return JsonResult(HttpStatusCode.InternalServerError, "Failed to retrieve the file.");
 
-            _memoryCacheService.SetValue(cacheKey, (bytes, fileData.ContentType), CacheTTL);
             return File(bytes, fileData.ContentType);
         }
         catch (Exception ex)
@@ -373,7 +363,7 @@ public class LauncherController : CustomControllerBase
                 }
                 await _launcherVersionDataRepo.RemoveAsync(ver);
             }
-            
+
             await _launcherVersionRepo.RemoveAsync(version, true);
             return JsonResult(HttpStatusCode.OK, "Launcher version deleted successfully.");
         }
@@ -454,7 +444,7 @@ public class LauncherController : CustomControllerBase
             var uploadResult = await fd.SaveFileAsync(stream);
             if (!uploadResult.Success)
                 return JsonResult(uploadResult.StatusCode, uploadResult.Message);
-            
+
             fd = await _fileDataRepository.AddAsync(fd, true);
             await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
@@ -499,7 +489,7 @@ public class LauncherController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest,
                     string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
-            
+
             CustomUser? user = await GetCurrentUserAsync();
             if (user == null)
                 return JsonResult(HttpStatusCode.Unauthorized, "User not authenticated");
