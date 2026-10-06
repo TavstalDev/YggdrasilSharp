@@ -490,12 +490,8 @@ public class CustomUserManager
     public string GetMachineFingerprint(HttpContext httpContext, string userId)
     {
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
-        var ipAddress = HttpHelper.GetClientIp(httpContext);
-        if (string.IsNullOrEmpty(ipAddress))
-            ipAddress = "unknown";
-
         // Combine traits and hash them
-        var rawData = string.Concat(userId, "-", userAgent, "-", ipAddress);
+        var rawData = string.Concat(userId, "-", userAgent);
         return StringChiper.GetEncryptedHash(rawData, _appConfiguration.Jwt.FingerprintKey);
     }
     #endregion

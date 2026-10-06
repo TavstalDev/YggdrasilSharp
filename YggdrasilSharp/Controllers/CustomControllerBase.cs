@@ -23,6 +23,11 @@ public abstract class CustomControllerBase : Controller
     protected readonly ILogger Logger;
 
     /// <summary>
+    ///  Reference to the application's <see cref="CustomUserManager"/> used to modify user data.
+    /// </summary>
+    protected readonly CustomUserManager UserManager;
+
+    /// <summary>
     /// Reference to the application's <see cref="CustomUserStore"/> used to query and modify user data.
     /// </summary>
     protected readonly CustomUserStore UserStore;
@@ -36,11 +41,13 @@ public abstract class CustomControllerBase : Controller
     /// Initializes a new instance of the <see cref="CustomControllerBase"/> class.
     /// </summary>
     /// <param name="logger">The logger instance to be used by the controller.</param>
+    /// <param name="userManager">The <see cref="CustomUserManager"/> instance for user operations.</param>
     /// <param name="userStore">The <see cref="CustomUserStore"/> instance for accessing user data.</param>
     /// <param name="appConfiguration">The <see cref="AppConfiguration"/> instance containing application configuration used by controllers.</param>
-    protected CustomControllerBase(ILogger logger, CustomUserStore userStore, AppConfiguration appConfiguration)
+    protected CustomControllerBase(ILogger logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration)
     {
         Logger = logger;
+        UserManager = userManager;
         UserStore = userStore;
         AppConfiguration = appConfiguration;
     }
@@ -144,20 +151,5 @@ public abstract class CustomControllerBase : Controller
         var bytes = Encoding.UTF8.GetBytes(json);
         var hash = sha1.ComputeHash(bytes);
         return "\"" + Convert.ToBase64String(hash) + "\"";
-    }
-
-    /// <summary>
-    /// Computes a machine fingerprint for the specified user by combining traits from the current HTTP request
-    /// User-Agent with the user's identifier, then hashing the combined string using the
-    /// application's fingerprint key.
-    /// </summary>
-    /// <param name="userId">The user's id is used as part of the fingerprint.</param>
-    /// <returns>A string containing the hashed fingerprint.</returns>
-    protected string GetMachineFingerprint(string userId)
-    {
-        var userAgent = Request.Headers.UserAgent.ToString();
-        // Combine traits and hash them
-        var rawData = string.Concat(userId, "-", userAgent);
-        return StringChiper.GetEncryptedHash(rawData, AppConfiguration.Jwt.FingerprintKey);
     }
 }
