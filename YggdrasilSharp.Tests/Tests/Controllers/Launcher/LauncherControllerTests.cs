@@ -37,7 +37,7 @@ public class LauncherControllerTests : ControllerTestBase
             _launcherVersionRepo = new Repository<LauncherVersion>(_dbContext);
             _launcherVersionDataRepo = new Repository<LauncherVersionData>(_dbContext);
             _fileDataRepo = new Repository<FileData>(_dbContext);
-            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo, _memoryCacheService, AppConfiguration);
+            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -163,8 +163,8 @@ public class LauncherControllerTests : ControllerTestBase
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
-            
-            
+
+
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
@@ -172,7 +172,7 @@ public class LauncherControllerTests : ControllerTestBase
                 ContentType = "application/zip",
                 Type = EFileDataType.LAUNCHER,
             }, true, TestContext.Current.CancellationToken);
-            
+
             await _launcherVersionDataRepo.AddAsync(new LauncherVersionData
             {
                 VersionId = version.Id,
@@ -181,14 +181,14 @@ public class LauncherControllerTests : ControllerTestBase
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.GetLauncherVersionDetails(version.Id);
             result.Should().BeOfType<ContentResult>();
             var contentResult = result as ContentResult;
             contentResult.Should().NotBeNull();
             _testOutputHelper.WriteLine("Result: " + contentResult.Content);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns 404 when the version does not exist.
         /// </summary>
@@ -210,7 +210,7 @@ public class LauncherControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DownloadLauncherVersionTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Verifies that the endpoint successfully returns a file for a valid launcher version.
         /// </summary>
@@ -238,13 +238,13 @@ public class LauncherControllerTests : ControllerTestBase
                 }
                 bytes = zipStream.ToArray();
             }
-            
+
             using var stream = new MemoryStream(bytes);
             using var sha256 = SHA256.Create();
             byte[] hashBytes = await sha256.ComputeHashAsync(stream, TestContext.Current.CancellationToken);
             string fileHash = Convert.ToHexStringLower(hashBytes);
             stream.Position = 0;
-            
+
             var fd = await _fileDataRepo.AddAsync(new FileData
             {
                 Hash = fileHash,
@@ -290,7 +290,7 @@ public class LauncherControllerTests : ControllerTestBase
             var result = await _controller.DownloadLauncherVersion(999, ELauncherOs.WINDOWS);
             TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 404 status when the launcher version file does not exist.
         /// </summary>
@@ -305,7 +305,7 @@ public class LauncherControllerTests : ControllerTestBase
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.DownloadLauncherVersion(version.Id, ELauncherOs.WINDOWS);
             TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
@@ -378,7 +378,7 @@ public class LauncherControllerTests : ControllerTestBase
             });
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
         /// </summary>
@@ -480,7 +480,7 @@ public class LauncherControllerTests : ControllerTestBase
             });
             TestHelper.TestResponse(result, HttpStatusCode.BadRequest);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 401 status when no user is authenticated.
         /// </summary>
@@ -495,14 +495,14 @@ public class LauncherControllerTests : ControllerTestBase
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.UpdateLauncherVersion(v1.Id, new UpdateLauncherVersionRequest
             {
                 Version = "1.0.1"
             });
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
         /// </summary>
@@ -519,7 +519,7 @@ public class LauncherControllerTests : ControllerTestBase
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             }, true, TestContext.Current.CancellationToken);
-            
+
             var result = await _controller.UpdateLauncherVersion(v1.Id, new UpdateLauncherVersionRequest
             {
                 Version = "1.0.1"
@@ -571,7 +571,7 @@ public class LauncherControllerTests : ControllerTestBase
             var result = await _controller.DeleteLauncherVersion(1);
             TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions to delete a launcher version.
         /// </summary>
@@ -656,7 +656,7 @@ public class LauncherControllerTests : ControllerTestBase
             var result = await _controller.AddLauncherVersionData(1, request);
             TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 401 status when no user is authenticated.
         /// </summary>
@@ -670,7 +670,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Headers = new HeaderDictionary(),
                 ContentType = "application/zip"
             };
-            
+
             var result = await _controller.AddLauncherVersionData(1, new CreateLauncherVersionDataRequest
             {
                 Os = ELauncherOs.WINDOWS,
@@ -678,7 +678,7 @@ public class LauncherControllerTests : ControllerTestBase
             });
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
         /// </summary>
@@ -694,7 +694,7 @@ public class LauncherControllerTests : ControllerTestBase
                 Headers = new HeaderDictionary(),
                 ContentType = "application/zip"
             };
-            
+
             var result = await _controller.AddLauncherVersionData(1, new CreateLauncherVersionDataRequest
             {
                 Os = ELauncherOs.WINDOWS,
@@ -779,7 +779,7 @@ public class LauncherControllerTests : ControllerTestBase
             var result = await _controller.DeleteLauncherVersionData(1, 1);
             TestHelper.TestResponse(result, HttpStatusCode.NotFound);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 401 status when no user is authenticated.
         /// </summary>
@@ -789,7 +789,7 @@ public class LauncherControllerTests : ControllerTestBase
             var result = await _controller.DeleteLauncherVersionData(1, 1);
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Verifies that the endpoint returns a 403 status when the user lacks sufficient permissions.
         /// </summary>

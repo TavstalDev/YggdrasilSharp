@@ -19,7 +19,7 @@ public class TwoFactorControllerTests : ControllerTestBase
 {
     private readonly Mock<ILogger<TwoFactorController>> _loggerMock = new();
     private readonly TwoFactorController _controller;
-        
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TwoFactorControllerTests"/> test class.
     /// </summary>
@@ -30,7 +30,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         public TwoFactorControllerTests(ITestOutputHelper testOutputHelper) :  base(testOutputHelper)
         {
             // Controller now expects (logger, userManager, userStore, settings)
-            _controller = new TwoFactorController(_loggerMock.Object, _userManager, _userStore, AppConfiguration);
+            var signInManager = _testHelper.CreateSignInManager(_userStore, _userManager, AppConfiguration);
+            _controller = new TwoFactorController(_loggerMock.Object, signInManager, _userManager, _userStore, AppConfiguration);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext
@@ -61,9 +62,9 @@ public class TwoFactorControllerTests : ControllerTestBase
             byte[] secretBytes = Encoding.UTF8.GetBytes(secret);
             var totp = new Totp(secretBytes);
             string code = totp.ComputeTotp();
-            
+
             IActionResult result = await _controller.EnableTwoFactorAuthAsync(code);
-            
+
             TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
@@ -77,7 +78,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             await _userManager.GenerateTwoFactorTokenAsync(user);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
-            
+
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
 
@@ -91,7 +92,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Failure case: attempting to enable 2FA when it is already enabled should return HTTP 403 Forbidden.
         /// </summary>
@@ -103,7 +104,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             await _userManager.GenerateTwoFactorTokenAsync(user);
 
             IActionResult result = await _controller.EnableTwoFactorAuthAsync("000000");
-            
+
             TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
@@ -118,7 +119,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public DisableTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: user with 2FA enabled supplies a valid TOTP code and the controller disables 2FA, returning HTTP 200.
         /// </summary>
@@ -132,9 +133,9 @@ public class TwoFactorControllerTests : ControllerTestBase
             byte[] secretBytes = Encoding.UTF8.GetBytes(secret);
             var totp = new Totp(secretBytes);
             string code = totp.ComputeTotp();
-            
+
             IActionResult result = await _controller.DisableTwoFactorAuthAsync(code);
-            
+
             TestHelper.TestResponse(result, HttpStatusCode.OK);
         }
 
@@ -147,12 +148,12 @@ public class TwoFactorControllerTests : ControllerTestBase
             _userMock.TwoFactorEnabled = true;
             var user = await CreateUserAsync(_controller, _userMock);
             await _userManager.GenerateTwoFactorTokenAsync(user);
-            
+
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Failure case: unauthenticated requests to disable 2FA should be rejected with HTTP 401.
         /// </summary>
@@ -162,7 +163,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Failure case: attempting to disable 2FA when it is not enabled should return HTTP 403 Forbidden.
         /// </summary>
@@ -172,13 +173,13 @@ public class TwoFactorControllerTests : ControllerTestBase
             _userMock.TwoFactorEnabled = false;
             var user = await CreateUserAsync(_controller, _userMock);
             await _userManager.GenerateTwoFactorTokenAsync(user);
-            
+
             IActionResult result = await _controller.DisableTwoFactorAuthAsync("000000");
 
             TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
     }
-    
+
     /// <summary>
     /// Tests for generating a new two-factor secret/code for the user.
     /// </summary>
@@ -189,7 +190,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public GenerateCodeTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: authenticated user requests a new 2FA secret and receives content with the secret/QR info.
         /// Expected: <see cref="ContentResult"/>.
@@ -198,9 +199,9 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller, _userMock);
-            
+
             IActionResult result = await _controller.GenerateCodeAsync();
-            
+
             result.Should().BeOfType<ContentResult>();
             var content = (result as ContentResult)!.Content;
             _testOutputHelper.WriteLine("Result: " + content);
@@ -215,7 +216,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             IActionResult result = await _controller.GenerateCodeAsync();
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
-        
+
         /// <summary>
         /// Failure case: authenticated user who already has 2FA enabled should receive HTTP 403 Forbidden.
         /// </summary>
@@ -225,7 +226,7 @@ public class TwoFactorControllerTests : ControllerTestBase
             _userMock.TwoFactorEnabled = true;
             var user = await CreateUserAsync(_controller, _userMock);
             await _userManager.GenerateTwoFactorTokenAsync(user);
-            
+
             IActionResult result = await _controller.GenerateCodeAsync();
             TestHelper.TestResponse(result, HttpStatusCode.Forbidden);
         }
@@ -241,7 +242,7 @@ public class TwoFactorControllerTests : ControllerTestBase
         /// </summary>
         /// <param name="testOutputHelper">The output helper used to write test diagnostics.</param>
         public RegenerateRecoveryCodesTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+
         /// <summary>
         /// Success case: authenticated user regenerates recovery codes and receives a <see cref="ContentResult"/>.
         /// </summary>
@@ -249,9 +250,9 @@ public class TwoFactorControllerTests : ControllerTestBase
         public async Task ReturnsOk()
         {
             await CreateUserAsync(_controller, _userMock);
-            
-            IActionResult result = await _controller.RegenerateRecoveryCodesAsync();
-            
+
+            IActionResult result = await _controller.RegenerateRecoveryCodesAsync(_passwordMock);
+
             result.Should().BeOfType<ContentResult>();
             var obj = result as ContentResult;
             obj.Should().NotBeNull();
@@ -264,8 +265,8 @@ public class TwoFactorControllerTests : ControllerTestBase
         [Fact(DisplayName = "Failure: Unauthenticated user")]
         public async Task ReturnsUnauthorized_WhenUnauthenticated()
         {
-            IActionResult result = await _controller.RegenerateRecoveryCodesAsync();
-            
+            IActionResult result = await _controller.RegenerateRecoveryCodesAsync(_passwordMock);
+
             TestHelper.TestResponse(result, HttpStatusCode.Unauthorized);
         }
     }
