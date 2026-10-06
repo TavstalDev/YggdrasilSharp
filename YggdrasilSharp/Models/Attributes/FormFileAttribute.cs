@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Tavstal.YggdrasilSharp.Models.Common;
 
 namespace Tavstal.YggdrasilSharp.Models.Attributes;
@@ -38,44 +39,56 @@ public class FormFileAttribute : ValidationAttribute
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is IFormFile file)
-        {
-            var contentType = file.ContentType;
-            var fileSize = file.Length;
-
-            if (fileSize == 0)
-                return new ValidationResult("The file is empty.");
-
-            if (_contentTypes != null && !_contentTypes.Contains(contentType))
-                return new ValidationResult($"The media type of the file is not supported. Supported: {string.Join(", ", _contentTypes)}.");
-            
-            if (_fileExtensions != null && !_fileExtensions.Any(x => file.FileName.EndsWith(x)))
-                return new ValidationResult($"The extension of the file is not supported. Supported: {string.Join(", ", _fileExtensions)}");
-
-            if (fileSize / (int)_fileSizeUnit > _maxFileSize)
-                return new ValidationResult($"The file size is greater than {_maxFileSize} {Enum.GetName(_fileSizeUnit)}.");
-        }
+            return ValidateFile(file, validationContext);
 
         if (value is IEnumerable<IFormFile> files)
         {
             foreach (var formFile in files)
             {
-                var contentType = formFile.ContentType;
-                var fileSize = formFile.Length;
-
-                if (fileSize == 0)
-                    return new ValidationResult("The file is empty.");
-
-                if (_contentTypes != null && !_contentTypes.Contains(contentType))
-                    return new ValidationResult($"The media type of the file is not supported. Supported: {string.Join(", ", _contentTypes)}.");
-
-                if (_fileExtensions != null && !_fileExtensions.Any(x => formFile.FileName.EndsWith(x)))
-                    return new ValidationResult($"The extension of the file is not supported. Supported: {string.Join(", ", _fileExtensions)}");
-
-                if (fileSize / (int)_fileSizeUnit > _maxFileSize)
-                    return new ValidationResult($"The file size is greater than {_maxFileSize} {Enum.GetName(_fileSizeUnit)}.");
+                var result = ValidateFile(formFile, validationContext);
+                if (result != ValidationResult.Success)
+                    return result;
             }
         }
 
         return ValidationResult.Success;
+    }
+
+    private ValidationResult? ValidateFile(IFormFile file, ValidationContext validationContext)
+    {
+        var fileSize = file.Length;
+
+        if (fileSize == 0)
+        {
+            // An empty file is treated as "not provided" on optional members,
+            // but is rejected on required ones.
+            return IsRequiredMember(validationContext)
+                ? new ValidationResult("The file is empty.")
+                : ValidationResult.Success;
+        }
+
+        if (_contentTypes != null && !_contentTypes.Contains(file.ContentType))
+            return new ValidationResult($"The media type of the file is not supported. Supported: {string.Join(", ", _contentTypes)}.");
+
+        if (_fileExtensions != null && !_fileExtensions.Any(x => file.FileName.EndsWith(x)))
+            return new ValidationResult($"The extension of the file is not supported. Supported: {string.Join(", ", _fileExtensions)}");
+
+        if (fileSize > (long)_maxFileSize * (int)_fileSizeUnit)
+            return new ValidationResult($"The file size is greater than {_maxFileSize} {Enum.GetName(_fileSizeUnit)}.");
+
+        return ValidationResult.Success;
+    }
+
+    private static bool IsRequiredMember(ValidationContext validationContext)
+    {
+        var property = validationContext.ObjectType?.GetProperty(validationContext.MemberName ?? string.Empty);
+        if (property == null)
+            return true;
+
+        if (property.IsDefined(typeof(RequiredAttribute), inherit: true))
+            return true;
+
+        var nullability = new NullabilityInfoContext().Create(property);
+        return nullability.WriteState != NullabilityState.Nullable;
     }
 }
