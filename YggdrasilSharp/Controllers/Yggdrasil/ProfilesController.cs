@@ -38,7 +38,7 @@ public class ProfilesController : CustomControllerBase
     /// <response code="404">No users found with the provided usernames.</response>
     [HttpPost("minecraft")]
     [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> MinecraftProfile([Required, FromBody] List<string> names)
+    public async Task<IActionResult> MinecraftProfile([Required, MaxLength(10), FromBody] List<string> names)
     {
         try
         {
