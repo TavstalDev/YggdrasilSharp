@@ -49,7 +49,7 @@ public static class IOHelper
             {
                 Success = false,
                 StatusCode = HttpStatusCode.InternalServerError,
-                Message = $"Unexpected error occured while saving the file.\n{ex.Message}"
+                Message = $"Unexpected error occured while saving the file."
             };
         }
     }
