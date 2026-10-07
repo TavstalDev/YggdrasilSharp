@@ -33,7 +33,7 @@ public class AvatarControllerTests : ControllerTestBase
     public AvatarControllerTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new AvatarController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo, _memoryCacheService);
+        _controller = new AvatarController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _fileDataRepo, _memoryCacheService, AntiVirusService);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

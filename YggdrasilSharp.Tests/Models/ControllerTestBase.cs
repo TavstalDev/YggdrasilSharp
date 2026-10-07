@@ -9,6 +9,7 @@ using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Helpers;
 using Tavstal.YggdrasilSharp.Tests.Services;
@@ -67,6 +68,12 @@ public abstract class ControllerTestBase
     protected readonly FakeEmailService _fakeEmailService;
 
     /// <summary>
+    /// The AntiVirus service given to the controller under test. Unreachable daemon connections are
+    /// swallowed by the service, so no AntiVirus instance is needed for the tests to pass.
+    /// </summary>
+    protected readonly IAntiVirusService AntiVirusService;
+
+    /// <summary>
     /// The test configuration given to the controller and services under test.
     /// </summary>
     protected readonly AppConfiguration AppConfiguration;
@@ -104,6 +111,7 @@ public abstract class ControllerTestBase
         _passwordHasher = _testHelper.PasswordHasher;
         _memoryCacheService = _testHelper.MemoryCacheService;
         _fakeEmailService = _testHelper.FakeEmailService;
+        AntiVirusService = _testHelper.AntiVirusService;
         AppConfiguration = _testHelper.Settings;
 
         var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
@@ -113,14 +121,14 @@ public abstract class ControllerTestBase
         }).Build();
         Program.UploadDir = uploadTempDir;
         Program.IsDevelopment = true;
-        
+
         _controllerHttpContext = new DefaultHttpContext
         {
             Connection = { RemoteIpAddress = IPAddress.Parse(TestHelper.IpAddress) }
         };
         _controllerHttpContext.Request.Headers.UserAgent = TestHelper.UserAgent;
         _controllerHttpContext.Request.Host = new HostString("localhost", 5000);
-        
+
         _userMock = new CustomUser
         {
             Email = "testuser@gmail.com",
@@ -151,7 +159,7 @@ public abstract class ControllerTestBase
         };
         _userMock2.PasswordHash = _passwordHasher.HashPassword(_userMock2, _passwordMock);
     }
-    
+
     /// <summary>
     /// Persists a user together with the default and, optionally, the admin role, then authenticates
     /// the given controller with the created user.
@@ -181,14 +189,14 @@ public abstract class ControllerTestBase
                     ClaimValue = claim.DefaultValue
                 }, true);
         }
-        
+
         var role = await _userStore.Roles.AddAsync(new CustomRole(1, "default", "DEFAULT"), true);
         await _userStore.UserRoles.AddAsync(new CustomUserRole
         {
             UserId = user.Id,
             RoleId = role.Id
         }, true);
-        
+
         var defaultClaims = CustomRoleClaims.Claims["Default"];
         foreach (var claim in defaultClaims)
             await _userStore.RoleClaims.AddAsync(new IdentityRoleClaim<string>()

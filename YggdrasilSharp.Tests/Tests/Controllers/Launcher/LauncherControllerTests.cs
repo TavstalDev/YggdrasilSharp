@@ -37,7 +37,7 @@ public class LauncherControllerTests : ControllerTestBase
             _launcherVersionRepo = new Repository<LauncherVersion>(_dbContext);
             _launcherVersionDataRepo = new Repository<LauncherVersionData>(_dbContext);
             _fileDataRepo = new Repository<FileData>(_dbContext);
-            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo);
+            _controller = new LauncherController(_loggerMock.Object, _userManager, _userStore, AntiVirusService, AppConfiguration, _launcherVersionRepo, _launcherVersionDataRepo, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

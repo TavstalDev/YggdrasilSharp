@@ -36,7 +36,7 @@ public class CapesControllerTests : ControllerTestBase
     {
         _capeRepo = new Repository<Cape>(_dbContext);
         _fileDataRepo = new Repository<FileData>(_dbContext);
-        _controller = new CapesController(_loggerMock.Object, _userManager, _userStore, AppConfiguration, _dbContext, _capeRepo, _fileDataRepo);
+        _controller = new CapesController(_loggerMock.Object, _userManager, _userStore, AntiVirusService, AppConfiguration, _dbContext, _capeRepo, _fileDataRepo);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = _controllerHttpContext

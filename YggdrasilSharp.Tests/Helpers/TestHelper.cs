@@ -15,6 +15,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Responses;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Tests.Services;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -66,6 +67,13 @@ public class TestHelper
     public FakeEmailService FakeEmailService { get; }
 
     /// <summary>
+    /// The AntiService service built from <see cref="Settings"/>. Scans against an unreachable daemon are
+    /// swallowed by the service and reported as "not infected", so tests never require a running
+    /// AntiVirus instance.
+    /// </summary>
+    public IAntiVirusService AntiVirusService { get; }
+
+    /// <summary>
     /// The configuration shared by every service this helper builds. Tests must hash tokens with this
     /// instance so the values match the ones the code under test computes.
     /// </summary>
@@ -90,6 +98,10 @@ public class TestHelper
         MemoryCacheService = new MemoryCacheService(ServiceProvider.GetRequiredService<IMemoryCache>());
         FakeEmailService = new FakeEmailService();
         Settings = CreateTestSettings();
+        if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.Other)
+            AntiVirusService = new ClamAvService(NullLogger<ClamAvService>.Instance, Settings);
+        else
+            AntiVirusService = new DefenderService(NullLogger<DefenderService>.Instance, Settings);
     }
 
     /// <summary>
@@ -117,7 +129,7 @@ public class TestHelper
     /// <returns>The hashed token value as persisted in the database.</returns>
     public static string HashToken(string rawToken, AppConfiguration appConfiguration) =>
         StringChiper.GetEncryptedHash(rawToken, appConfiguration.Jwt.EncryptionKey);
-    
+
     /// <summary>
     /// Creates a <see cref="CustomDbContext"/> backed by the EF in-memory provider.
     /// </summary>
@@ -216,7 +228,7 @@ public class TestHelper
     public static AppConfiguration CreateTestSettings()
     {
         var (pfxFilePath, password) = CreateSelfSignedPfxFile();
-        
+
         return new AppConfiguration(
             "http://localhost",
             "http://localhost",
@@ -238,7 +250,7 @@ public class TestHelper
             "1.0.0"
             );
     }
-    
+
     /// <summary>
     /// Generates a self-signed certificate and writes it to a temporary PFX file.
     /// </summary>
@@ -248,14 +260,14 @@ public class TestHelper
     public static (string filePath, string password) CreateSelfSignedPfxFile(string subjectName = "CN=localhost", string password = "changeit")
     {
         var (pfxBytes, _) = CreateSelfSignedPfx(subjectName, password);
-        
+
         // Save to a temporary file with .pfx extension
         var tempFilePath = Path.Combine(Path.GetTempPath(), $"test-cert-{Guid.NewGuid():N}.pfx");
         File.WriteAllBytes(tempFilePath, pfxBytes);
-        
+
         return (tempFilePath, password);
     }
-    
+
     /// <summary>
     /// Generates a self-signed certificate valid for server authentication and exports it in PFX format.
     /// </summary>
@@ -280,7 +292,7 @@ public class TestHelper
         var pfx = cert.Export(X509ContentType.Pkcs12, password);
         return (pfx, password);
     }
-    
+
     /// <summary>
     /// Utility: creates and returns an in-memory PNG image stream of the specified width and height.
     /// The returned <see cref="MemoryStream"/> is positioned at 0 and ready for reading.
