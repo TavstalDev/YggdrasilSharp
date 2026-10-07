@@ -215,8 +215,8 @@ public class LoginControllerTests
     }
 
     /// <summary>
-    /// Tests for web two-factor login flow (TFA session cookie + code verification).
-    /// Covers successful TFA confirmation, missing session cookie, invalid/expired session.
+    /// Tests for web two-factor login flow (session token + code verification).
+    /// Covers successful TFA confirmation, missing session token, invalid/expired session.
     /// </summary>
     public class LoginTwoFactorTests : LoginControllerTests
     {
@@ -227,16 +227,17 @@ public class LoginControllerTests
         public LoginTwoFactorTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
 
         /// <summary>
-        /// Success case: after the initial login redirect, the TFA cookies are present and submitting the correct TOTP returns success.
+        /// Success case: the initial login redirect carries the user id and session token in the body,
+        /// and submitting them with the correct TOTP returns success.
         /// Expected: ContentResult with final login payload.
         /// </summary>
         [Fact(DisplayName = "Success: Login with valid credentials")]
         public async Task ReturnsOk()
         {
-            await AddMockUserAndLoginAsync(true);
-            var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookie.Should().Contain("ysharp-twofactor-session=");
-            setCookie.Should().Contain("ysharp-userId=");
+            var loginResult = await AddMockUserAndLoginAsync(true);
+            var redirect = Deserialize<LoginRedirectResponse>(loginResult.content);
+            redirect.UserId.Should().NotBeNullOrEmpty();
+            redirect.SessionToken.Should().NotBeNullOrEmpty();
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
@@ -244,6 +245,8 @@ public class LoginControllerTests
             string expectedCode = totpGenerator.ComputeTotp();
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = redirect.UserId,
+                SessionToken = redirect.SessionToken,
                 TwoFactorCode = expectedCode
             });
 
@@ -266,6 +269,7 @@ public class LoginControllerTests
         public async Task ReturnsRawTokenAndStoresOnlyItsHash()
         {
             var loginResult = await AddMockUserAndLoginAsync(true);
+            var redirect = Deserialize<LoginRedirectResponse>(loginResult.content);
             _userMock.TwoFactorSecret.Should().NotBeNullOrEmpty();
 
             byte[] secretBytes = Encoding.UTF8.GetBytes(_userMock.TwoFactorSecret.DecryptSelf(_appConfiguration.Jwt.TwoFactorEncryptionKey));
@@ -273,6 +277,8 @@ public class LoginControllerTests
 
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = redirect.UserId,
+                SessionToken = redirect.SessionToken,
                 TwoFactorCode = expectedCode
             });
 
@@ -285,20 +291,21 @@ public class LoginControllerTests
         }
 
         /// <summary>
-        /// Failure case: missing TFA session cookie should result in unauthorized response (401).
-        /// The test clears Request.Headers.Cookie to simulate a missing cookie.
+        /// Failure case: a two-factor request without a user id or session token in the body
+        /// should result in unauthorized response (401).
         /// </summary>
-        [Fact(DisplayName = "Failure: Missing TFA session cookie")]
-        public async Task ReturnsUnauthorized_ForMissingCookie()
+        [Fact(DisplayName = "Failure: Missing TFA session")]
+        public async Task ReturnsUnauthorized_ForMissingSession()
         {
             await AddMockUserAndLoginAsync(true);
-            _controllerHttpContext.Request.Headers.Cookie = []; // Clear cookies
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = string.Empty,
+                SessionToken = string.Empty,
                 TwoFactorCode = "000000"
             });
 
-            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
+            TestHelper.TestResponse(result, HttpStatusCode.Unauthorized, "Invalid credentials.");
         }
 
         /// <summary>
@@ -307,10 +314,13 @@ public class LoginControllerTests
         [Fact(DisplayName = "Failure: Invalid TFA code")]
         public async Task ReturnsUnauthorized_ForInvalidCode()
         {
-            await AddMockUserAndLoginAsync(true);
+            var loginResult = await AddMockUserAndLoginAsync(true);
+            var redirect = Deserialize<LoginRedirectResponse>(loginResult.content);
 
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = redirect.UserId,
+                SessionToken = redirect.SessionToken,
                 TwoFactorCode = "000000"
             });
 
@@ -325,9 +335,8 @@ public class LoginControllerTests
         public async Task ReturnsUnauthorized_ForExpiredSession()
         {
             var loginResult = await AddMockUserAndLoginAsync(true);
-            var setCookie = _controllerHttpContext.Response.Headers.SetCookie.ToString();
-            setCookie.Should().Contain("ysharp-twofactor-session=");
-            setCookie.Should().Contain("ysharp-userId=");
+            var redirect = Deserialize<LoginRedirectResponse>(loginResult.content);
+            redirect.SessionToken.Should().NotBeNullOrEmpty();
 
             var memoryCacheService = _testHelper.MemoryCacheService;
             string fingerprint = TestHelper.GetFingerprint(loginResult.userId);
@@ -337,6 +346,8 @@ public class LoginControllerTests
 
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = redirect.UserId,
+                SessionToken = redirect.SessionToken,
                 TwoFactorCode = "000000"
             });
 
@@ -344,25 +355,26 @@ public class LoginControllerTests
         }
 
         /// <summary>
-        /// Failure case: a valid TFA session cookie paired with a <c>ysharp-userId</c> cookie that refers to a
-        /// user that does not exist. The cached session token check passes for the unknown id, but the user
-        /// lookup fails, so the controller returns 400 BadRequest.
+        /// Failure case: a valid session token paired with a user id that does not exist.
+        /// The cached session token check passes for the unknown id, but the user lookup fails,
+        /// so the controller returns 400 BadRequest.
         /// </summary>
-        [Fact(DisplayName = "Failure: Unknown user id with valid session cookie")]
+        [Fact(DisplayName = "Failure: Unknown user id with valid session")]
         public async Task ReturnsBadRequest_ForUnknownUserId()
         {
-            await AddMockUserAndLoginAsync(true);
+            var loginResult = await AddMockUserAndLoginAsync(true);
+            var redirect = Deserialize<LoginRedirectResponse>(loginResult.content);
+            string sessionToken = redirect.SessionToken;
+            sessionToken.Should().NotBeNullOrEmpty();
 
             const string nonExistentUserId = "11111111-1111-1111-1111-111111111111";
-            string sessionCookie = _controllerHttpContext.Request.Cookies["ysharp-twofactor-session"]!;
-            sessionCookie.Should().NotBeNullOrEmpty();
-            _controllerHttpContext.Request.Headers.Cookie = $"ysharp-twofactor-session={sessionCookie}; ysharp-userId={nonExistentUserId}";
-
             string tokenKey = $"auth:{TestHelper.GetFingerprint(nonExistentUserId)}:tfa:token";
-            _testHelper.MemoryCacheService.SetValue(tokenKey, sessionCookie, TimeSpan.FromMinutes(5));
+            _testHelper.MemoryCacheService.SetValue(tokenKey, sessionToken, TimeSpan.FromMinutes(5));
 
             IActionResult result = await _controller.LoginTwoFactorAsync(new LoginTFASessionRequestBody
             {
+                UserId = nonExistentUserId,
+                SessionToken = sessionToken,
                 TwoFactorCode = "000000"
             });
 
