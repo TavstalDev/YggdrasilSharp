@@ -13,6 +13,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -30,6 +31,7 @@ public class AvatarController : CustomControllerBase
 {
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly MemoryCacheService _memoryCache;
+    private readonly IAntiVirusService _antiVirusService;
     private static readonly TimeSpan CacheSlidingTtl = TimeSpan.FromDays(1);
 
     /// <summary>
@@ -41,12 +43,14 @@ public class AvatarController : CustomControllerBase
     /// <param name="appConfiguration">Application settings.</param>
     /// <param name="fileDataRepo">Repository for managing file data (avatars).</param>
     /// <param name="cacheService">Service for caching data in memory.</param>
+    /// <param name="antiVirusService">Service for scanning files for infections.</param>
     public AvatarController(ILogger<AvatarController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
-        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService)
+        IRepository<FileData> fileDataRepo, MemoryCacheService cacheService, IAntiVirusService antiVirusService)
         : base(logger, userManager, userStore, appConfiguration)
     {
         _fileDataRepo = fileDataRepo;
         _memoryCache = cacheService;
+        _antiVirusService = antiVirusService;
     }
 
     /// <summary>
@@ -151,6 +155,9 @@ public class AvatarController : CustomControllerBase
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(file))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -293,6 +300,9 @@ public class AvatarController : CustomControllerBase
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(file))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();

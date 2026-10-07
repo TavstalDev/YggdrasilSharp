@@ -12,6 +12,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -28,6 +29,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.User;
 public class SkinsController : CustomControllerBase
 {
     private readonly MemoryCacheService _cacheService;
+    private readonly IAntiVirusService _antiVirusService;
     private readonly IRepository<FileData> _fileDataRepository;
 
     /// <summary>
@@ -39,10 +41,12 @@ public class SkinsController : CustomControllerBase
     /// <param name="appConfiguration">Application settings.</param>
     /// <param name="memoryCacheService">The memory cache service for caching data.</param>
     /// <param name="fileDataRepository">Repository for managing file data (skins).</param>
-    public SkinsController(ILogger<SkinsController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+    /// <param name="antiVirusService">Service for scanning files for infections.</param>
+    public SkinsController(ILogger<SkinsController> logger, CustomUserManager userManager, CustomUserStore userStore, IAntiVirusService antiVirusService, AppConfiguration appConfiguration,
         MemoryCacheService memoryCacheService, IRepository<FileData> fileDataRepository) : base(logger, userManager, userStore, appConfiguration)
     {
         _cacheService = memoryCacheService;
+        _antiVirusService = antiVirusService;
         _fileDataRepository = fileDataRepository;
     }
 
@@ -126,6 +130,9 @@ public class SkinsController : CustomControllerBase
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(file))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();
@@ -329,6 +336,9 @@ public class SkinsController : CustomControllerBase
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(file))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();

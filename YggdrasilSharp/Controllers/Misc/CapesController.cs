@@ -10,6 +10,8 @@ using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
@@ -25,6 +27,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Misc;
 [Authorize(AuthenticationSchemes = "Bearer,Basic")]
 public class CapesController : CustomControllerBase
 {
+    private readonly IAntiVirusService _antiVirusService;
     private readonly IRepository<Cape> _capeRepo;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly CustomDbContext _dbContext;
@@ -39,10 +42,12 @@ public class CapesController : CustomControllerBase
     /// <param name="dbContext">Database context for accessing cape data.</param>
     /// <param name="capeRepo">Repository for <see cref="Cape"/> entities.</param>
     /// <param name="fileDataRepo">Repository for <see cref="FileData"/> entities.</param>
-    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+    /// <param name="antiVirusService">Service for scanning files for infections.</param>
+    public CapesController(ILogger<CapesController> logger, CustomUserManager userManager, CustomUserStore userStore, IAntiVirusService antiVirusService, AppConfiguration appConfiguration,
         CustomDbContext dbContext, IRepository<Cape> capeRepo, IRepository<FileData> fileDataRepo)
         : base(logger, userManager, userStore, appConfiguration)
     {
+        _antiVirusService = antiVirusService;
         _capeRepo = capeRepo;
         _fileDataRepo = fileDataRepo;
         _dbContext = dbContext;
@@ -87,6 +92,9 @@ public class CapesController : CustomControllerBase
 
             if (!file.FileName.EndsWith(".png"))
                 return JsonResult(HttpStatusCode.BadRequest, "Only PNG files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(file))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = file.OpenReadStream();
             using var sha256 = SHA256.Create();

@@ -13,6 +13,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using Tavstal.YggdrasilSharp.Utils.Extensions;
@@ -29,8 +30,9 @@ namespace Tavstal.YggdrasilSharp.Controllers.Auth;
 [Tags("Authentication: Registration")]
 public class RegisterController : CustomControllerBase
 {
-    private readonly CustomDbContext _dbContext;
     private readonly IEmailService _emailService;
+    private readonly IAntiVirusService _antiVirusService;
+    private readonly CustomDbContext _dbContext;
     private readonly IRepository<FileData> _fileDataRepo;
     private readonly IPasswordHasher<CustomUser> _passwordHasher;
 
@@ -45,12 +47,14 @@ public class RegisterController : CustomControllerBase
     /// <param name="passwordHasher">The password hasher for securely hashing user passwords during registration.</param>
     /// <param name="emailService">Service for sending emails.</param>
     /// <param name="fileDataRepo">Repository for managing file data, such as user avatars.</param>
-    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+    /// <param name="antiVirusService">Service for scanning files for infections.</param>
+    public RegisterController(ILogger<RegisterController> logger, CustomUserManager userManager, CustomUserStore userStore, IAntiVirusService antiVirusService, AppConfiguration appConfiguration,
         CustomDbContext dbContext, IPasswordHasher<CustomUser> passwordHasher, IEmailService emailService, IRepository<FileData> fileDataRepo)
         : base(logger, userManager, userStore, appConfiguration)
     {
-        _dbContext = dbContext;
         _emailService = emailService;
+        _antiVirusService = antiVirusService;
+        _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _fileDataRepo = fileDataRepo;
     }
@@ -103,6 +107,9 @@ public class RegisterController : CustomControllerBase
             FileData? avatarData = null;
             if (request.Avatar is { Length: > 0 })
             {
+                if (await _antiVirusService.IsInfectedAsync(request.Avatar))
+                    return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
+
                 await using var stream = request.Avatar.OpenReadStream();
                 using var sha256 = SHA256.Create();
                 byte[] hashBytes = await sha256.ComputeHashAsync(stream);

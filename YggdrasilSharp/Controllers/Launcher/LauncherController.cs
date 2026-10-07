@@ -13,6 +13,8 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
@@ -26,6 +28,7 @@ namespace Tavstal.YggdrasilSharp.Controllers.Launcher;
 [Route("/launcher")]
 public class LauncherController : CustomControllerBase
 {
+    private readonly IAntiVirusService _antiVirusService;
     private readonly IRepository<LauncherVersion> _launcherVersionRepo;
     private readonly IRepository<LauncherVersionData> _launcherVersionDataRepo;
     private readonly IRepository<FileData> _fileDataRepository;
@@ -40,10 +43,12 @@ public class LauncherController : CustomControllerBase
     /// <param name="launcherVersionRepo">Repository for <see cref="LauncherVersion"/> entities.</param>
     /// <param name="launcherVersionDataRepo">Repository for <see cref="LauncherVersionData"/> entities.</param>
     /// <param name="fileDataRepository">Repository for <see cref="FileData"/> entities.</param>
-    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, AppConfiguration appConfiguration,
+    /// <param name="antiVirusService">Service for scanning files for infections.</param>
+    public LauncherController(ILogger<LauncherController> logger, CustomUserManager userManager, CustomUserStore userStore, IAntiVirusService antiVirusService, AppConfiguration appConfiguration,
         IRepository<LauncherVersion> launcherVersionRepo, IRepository<LauncherVersionData> launcherVersionDataRepo, IRepository<FileData> fileDataRepository)
         : base(logger, userManager, userStore, appConfiguration)
     {
+        _antiVirusService = antiVirusService;
         _launcherVersionRepo = launcherVersionRepo;
         _launcherVersionDataRepo = launcherVersionDataRepo;
         _fileDataRepository = fileDataRepository;
@@ -426,6 +431,9 @@ public class LauncherController : CustomControllerBase
                   request.File.FileName.EndsWith(".tar")))
                 return JsonResult(HttpStatusCode.BadRequest,
                     "Invalid file type. Only .zip, .tar.gz, and .tar files are allowed.");
+
+            if (await _antiVirusService.IsInfectedAsync(request.File))
+                return JsonResult(HttpStatusCode.BadRequest, "File is infected.");
 
             await using var stream = request.File.OpenReadStream();
             using var sha256 = SHA256.Create();
