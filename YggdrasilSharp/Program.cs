@@ -307,8 +307,8 @@ public static class Program
                 options.Cookie.HttpOnly = true;
                 // Mark the session cookie as essential
                 options.Cookie.IsEssential = true;
-                options.Cookie.SameSite = SameSiteMode.None;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             })
             // Add CORS services with specified options
             .AddCors(options =>
