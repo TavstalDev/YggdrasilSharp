@@ -87,22 +87,6 @@ public class LoginController : CustomControllerBase
             {
                 var user = result.User!;
                 string sessionToken = result.SessionToken!;
-                var expiry = result.TokenExpiresAt;
-                Response.Cookies.Append("ysharp-userId", user.Id, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true, // only over HTTPS
-                    SameSite = SameSiteMode.None, // required for cross-origin
-                    Expires = expiry
-                });
-                Response.Cookies.Append("ysharp-twofactor-session", sessionToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true, // only over HTTPS
-                    SameSite = SameSiteMode.None, // required for cross-origin
-                    Expires = expiry
-                });
-
                 var uriBuilder = new UriBuilder(new Uri(AppConfiguration.Misc.WebsiteUrl))
                 {
                     Path = "/2fa",
@@ -113,8 +97,10 @@ public class LoginController : CustomControllerBase
                 {
                     StatusCode = HttpStatusCode.Redirect,
                     Message = "Redirect to 2FA page",
+                    UserId = user.Id,
                     Email = user.Email,
-                    Url = uriBuilder.ToString()
+                    Url = uriBuilder.ToString(),
+                    SessionToken = sessionToken
                 });
             }
 
@@ -146,7 +132,7 @@ public class LoginController : CustomControllerBase
     /// </summary>
     /// <param name="request">The 2FA session request body containing the session token and 2FA code.</param>
     /// <response code="200">Request successful. Returns authentication result and tokens.</response>
-    /// <response code="401">Unauthorized. Invalid or missing session cookie, session secret, or 2FA code.</response>
+    /// <response code="401">Unauthorized. Invalid or missing session token, or invalid 2FA code.</response>
     /// <response code="403">Forbidden. Session token expired or too many failed attempts.</response>
     /// <response code="404">Not found. User associated with the session token does not exist.</response>
     /// <response code="423">Locked. User account is locked; includes lockout reason and expiration.</response>
@@ -170,18 +156,15 @@ public class LoginController : CustomControllerBase
                 return JsonResult(HttpStatusCode.BadRequest, string.IsNullOrEmpty(errorMessages) ? "Invalid input data." : errorMessages);
             }
 
-            if (!Request.Cookies.TryGetValue("ysharp-twofactor-session", out var sessionCookie)  || string.IsNullOrEmpty(sessionCookie))
-                return JsonResult(HttpStatusCode.Unauthorized, "Invalid or missing session cookie.");
+            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.SessionToken))
+                return JsonResult(HttpStatusCode.Unauthorized, "Invalid credentials.");
 
-            if (!Request.Cookies.TryGetValue("ysharp-userId", out var userIdCookie) || string.IsNullOrEmpty(userIdCookie))
-                return JsonResult(HttpStatusCode.Unauthorized, "Invalid or missing userId cookie.");
-
-            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, userIdCookie);
+            string fingerprint = UserManager.GetMachineFingerprint(HttpContext, request.UserId);
             string tokenKey = $"auth:{fingerprint}:tfa:token";
-            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || cachedSessionToken != sessionCookie)
-                return JsonResult(HttpStatusCode.Unauthorized, $"Invalid credentials.");
+            if (!_memoryCacheService.TryGetValue(tokenKey, out string? cachedSessionToken) || cachedSessionToken != request.SessionToken)
+                return JsonResult(HttpStatusCode.Unauthorized, "Invalid credentials.");
 
-            CustomUser? user = await UserStore.FindUserByIdAsync(userIdCookie);
+            CustomUser? user = await UserStore.FindUserByIdAsync(request.UserId);
             if (user == null)
                 return JsonResult(HttpStatusCode.BadRequest, "Invalid credentials.");
 
