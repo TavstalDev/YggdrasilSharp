@@ -16,37 +16,37 @@ namespace Tavstal.YggdrasilSharp.Services.Database;
 public class CustomDbContext : DbContext
 {
     private DbSet<CustomUser> Users { get; set; }
-    
+
     private DbSet<CustomUserClaim> UserClaims { get; set; }
-    
+
     private DbSet<CustomUserRole> UserRoles { get; set; }
-    
+
     private DbSet<CustomRole> Roles { get; set; }
-    
+
     private DbSet<CustomUserToken> UserTokens { get; set; }
-    
+
     private DbSet<CustomUserLogin> UserLogins { get; set; }
-    
+
     private DbSet<IdentityRoleClaim<string>> RoleClaims { get; set; }
 
     private DbSet<UserBackupCode> UserBackupCodes { get; set; }
-    
+
     private DbSet<UserBillingInformation> UserBillingInformations { get; set; }
-    
+
     private DbSet<UserPlaySession> UserPlaySessions { get; set; }
-    
+
     private DbSet<FileData> Files { get; set; }
 
     private DbSet<Cape> Capes { get; set; }
-    
+
     private DbSet<UserCape> UserCapes { get; set; }
-    
+
     private DbSet<ServerJoin> ServerJoins { get; set; }
-    
+
     private DbSet<News> News { get; set; }
-    
+
     private DbSet<LauncherVersion> LauncherVersions { get; set; }
-    
+
     private DbSet<LauncherVersionData> LauncherVersionDatas { get; set; }
 
     /// <summary>
@@ -77,7 +77,7 @@ public class CustomDbContext : DbContext
 
         builder.Entity<CustomUserToken>()
             .HasKey(x => x.Id);
-        
+
         builder.Entity<CustomUserRole>(entity =>
         {
             entity.HasKey(ur => new { ur.UserId, ur.RoleId });
@@ -106,8 +106,8 @@ public class CustomDbContext : DbContext
                 .WithMany(cu => cu.UserLogins)
                 .HasForeignKey(cul => cul.UserId)
                 .IsRequired();
-            
-            entity.ToTable("AspNetUserLogins"); 
+
+            entity.ToTable("AspNetUserLogins");
         });
 
         builder.Entity<UserBillingInformation>()
@@ -115,18 +115,21 @@ public class CustomDbContext : DbContext
             .WithOne(u => u.BillingInformation)
             .HasForeignKey<UserBillingInformation>(b => b.UserId)
             .IsRequired();
-        
+
         builder.Entity<UserPlaySession>()
             .HasOne(p => p.User)
-            .WithMany(u => u.PlaySessions) 
-            .HasForeignKey(p => p.UserId) 
+            .WithMany(u => u.PlaySessions)
+            .HasForeignKey(p => p.UserId)
             .IsRequired();
-        
+
         builder.Entity<FileData>()
             .HasOne(f => f.User)
             .WithMany(u => u.Files)
             .HasForeignKey(f => f.UserId)
             .IsRequired(false);
+
+        builder.Entity<FileData>()
+            .HasIndex(x => new { x.Hash, x.Type });
 
         builder.Entity<UserCape>()
             .HasOne(c => c.User)
@@ -170,11 +173,11 @@ public class CustomDbContext : DbContext
             if (token != null)
                 UserTokens.Remove(token);
         }
-        
+
         UserLogins.RemoveRange(expiredLogins);
         if (shouldSave) await SaveChangesAsync(cancellationToken);
     }
-    
+
     /// <summary>
     /// Clears expired user play sessions from the database asynchronously.
     /// </summary>
@@ -187,7 +190,7 @@ public class CustomDbContext : DbContext
         UserPlaySessions.RemoveRange(expiredSessions);
         if (shouldSave) await SaveChangesAsync(cancellationToken);
     }
-    
+
     /// <summary>
     /// Clears all user logins and tokens associated with the specified user ID.
     /// </summary>
@@ -202,7 +205,7 @@ public class CustomDbContext : DbContext
 
         UserLogins.RemoveRange(logins);
         UserTokens.RemoveRange(tokens);
-        
+
         if (shouldSave)
             await SaveChangesAsync(cancellationToken);
     }
