@@ -6,12 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-<details>
-<summary>In development changes</summary>
 
-</details>
-
-## [1.0.0] - 2026-09-26
+## [1.0.0]
 <details>
 <summary>Initial release</summary>
 
@@ -32,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   server-join records.
 - `ETag` / `If-None-Match` revalidation (`304 Not Modified`) on the blocked-server list and session
   profile responses.
+- Legacy Yggdrasil auth-server endpoints — `authenticate`, `refresh`, `validate`, `invalidate`, and
+  `signout` under `/yggdrasil/authserver/…` (and the `/yggdrasil/…` alias) — gated behind the
+  `Yggdrasil:EnableLegacyAuth` configuration key, which is **disabled by default**.
 
 #### Accounts and authentication
 - Account registration with an emailed confirmation token, login, and logout.
@@ -44,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Two interchangeable authentication schemes — **Bearer** and **Basic** — both JWT-based and
   selectable per endpoint, with Bearer as the default challenge scheme.
 - Public user profile and avatar lookups by user id.
+- First-run admin account seeding from the `ADMIN_USERNAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`
+  environment variables.
 
 #### User assets
 - Skin upload, replacement, and deletion, with PNG dimension validation accepting 64x32, 64x64,
@@ -54,6 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   permission claims.
 - Content-addressed file storage keyed by SHA-256 hash, with `ETag`/`304` support on retrieval.
 - SkiaSharp-based image decoding and validation for all uploads.
+- Antivirus scanning for every file upload through ClamAV (and AMSI on Windows), configured with the
+  required `CLAM_AV_HOST` / `CLAM_AV_PORT` environment variables.
 
 #### Session management
 - List your own active sessions, revoke a single session, or revoke all of them.
@@ -69,8 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Persistence
 - Entity Framework Core with selectable **MySQL**, **PostgreSQL**, or **SQLite** providers, including
   MySQL connection resiliency with retry-on-failure.
-- EF Core schema management: startup applies migrations through `DatabaseInitializer`. No migrations are
-  currently committed to the repository.
+- EF Core schema management: the schema is created on first startup through `DatabaseInitializer`.
+- An initial EF Core migration (`20261006192546_Initial`) shipped in `YggdrasilSharp/Migrations/`.
+- EF Core CLI tooling pinned through `.config/dotnet-tools.json`.
 - Automatic seeding of the `Default`, `Moderator`, and `Admin` roles with granular permission claims
   on first startup.
 - A background service that cleans up expired logins, play sessions, and server joins hourly, and
@@ -88,6 +92,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A restrictive `Content-Security-Policy` response header.
 - Forwarded-headers support for reverse-proxy deployments.
 - Configurable request upload size limit (100 MB by default).
+- A `/health` endpoint (database-backed), correlation-ID middleware, and memory-cache size/compaction
+  configuration.
+- Required `FINGERPRINT_SIGNING_KEY` and `TWO_FACTOR_ENCRYPTION_KEY` environment variables for
+  fingerprint HMACs and stored TOTP secrets.
 - Secrets supplied through environment variables via a `.env` file, keeping credentials out of
   `appsettings.json`.
 
@@ -95,14 +103,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SMTP email delivery for confirmation and recovery messages.
 
 #### API documentation
-- Swagger / OpenAPI documentation served at `/docs`, versioned as `v1` and generated from the
-  endpoint metadata and custom response attributes.
+- Swagger / OpenAPI documentation served at `/docs` in the Development environment, versioned as `v1`
+  and generated from the endpoint metadata and custom response attributes.
 
 #### Engineering
-- A 222-test xUnit v3 suite using FluentAssertions and Moq, covering the controllers and both
+- An xUnit v3 test suite using FluentAssertions and Moq, covering the controllers and both
   authentication handlers.
 - Continuous integration and a release workflow that publishes source code only — no NuGet packages
   or build artifacts are attached to releases.
+
+### Changed
+- Database initialization now applies migrations with `Database.MigrateAsync` instead of
+  `Database.EnsureCreatedAsync`, so fresh databases are schema'd through the normal migration
+  pipeline.
+- The two-factor login flow now identifies the session with a session token and user id instead of
+  cookies.
+- Controllers cache with sliding expiration; startup validates required configuration (certificate,
+  JWT keys, database settings) and fails fast with a clear error.
+
+### Fixed
+- Cookie `SameSite` and `SecurePolicy` defaults hardened.
+- `MinecraftProfile` now enforces the maximum username length.
+- TOTP verification window adjusted to reduce legitimate-code rejections.
+- Password-pwned API request timeout increased for reliability.
 
 </details>
 
