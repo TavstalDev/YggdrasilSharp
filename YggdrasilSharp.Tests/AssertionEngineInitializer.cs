@@ -1,8 +1,12 @@
-namespace Tavstal.YggdrasilSharp.Tests;
+using FluentAssertions;
+using FluentAssertions.Extensibility;
+using Tavstal.YggdrasilSharp.Tests;
 
-[assembly: FluentAssertions.Extensibility.AssertionEngineInitializer(
+[assembly: AssertionEngineInitializer(
     typeof(AssertionEngineInitializer),
     nameof(AssertionEngineInitializer.AcknowledgeSoftWarning))]
+
+namespace Tavstal.YggdrasilSharp.Tests;
 
 public static class AssertionEngineInitializer
 {
