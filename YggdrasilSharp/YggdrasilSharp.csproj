@@ -19,6 +19,8 @@
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
         
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="YggdrasilSharp.Tests" />
@@ -39,6 +41,7 @@
         <PackageReference Include="Microting.EntityFrameworkCore.MySql" Version="10.0.12" />
         <PackageReference Include="Mime-Detective" Version="25.8.1" />
         <PackageReference Include="MimeKit" Version="4.18.1" />
+        <PackageReference Include="nClam" Version="9.0.0" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
         <PackageReference Include="Otp.NET" Version="1.4.1" />
         <PackageReference Include="SkiaSharp" Version="4.153.1" />
@@ -52,5 +55,10 @@
     </ItemGroup>
     <ItemGroup>
         <None Remove="*.pfx;*.pem;*.key" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 </Project>

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Tavstal.YggdrasilSharp.Services;
