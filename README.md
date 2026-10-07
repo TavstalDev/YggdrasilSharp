@@ -14,12 +14,13 @@ A lightweight, self-hostable implementation of the Minecraft [Yggdrasil](https:/
 - **Yggdrasil compatibility** – authentication sessions, profiles, textures, and server join (`hasJoined` / `join`) matching the official Yggdrasil API and session server.
 - **Full account system** – registration with email confirmation, login, logout, password recovery, and TOTP-based **2FA** (with backup codes).
 - **User assets** – skins (64x32/64x64/512x256/512x512), avatars, and capes with upload validation.
+- **Antivirus scanning** – every file upload is scanned through Defender/ClamAV before it is stored.
 - **Launcher server** – version management and file hosting for custom launchers.
 - **Extras** – news feed, generic file hosting, per-user session management.
 - **Flexible database** – MySQL, PostgreSQL, or SQLite via EF Core.
 - **Multiple auth schemes** – JWT Bearer and Basic, selectable per endpoint.
-- **Security defaults** – per-endpoint rate limiting, CORS policies, HTTPS with certificate support, security headers.
-- **API documentation** – Swagger/OpenAPI at `/docs`.
+- **Security defaults** – per-endpoint rate limiting, CORS policies, HTTPS with certificate support, HSTS, and a restrictive Content-Security-Policy.
+- **API documentation** – Swagger/OpenAPI UI at `/docs` (Development environment only).
 
 ## Documentation
 
@@ -39,8 +40,17 @@ dotnet restore YggdrasilSharp.sln
 dotnet run --project YggdrasilSharp
 ```
 
-Copy `YggdrasilSharp/.env.example` to `YggdrasilSharp/.env` first and fill in your secrets.
-Swagger UI is available at `http://localhost:5001/docs`.
+Copy `YggdrasilSharp/.env.example` to `YggdrasilSharp/.env` first and fill in your secrets —
+this includes the required `CLAM_AV_*` and `ADMIN_*` variables (see
+[Getting Started](docs/GETTING-STARTED.md#2-configure-secrets)).
+
+The API listens on the port from `Application:Port` (`5001` by default). Swagger UI is served only in
+the Development environment:
+
+```bash
+dotnet run --project YggdrasilSharp --launch-profile Development
+# open https://localhost:36767/docs (http:// when no certificate is configured)
+```
 
 Full instructions: [Getting Started](docs/GETTING-STARTED.md)
 

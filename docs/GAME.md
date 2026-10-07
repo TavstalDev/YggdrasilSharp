@@ -5,7 +5,7 @@ This document provides instructions on how to set up and use a custom Yggdrasil 
 ## Table of Contents
 - [Server](#server)
 - [Client](#client)
-- - [Skins](#skins)
+- [Skins](#skins)
 - [HTTPS Development certificate](#https-development-certificate)
 
 ## Server
@@ -23,6 +23,14 @@ java -javaagent:authlib-injector.jar=https://localhost:36767/yggdrasil/ -Dauthli
 ```bash
 -Dauthlibinjector.debug
 ```
+
+> **Legacy authentication must be enabled.** The auth-server endpoints used by authlib-injector
+> (`/yggdrasil/authserver/{authenticate,refresh,validate,invalidate,signout}`) are gated behind
+> `"Yggdrasil": { "EnableLegacyAuth": true }` in `appsettings.json` and return `403 Forbidden`
+> while the flag is `false` (the default).
+>
+> The examples on this page use the Development environment (`https://localhost:36767`); the default
+> port outside Development is `5001` (see [Getting Started](GETTING-STARTED.md#5-run)).
 
 ## Client
 The client requires the following JVM arguments to be able to use the custom Yggdrasil server:

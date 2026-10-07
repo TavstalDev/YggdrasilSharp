@@ -1,8 +1,8 @@
 # API Reference
 
-Authentication uses one of two schemes: **Bearer** or **Basic**, both JWT-based. URLs are relative to the configured API base URL (e.g. `http://localhost:5001`). Most endpoints respond with JSON; the texture, file download, avatar, and skin endpoints respond with raw file content.
+Authentication uses one of two schemes: **Bearer** or **Basic**, both JWT-based. URLs are relative to the configured API base URL; the port comes from `Application:Port` (`5001` by default, `36767` in the Development environment) and the scheme is `https` when a certificate is configured, `http` otherwise. Most endpoints respond with JSON; the texture, file download, avatar, and skin endpoints respond with raw file content.
 
-Interactive documentation (Swagger UI) is available at `/docs`.
+Interactive documentation (Swagger UI) is available at `/docs` **in the Development environment only** — it is not served when `ASPNETCORE_ENVIRONMENT` is `Production`.
 
 ## Table of Contents
 - [Authentication](#authentication)
@@ -21,6 +21,8 @@ Interactive documentation (Swagger UI) is available at `/docs`.
   - [Metadata & Keys](#metadata--keys)
   - [Profiles & Textures](#profiles--textures)
   - [Session Server](#session-server)
+  - [Legacy Auth Server](#legacy-auth-server)
+- [Operations](#operations)
 - [Versioning](#versioning)
 
 ## Authentication
@@ -153,6 +155,7 @@ These endpoints are compatible with the official Yggdrasil protocol and the Mine
 | --- | --- | --- | --- |
 | POST | `/yggdrasil/api/profiles/minecraft` | Look up profiles by username(s). | Public |
 | GET | `/yggdrasil/textures/{hash}` | Fetch texture data by hash. | Public |
+| GET | `/yggdrasil/texture/{hash}` | Alias of `/yggdrasil/textures/{hash}`. | Public |
 
 ### Session Server
 
@@ -160,10 +163,34 @@ Routes are available under both client (`yggdrasil/session/minecraft`) and serve
 
 | Method | Route | Description | Auth |
 | --- | --- | --- | --- |
-| GET | `/yggdrasil/sessionserver/blockedservers` | List of blocked servers (currently empty). | Public |
+| GET | `/yggdrasil/sessionserver/blockedservers` | List of blocked servers (the configured `Yggdrasil:BlockedServers` list; empty by default). | Public |
 | POST | …/`join` | Verify the client joined a server. | Access token |
 | GET | …/`hasJoined` | Confirm a profile has joined a server. | Public |
 | GET | …/`profile/{uuid}` | Fetch a session profile by UUID (with signatures). | Public |
+
+### Legacy Auth Server
+
+The classic Yggdrasil auth-server API (`authenticate`, `refresh`, `validate`, `invalidate`,
+`signout`). Every endpoint is gated behind the `Yggdrasil:EnableLegacyAuth` configuration key, which
+is **disabled by default** — while it is off, these routes respond with `403 Forbidden`. Each route
+is served under both the `/yggdrasil/authserver/…` and `/yggdrasil/…` prefixes.
+
+| Method | Route | Description | Auth |
+| --- | --- | --- | --- |
+| POST | `/yggdrasil/authserver/authenticate` | Authenticate with username/password and issue an access token. | Public |
+| POST | `/yggdrasil/authserver/refresh` | Refresh an access token. | Access token |
+| POST | `/yggdrasil/authserver/validate` | Check that an access token is still usable (`204` if it is). | Access token |
+| POST | `/yggdrasil/authserver/invalidate` | Invalidate an access token (`204`). | Access token |
+| POST | `/yggdrasil/authserver/signout` | Verify credentials and end every session of the user (`204`). | Public |
+
+For the access-token endpoints the token travels in the request body (Yggdrasil style), not in an
+`Authorization` header.
+
+## Operations
+
+| Method | Route | Description | Auth |
+| --- | --- | --- | --- |
+| GET | `/health` | Health check backed by the registered database check. | Public |
 
 ## Versioning
 

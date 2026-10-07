@@ -30,8 +30,11 @@ dotnet run --project ./YggdrasilSharp.Tests/YggdrasilSharp.Tests.csproj --config
 > Microsoft.Testing.Platform, which no longer supports the VSTest path that `dotnet test` drives, so
 > the test project is an executable that must be run directly. This is what CI does as well.
 
-The test project (`YggdrasilSharp.Tests`) uses xUnit v3 with FluentAssertions and Moq. It runs
-entirely on EF Core's in-memory provider, so no external database or service is required.
+The test project (`YggdrasilSharp.Tests`) uses xUnit v3 with FluentAssertions and Moq. Database
+access runs entirely on EF Core's in-memory provider, so no external database is required. Upload
+tests do open a connection to ClamAV at `localhost:3310` — start a local ClamAV daemon to exercise
+real scanning (CI installs it for this reason); if the connection fails, the scan error is logged
+and the upload is treated as clean.
 
 ## Run Locally (Development)
 

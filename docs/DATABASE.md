@@ -55,12 +55,16 @@ SQLite needs no server, user, or password — everything lives in a single file.
 
 On startup the application:
 
-1. Applies EF Core migrations (`Database.MigrateAsync`) via `DatabaseInitializer`.
-2. Seeds the default roles `Default`, `Moderator`, and `Admin` together with their claims.
+1. Applies the EF Core migrations shipped in `YggdrasilSharp/Migrations/` (`Database.MigrateAsync`)
+   via `DatabaseInitializer`, so an empty database is schema'd automatically.
+2. Seeds the default roles `Default`, `Moderator`, and `Admin` together with their claims, and on a
+   fresh database creates the admin account from the `ADMIN_USERNAME` / `ADMIN_EMAIL` /
+   `ADMIN_PASSWORD` environment variables.
 
-No migrations are shipped in this repository, so `MigrateAsync` has nothing to apply and the schema is
-**not** created automatically. Generate an initial migration (see below) before pointing the app at an
-empty database, or swap the initializer call for `Database.EnsureCreated()`.
+> **Provider note:** the shipped migration (`20261006192546_Initial`) was generated against MySQL,
+> including MySQL identity-column annotations. It has not been validated on PostgreSQL or SQLite —
+> if you use either provider, inspect the schema after the first run, or generate a
+> provider-specific migration with the command below, before going to production.
 
 ## Common Commands
 
@@ -87,6 +91,7 @@ dotnet ef migrations remove --project ./YggdrasilSharp/YggdrasilSharp.csproj --s
 ## Notes
 
 - The placeholder substitution happens in `Program.cs` before the provider is selected.
-- `Database:Version` is **required**. Startup throws if it is missing or not parseable, because the
-  value is passed to `MySqlServerVersion` for the MySQL provider. Example: `"8.0.31"`.
+- `Database:Version` is **required for every provider**. Startup throws if it is missing or not
+  parseable; the value is passed to `MySqlServerVersion` when the MySQL provider is selected.
+  Example: `"8.0.31"`.
 - Retry-on-failure is enabled for both MySQL and PostgreSQL, but not for SQLite.
