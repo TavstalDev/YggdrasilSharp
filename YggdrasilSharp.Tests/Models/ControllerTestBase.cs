@@ -114,7 +114,7 @@ public abstract class ControllerTestBase
         AntiVirusService = _testHelper.AntiVirusService;
         AppConfiguration = _testHelper.Settings;
 
-        var uploadTempDir = Path.Combine(Path.GetTempPath(), "ysharp-tests-uploads");
+        var uploadTempDir = Path.Combine(Path.GetTempPath(), "yggdrasilsharp-tests", "uploads");
         new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["UploadDirectory"] = uploadTempDir

@@ -261,8 +261,9 @@ public class TestHelper
     {
         var (pfxBytes, _) = CreateSelfSignedPfx(subjectName, password);
 
-        // Save to a temporary file with .pfx extension
-        var tempFilePath = Path.Combine(Path.GetTempPath(), $"test-cert-{Guid.NewGuid():N}.pfx");
+        string tempDir = Path.Combine(Path.GetTempPath(), "yggdrasilsharp-tests");
+        Directory.CreateDirectory(tempDir);
+        var tempFilePath = Path.Combine(tempDir, "test-cert.pfx");
         File.WriteAllBytes(tempFilePath, pfxBytes);
 
         return (tempFilePath, password);
