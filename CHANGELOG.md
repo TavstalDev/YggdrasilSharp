@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Entity Framework Core with selectable **MySQL**, **PostgreSQL**, or **SQLite** providers, including
   MySQL connection resiliency with retry-on-failure.
 - EF Core schema management: the schema is created on first startup through `DatabaseInitializer`.
-- An initial EF Core migration (`20261006192546_Initial`) shipped in `YggdrasilSharp/Migrations/`.
+- An initial EF Core migration shipped in `YggdrasilSharp/Migrations/`.
 - EF Core CLI tooling pinned through `.config/dotnet-tools.json`.
 - Automatic seeding of the `Default`, `Moderator`, and `Admin` roles with granular permission claims
   on first startup.

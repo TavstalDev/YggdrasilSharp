@@ -61,7 +61,7 @@ On startup the application:
    fresh database creates the admin account from the `ADMIN_USERNAME` / `ADMIN_EMAIL` /
    `ADMIN_PASSWORD` environment variables.
 
-> **Provider note:** the shipped migration (`20261006192546_Initial`) was generated against MySQL,
+> **Provider note:** the shipped migration was generated against MySQL,
 > including MySQL identity-column annotations. It has not been validated on PostgreSQL or SQLite —
 > if you use either provider, inspect the schema after the first run, or generate a
 > provider-specific migration with the command below, before going to production.
