@@ -59,6 +59,7 @@ build/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+published/
 
 # Architecture Specific Outputs
 x64/
