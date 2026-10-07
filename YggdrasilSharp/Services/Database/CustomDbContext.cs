@@ -138,18 +138,6 @@ public class CustomDbContext : DbContext
             .IsRequired();
     }
 
-
-    /// <summary>
-    /// Configures the database (and other options) to be used for this context.
-    /// </summary>
-    /// <param name="optionsBuilder">A builder used to create or modify options for this context.</param>
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (optionsBuilder.IsConfigured)
-            return;
-        Database.EnsureCreated();
-    }
-
     /// <summary>
     /// Discards all changes made to the tracked entities.
     /// </summary>

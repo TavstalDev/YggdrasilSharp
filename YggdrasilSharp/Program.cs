@@ -141,7 +141,8 @@ public static class Program
     /// <br/>- Database context and repositories
     /// <br/>- Authentication (JWT Bearer, Basic)
     /// <br/>- Authorization and identity services
-    /// <br/>- Swagger/OpenAPI documentation
+    /// <br/>- Swagger/OpenAPI document generation (the UI is served in the Development environment only)
+    /// <br/>- Antivirus scanning for file uploads (ClamAV / AMSI)
     /// <br/>- CORS policies and session management
     /// <br/>- Rate limiting and caching
     /// <br/>- Hosted services (database cleanup, email service)

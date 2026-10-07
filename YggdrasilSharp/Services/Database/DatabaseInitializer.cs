@@ -13,7 +13,7 @@ namespace Tavstal.YggdrasilSharp.Services.Database;
 public static class DatabaseInitializer
 {
     /// <summary>
-    /// Initializes the database by ensuring it is created and populating default data.
+    /// Initializes the database by applying pending EF Core migrations and populating default data.
     /// </summary>
     /// <param name="context">The custom database context to initialize.</param>
     /// <param name="userStore">The custom user store used for managing user data.</param>
@@ -24,7 +24,7 @@ public static class DatabaseInitializer
     public static async Task InitializeAsync(CustomDbContext context, CustomUserStore userStore, IPasswordHasher<CustomUser> passwordHasher,
         IConfiguration configuration, CancellationToken cancellationToken = default)
     {
-        // Ensures the database is created.
+        // Applies pending EF Core migrations, creating the schema if the database is empty.
         await context.Database.MigrateAsync(cancellationToken);
 
         // Checks if roles are empty and adds default roles.
