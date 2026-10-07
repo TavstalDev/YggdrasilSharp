@@ -19,6 +19,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.RateLimiting;
 using Tavstal.YggdrasilSharp.Services;
+using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Authentication;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
@@ -103,10 +104,13 @@ public static class Program
             await app.RunAsync(cts.Token);
             return 0;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not HostAbortedException)
         {
-            Console.WriteLine($"Host terminated unexpectedly: {ex}");
-            throw;
+            if (_logger != null)
+                _logger.LogError(ex, "Host terminated unexpectedly.");
+            else
+                Console.WriteLine($"Host terminated unexpectedly: {ex}");
+            return 1;
         }
     }
 
@@ -440,6 +444,10 @@ public static class Program
         services.AddSingleton<AppConfiguration>();
         // Email Service
         services.AddSingleton<IEmailService, EmailService>();
+        if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.Other)
+            services.AddSingleton<IAntiVirusService, ClamAvService>();
+        else
+            services.AddSingleton<IAntiVirusService, DefenderService>();
         #endregion
     }
 
