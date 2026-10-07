@@ -14,7 +14,7 @@ public class EmailService : IEmailService
     private readonly ILogger<EmailService> _logger;
     private readonly AppConfiguration _appConfiguration;
     private readonly Dictionary<string, string> _emailTemplates = [];
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailService"/> class.
     /// </summary>
@@ -25,23 +25,23 @@ public class EmailService : IEmailService
     {
         _logger = logger;
         _appConfiguration = appConfiguration;
-       
-        // Load email templates   
-        
+
+        // Load email templates
+
         string templateDir = Path.Combine(environment.WebRootPath, "templates");
         if (!Directory.Exists(templateDir))
         {
             _logger.LogError("Email template directory not found at path: {Path}", templateDir);
             return;
         }
-        
+
         foreach (var file in Directory.GetFiles(templateDir, "*.html"))
         {
             string templateName = Path.GetFileNameWithoutExtension(file);
             _emailTemplates[templateName] = File.ReadAllText(file);
         }
     }
-    
+
     /// <summary>
     /// Sends an email asynchronously.
     /// </summary>
@@ -75,6 +75,7 @@ public class EmailService : IEmailService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error during SMTP authentication");
+                return;
             }
             await smtp.SendAsync(email, cancellationToken);
         }
@@ -111,13 +112,13 @@ public class EmailService : IEmailService
             await SendEmailAsync(to, subject, body, cancellationToken);
             return;
         }
-        
+
         string finalBody = emailBlankDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username);
         await SendEmailAsync(to, subject, finalBody, cancellationToken);
     }
-    
+
     /// <summary>
     /// Sends an email using the action-style HTML template which contains an action button.
     /// Template placeholders:
@@ -147,7 +148,7 @@ public class EmailService : IEmailService
             await SendEmailAsync(to, subject, body, cancellationToken);
             return;
         }
-        
+
         string finalBody = emailActionDoc.Replace("{{TITLE}}", subject)
             .Replace("{{MESSAGE_BODY}}", body)
             .Replace("{{USERNAME}}", username)
