@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentAssertions.Extensibility;
 using Tavstal.YggdrasilSharp.Tests;
 

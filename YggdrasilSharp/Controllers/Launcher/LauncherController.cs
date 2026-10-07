@@ -13,7 +13,6 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Models.Database.User;
-using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
