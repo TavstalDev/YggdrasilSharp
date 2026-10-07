@@ -420,5 +420,17 @@ public static class Constants
         /// Example: "admin"
         /// </summary>
         public const string AdminPassword = "ADMIN_PASSWORD";
+
+        /// <summary>
+        /// Environment/config key for the ClamAV daemon host used when scanning uploaded files for malware.
+        /// Example: "localhost"
+        /// </summary>
+        public const string ClamAvHost = "CLAM_AV_HOST";
+
+        /// <summary>
+        /// Environment/config key for the ClamAV daemon port used when scanning uploaded files for malware.
+        /// Example: 3310
+        /// </summary>
+        public const string ClamAvPort = "CLAM_AV_PORT";
     }
 }

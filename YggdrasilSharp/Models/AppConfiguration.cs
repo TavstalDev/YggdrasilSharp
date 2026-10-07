@@ -31,6 +31,16 @@ public class AppConfiguration
     /// This value is required when loading certificates from encrypted PFX/PKCS#12 files.
     /// </summary>
     public string CertificatePassword { get; }
+
+    /// <summary>
+    /// Gets the ClamAV daemon host used to scan uploaded files for malware.
+    /// </summary>
+    public string ClamAvHost { get; }
+
+    /// <summary>
+    /// Gets the ClamAV daemon port used to scan uploaded files for malware.
+    /// </summary>
+    public int ClamAvPort { get; }
     
     /// <summary>
     /// Gets or sets the database configuration.
@@ -79,6 +89,9 @@ public class AppConfiguration
         ArgumentException.ThrowIfNullOrWhiteSpace(CertificateFingerprint);
         CertificatePassword = GetString(configuration, Constants.EnvironmentKeys.CertificatePassword);
         ArgumentException.ThrowIfNullOrWhiteSpace(CertificatePassword);
+        ClamAvHost = GetString(configuration, Constants.EnvironmentKeys.ClamAvHost);
+        ArgumentException.ThrowIfNullOrWhiteSpace(ClamAvHost);
+        ClamAvPort = configuration.GetValue(Constants.EnvironmentKeys.ClamAvPort, 3310);
 
         Proxy = new ProxyConfig(configuration);
         Database = new  DatabaseConfig(configuration);
@@ -118,6 +131,8 @@ public class AppConfiguration
         AllowedUsernameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
         CertificateFingerprint = certificateFingerprint;
         CertificatePassword = certificatePassword;
+        ClamAvHost = "localhost";
+        ClamAvPort = 3310;
         Proxy = new ProxyConfig();
         Misc = new MiscConfig(websiteUrl, apiUrl);
         Database = new DatabaseConfig("", "", "");
