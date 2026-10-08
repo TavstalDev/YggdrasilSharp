@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
+using System.Text.Json;
 using Tavstal.YggdrasilSharp.Models.Common;
+using Tavstal.YggdrasilSharp.Serialization;
 
 namespace Tavstal.YggdrasilSharp.Utils.Helpers;
 
@@ -28,11 +30,11 @@ public static class DatabaseHelper
             "Unknown",
             "Unknown"
         );
-        
+
         try
         {
             string info = await _client.GetStringAsync($"https://ipinfo.io/{ip}");
-            var localInfo = JsonHelper.DeserializeJson<IpInfo>(info);
+            var localInfo = JsonSerializer.Deserialize(info, CustomJsonContext.Default.IpInfo);
             if (localInfo != null)
             {
                 ipInfo = localInfo;

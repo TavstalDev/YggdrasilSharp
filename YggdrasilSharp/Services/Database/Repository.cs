@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
@@ -5,13 +6,17 @@ using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 namespace Tavstal.YggdrasilSharp.Services.Database;
 
 /// <inheritdoc />
-public class Repository<T> : IRepository<T> where T : class
+[SuppressMessage("Trimming", "IL2091:Target generic argument does not satisfy \'DynamicallyAccessedMembersAttribute\' in target method or type. The generic parameter of the source method or type does not have matching annotations.")]
+public class Repository<[DynamicallyAccessedMembers(
+    DynamicallyAccessedMemberTypes.PublicConstructors |
+    DynamicallyAccessedMemberTypes.PublicProperties |
+    DynamicallyAccessedMemberTypes.NonPublicProperties)] T> : IRepository<T> where T : class
 {
     /// <summary>
     /// The application database context used by the repository to access the database.
     /// </summary>
     protected readonly CustomDbContext _db;
-    
+
     /// <summary>
     /// The EF Core <see cref="DbSet{T}"/> corresponding to the entity type <typeparamref name="T"/>.
     /// </summary>
@@ -31,7 +36,7 @@ public class Repository<T> : IRepository<T> where T : class
     /// <inheritdoc />
     public async Task<T> AddAsync(T value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        var result = await _set.AddAsync(value, cancellationToken);
+        var result = _set.Add(value);
         if (shouldSave)
             await _db.SaveChangesAsync(cancellationToken);
         return result.Entity;
@@ -40,11 +45,11 @@ public class Repository<T> : IRepository<T> where T : class
     /// <inheritdoc />
     public async Task AddRangeAsync(IEnumerable<T> values, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
-        await _set.AddRangeAsync(values, cancellationToken);
+        _set.AddRange(values);
         if (shouldSave)
             await _db.SaveChangesAsync(cancellationToken);
     }
-    
+
     /// <inheritdoc />
     public async Task<T> UpdateAsync(T value, bool shouldSave = false, CancellationToken cancellationToken = default)
     {
@@ -98,7 +103,7 @@ public class Repository<T> : IRepository<T> where T : class
     /// <inheritdoc />
     public async Task<T?> FindByIdAsync(object id, CancellationToken cancellationToken = default)
     {
-        return await _set.FindAsync(id, cancellationToken);
+        return await _set.FindAsync([id], cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
