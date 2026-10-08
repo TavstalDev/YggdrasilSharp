@@ -34,6 +34,13 @@ A lightweight, self-hostable implementation of the Minecraft [Yggdrasil](https:/
 
 ## Quick Start
 
+Prebuilt self-contained binaries for `linux-x64` and `win-x64` are attached to every
+[GitHub Release](https://github.com/TavstalDev/YggdrasilSharp/releases) — no .NET SDK required.
+Download the zip for your platform, extract it, and follow
+[Getting Started](docs/GETTING-STARTED.md) to configure secrets and run.
+
+To build from source instead:
+
 ```bash
 # Requirements: .NET 10 SDK, a database (MySQL / PostgreSQL / SQLite)
 dotnet restore YggdrasilSharp.sln

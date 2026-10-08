@@ -109,8 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Engineering
 - An xUnit v3 test suite using FluentAssertions and Moq, covering the controllers and both
   authentication handlers.
-- Continuous integration and a release workflow that publishes source code only — no NuGet packages
-  or build artifacts are attached to releases.
+- Continuous integration and a release workflow that publishes self-contained `linux-x64` and
+  `win-x64` builds as zip archives attached to GitHub releases.
 
 ### Changed
 - Database initialization now applies migrations with `Database.MigrateAsync` instead of

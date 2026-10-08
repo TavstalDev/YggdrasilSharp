@@ -68,10 +68,12 @@ dotnet publish YggdrasilSharp/YggdrasilSharp.csproj --configuration Release --ou
 - Builds in `Release`
 - Runs the full test suite
 
-`.github/workflows/release.yml` runs on pushes to `stable`. It performs the same restore, build, and
-test steps, then reads `<Version>` from `YggdrasilSharp.csproj` and creates a GitHub release tagged
-`v<Version>`. It refuses to run if that tag already exists on the remote, so the version must be
-bumped before pushing. Source code only is published — no packages or build artifacts are attached.
+`.github/workflows/release.yml` runs on pushes to `stable` (or manually via `workflow_dispatch`). It
+performs the same restore, build, and test steps, then publishes self-contained builds for
+`linux-x64` and `win-x64` (without PDBs), zips each one as `YggdrasilSharp-<rid>.zip`, reads
+`<Version>` from `YggdrasilSharp.csproj`, and creates a [GitHub release](https://github.com/TavstalDev/YggdrasilSharp/releases)
+tagged `v<Version>` with the zips attached and a generated commit list as the release body. Bump
+`<Version>` before pushing to `stable` so each push produces a distinct release tag.
 
 ## Troubleshooting
 
