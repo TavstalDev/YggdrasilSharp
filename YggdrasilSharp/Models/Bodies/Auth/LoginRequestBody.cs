@@ -13,19 +13,17 @@ public class LoginRequestBody
     /// </summary>
     [Required]
     [EmailAddress]
-    [MinLength(3)]
-    [MaxLength(254)]
+    [StringLength(254, MinimumLength = 3)]
     public required string Email { get; init; }
-    
+
     /// <summary>
     /// Gets or initializes the password of the user.
     /// This field is required.
     /// </summary>
     [Required]
-    [MinLength(3)]
-    [MaxLength(64)]
+    [StringLength(64, MinimumLength = 8)]
     public required string Password { get; init; }
-    
+
     /// <summary>
     /// Gets or initializes a value indicating whether the user should remain logged in.
     /// This field is optional and defaults to false.

@@ -11,14 +11,13 @@ public class ConfirmRegisterRequestBody
     /// Gets or sets the unique identifier of the user.
     /// </summary>
     [Required]
-    [MinLength(32)]
-    [MaxLength(36)]
+    [StringLength(36, MinimumLength = 32)]
     public required string UserId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the confirmation token for verifying the registration.
     /// </summary>
     [Required]
     [StringLength(64)]
-    public required string ConfirmationToken { get; set; } 
+    public required string ConfirmationToken { get; set; }
 }

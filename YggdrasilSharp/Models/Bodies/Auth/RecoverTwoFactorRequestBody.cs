@@ -13,8 +13,7 @@ public class RecoverTwoFactorRequestBody
     /// </summary>
     [Required]
     [EmailAddress]
-    [MinLength(3)]
-    [MaxLength(254)]
+    [StringLength(254, MinimumLength = 3)]
     public required string Email { get; set; }
 
     /// <summary>

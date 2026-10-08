@@ -14,19 +14,17 @@ public class NewsCreateRequestBody
     /// This field is required.
     /// </summary>
     [Required]
-    [MinLength(3)]
-    [MaxLength(128)]
+    [StringLength(128, MinimumLength = 3)]
     public required string Title { get; set; }
-        
+
     /// <summary>
     /// Gets or sets the content of the news entry.
     /// This field is required.
     /// </summary>
     [Required]
-    [MinLength(3)]
-    [MaxLength(512)]
+    [StringLength(512, MinimumLength = 3)]
     public required string Content { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the banner image for the news entry.
     /// This field is required.

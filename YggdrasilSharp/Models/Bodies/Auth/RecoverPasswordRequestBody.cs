@@ -13,10 +13,9 @@ public class RecoverPasswordRequestBody
     /// </summary>
     [Required]
     [EmailAddress]
-    [MinLength(3)]
-    [MaxLength(254)]
+    [StringLength(254, MinimumLength = 3)]
     public required string Email { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the recovery token used to verify the password recovery request.
     /// This field is required.
@@ -24,16 +23,15 @@ public class RecoverPasswordRequestBody
     [Required]
     [StringLength(48)]
     public required string RecoveryToken { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the new password for the user's account.
     /// This field is required.
     /// </summary>
     [Required]
-    [MinLength(8)]
-    [MaxLength(64)]
+    [StringLength(64, MinimumLength = 8)]
     public required string NewPassword { get; set; }
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether to log the user out of all active sessions.
     /// This field is optional and defaults to false.

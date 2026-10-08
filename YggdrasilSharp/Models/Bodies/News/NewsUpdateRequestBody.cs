@@ -11,18 +11,16 @@ public class NewsUpdateRequestBody
     /// Gets or sets the title of the news entry.
     /// This field is optional.
     /// </summary>
-    [MinLength(3)]
-    [MaxLength(128)]
+    [StringLength(128, MinimumLength = 3)]
     public string? Title { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the content of the news entry.
     /// This field is optional.
     /// </summary>
-    [MinLength(3)]
-    [MaxLength(512)]
+    [StringLength(512, MinimumLength = 3)]
     public string? Content { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the banner image for the news entry.
     /// This field is optional.

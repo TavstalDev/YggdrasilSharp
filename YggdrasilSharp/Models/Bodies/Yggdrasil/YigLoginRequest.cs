@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Tavstal.YggdrasilSharp.Models.Bodies.Yggdrasil;
@@ -19,6 +20,7 @@ public class YigLoginRequest
     /// This field is required.
     /// </summary>
     [JsonPropertyName("username")]
+    [StringLength(16, MinimumLength = 3)]
     public required string Username { get; set; }
 
     /// <summary>
@@ -26,6 +28,7 @@ public class YigLoginRequest
     /// This field is required.
     /// </summary>
     [JsonPropertyName("password")]
+    [StringLength(64, MinimumLength = 8)]
     public required string Password { get; set; }
 
     /// <summary>
@@ -33,6 +36,7 @@ public class YigLoginRequest
     /// This field is optional.
     /// </summary>
     [JsonPropertyName("clientToken")]
+    [StringLength(36, MinimumLength = 32)]
     public string? ClientToken { get; set; }
 
     /// <summary>
