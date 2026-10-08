@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
@@ -13,6 +14,7 @@ namespace Tavstal.YggdrasilSharp.Services.Database;
 /// <summary>
 /// Custom database context for the application, extending IdentityDbContext with custom user and role entities.
 /// </summary>
+[SuppressMessage("Trimming", "IL2026:Members annotated with \'RequiresUnreferencedCodeAttribute\' require dynamic access otherwise can break functionality when trimming application code")]
 public class CustomDbContext : DbContext
 {
     private DbSet<CustomUser> Users { get; set; }

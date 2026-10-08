@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Tavstal.YggdrasilSharp.Models.Common;
 
@@ -8,6 +9,7 @@ namespace Tavstal.YggdrasilSharp.Models.Attributes;
 /// Attribute for validating uploaded form files.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+[SuppressMessage("Trimming", "IL2072:Target parameter argument does not satisfy \'DynamicallyAccessedMembersAttribute\' in call to target method. The return value of the source method does not have matching annotations.")]
 public class FormFileAttribute : ValidationAttribute
 {
     private readonly int _maxFileSize;
@@ -81,7 +83,10 @@ public class FormFileAttribute : ValidationAttribute
 
     private static bool IsRequiredMember(ValidationContext validationContext)
     {
-        var property = validationContext.ObjectType?.GetProperty(validationContext.MemberName ?? string.Empty);
+        if (string.IsNullOrEmpty(validationContext.MemberName))
+            throw new Exception($"'{nameof(validationContext.MemberName)}' cannot be null or empty.");
+        Type instanceType = validationContext.ObjectInstance.GetType();
+        PropertyInfo? property = GetPropertySafe(instanceType, validationContext.MemberName);
         if (property == null)
             return true;
 
@@ -90,5 +95,12 @@ public class FormFileAttribute : ValidationAttribute
 
         var nullability = new NullabilityInfoContext().Create(property);
         return nullability.WriteState != NullabilityState.Nullable;
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2075:DynamicallyAccessedMembers",
+        Justification = "DTO/Model properties are preserved for validation context.")]
+    private static PropertyInfo? GetPropertySafe([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type, string propertyName)
+    {
+        return type.GetProperty(propertyName);
     }
 }
