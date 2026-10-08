@@ -1,5 +1,4 @@
 # GitHub Actions workflow for validating and releasing
-# The release publishes source code only: no packages or build output are uploaded.
 name: Build and Release
 
 on:
@@ -19,6 +18,13 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            os_name: linux-x64
+          - rid: win-x64
+            os_name: win-x64
     steps:
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -34,17 +40,43 @@ jobs:
       - name: Build Solution
         run: dotnet build ${{ env.SLN_NAME }} --configuration Release --no-restore
 
-      - name: Publish
-        run: dotnet publish -c Release
-
-      - name: Install ClamAV
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clamav clamav-daemon
-
       - name: Run Tests
+        run: dotnet run --project ${{ env.TEST_PROJECT }} --configuration Debug
+
+      - name: Publish (Self-Contained without PDBs)
         run: |
-          dotnet run --project ${{ env.TEST_PROJECT }} --configuration Debug
+          dotnet publish ${{ env.CSPROJ_PATH }} \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:DebugType=None \
+            -p:DebugSymbols=false \
+            -o ./publish/${{ matrix.os_name }}
+
+      - name: Archive Build Artifacts
+        run: |
+          cd ./publish/${{ matrix.os_name }}
+          zip -r ../../YggdrasilSharp-${{ matrix.os_name }}.zip .
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: YggdrasilSharp-${{ matrix.os_name }}
+          path: YggdrasilSharp-${{ matrix.os_name }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          pattern: YggdrasilSharp-*
+          merge-multiple: true
 
       - name: Extract Version
         id: extract_version
@@ -59,17 +91,17 @@ jobs:
       - name: Verify Tag Does Not Already Exist
         run: |
           TAG="v$RELEASE_VERSION"
-          git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1 && STATUS=0 || STATUS=$?
+          git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1 && STATUS=0 \vert{}\vert{} STATUS=$?
           case "$STATUS" in
             0)
-              echo "::error::Tag $TAG already exists on origin. Bump <Version> in ${{ env.CSPROJ_PATH }} before pushing to ${{ github.ref_name }}."
+              echo "::error::Tag $TAG already exists on origin. Bump <Version> in ${{ env.CSPROJ_PATH }} before pushing."
               exit 1
               ;;
             2)
               echo "Tag $TAG is available."
               ;;
             *)
-              echo "::error::Could not query origin for tag $TAG (git ls-remote exit $STATUS). Aborting to avoid overwriting an existing release."
+              echo "::error::Could not query origin for tag $TAG."
               exit 1
               ;;
           esac
@@ -108,4 +140,5 @@ jobs:
           draft: false
           prerelease: false
           body_path: /tmp/release_body.md
+          files: ./artifacts/*.zip
           generate_release_notes: false
