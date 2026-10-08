@@ -24,6 +24,7 @@
         <SelfContained>false</SelfContained>
         <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
         <PublishTrimmed>false</PublishTrimmed>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
     <ItemGroup>
@@ -59,5 +60,8 @@
     </ItemGroup>
     <ItemGroup>
         <None Remove="*.pfx;*.pem;*.key" />
+        <None Update=".env.example">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
