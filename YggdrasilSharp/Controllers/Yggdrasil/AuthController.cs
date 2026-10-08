@@ -8,6 +8,7 @@ using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.RateLimiting.Constants;
 using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Utils.Helpers;
 
@@ -99,7 +100,7 @@ public class AuthController  : CustomControllerBase
                 };
             }
 
-            return JsonResult(response);
+            return JsonResult(response, CustomJsonContext.Default.YigLoginResponse);
         }
         catch (Exception ex)
         {
@@ -172,7 +173,7 @@ public class AuthController  : CustomControllerBase
                     Properties = []
                 };
             }
-            return JsonResult(response);
+            return JsonResult(response, CustomJsonContext.Default.YigLoginResponse);
         }
         catch (Exception ex)
         {

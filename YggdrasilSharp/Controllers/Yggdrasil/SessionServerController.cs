@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Tavstal.YggdrasilSharp.Models;
@@ -12,6 +13,8 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Server;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
@@ -66,10 +69,10 @@ public class SessionServerController : CustomControllerBase
     [HttpGet("/yggdrasil/sessionserver/blockedservers")]
     public IActionResult GetBlockedServers()
     {
-        string finalJson = JsonHelper.SerializeJson(new
+        string finalJson = JsonSerializer.Serialize(new YigBlockedServersResponse
         {
-            blockedServers = _appConfiguration.Yggdrasil.BlockedServers
-        });
+            BlockedServers = _appConfiguration.Yggdrasil.BlockedServers
+        }, CustomJsonContext.Default.YigBlockedServersResponse);
         string etag = ComputeETag(finalJson);
         if (HttpContext.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag))
         {
@@ -169,7 +172,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="401">The server join has expired.</response>
     /// <response code="403">The username does not match the server join.</response>
     [HttpGet("hasJoined")]
-    public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery, MinLength(3), MaxLength(16)] string username, [FromQuery, MinLength(7), MaxLength(15)] string? ip)
+    public async Task<IActionResult> HasJoined([FromQuery] string serverId, [FromQuery, StringLength(16, MinimumLength = 3)] string username, [FromQuery, StringLength(15, MinimumLength = 7)] string? ip)
     {
         try
         {
@@ -220,7 +223,7 @@ public class SessionServerController : CustomControllerBase
     /// <response code="404">User not found.</response>
     /// <response code="500">An error occurred while processing the request.</response>
     [HttpGet("profile/{uuid}")]
-    public async Task<IActionResult> GetProfile([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string uuid, [FromQuery] bool unsigned = true)
+    public async Task<IActionResult> GetProfile([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string uuid, [FromQuery] bool unsigned = true)
     {
         try
         {
@@ -334,7 +337,7 @@ public class SessionServerController : CustomControllerBase
             if (!unsigned)
                 textureValues.Add("signatureRequired", true);
 
-            string jsonString = JsonHelper.SerializeJson(textureValues);
+            string jsonString = JsonSerializer.Serialize(textureValues, CustomJsonContext.Default.DictionaryStringObject);
             string base64Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonString));
 
             List<Dictionary<string, object>> properties = [];
@@ -364,7 +367,7 @@ public class SessionServerController : CustomControllerBase
                 { "name", user.UserName },
                 { "properties", properties }
             };
-            string finalJson = JsonHelper.SerializeJson(response);
+            string finalJson = JsonSerializer.Serialize(response, CustomJsonContext.Default.DictionaryStringObject);
 
             // Cache the result with absolute expiration
             _cacheService.SetValue(key, finalJson, ttl);

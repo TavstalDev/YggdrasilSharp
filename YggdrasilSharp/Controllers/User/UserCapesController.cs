@@ -168,7 +168,7 @@ public class UserCapesController : CustomControllerBase
         TextResponse(StatusCodes.Status401Unauthorized),
         TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FromRoute] ulong capeId)
+    public async Task<IActionResult> SelectCapeAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId, [BindRequired, FromRoute] ulong capeId)
     {
         try
         {
@@ -241,7 +241,7 @@ public class UserCapesController : CustomControllerBase
             TextResponse(StatusCodes.Status401Unauthorized),
             TextResponse(StatusCodes.Status403Forbidden),
             TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> ClearSelectedCapeAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {

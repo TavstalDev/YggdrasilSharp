@@ -8,6 +8,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Responses.User;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
 
@@ -48,7 +49,7 @@ public class PublicUserController : CustomControllerBase
     /// <response code="404">User not found.</response>
     [HttpGet("{userId}")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> GetUserInfo([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {
@@ -78,7 +79,7 @@ public class PublicUserController : CustomControllerBase
                 UserName = user.UserName,
                 CreateDate = user.CreateDate,
                 LastUpdate = user.LastUpdate
-            });
+            }, CustomJsonContext.Default.UserInfoResponse);
         }
         catch (Exception ex)
         {
@@ -97,7 +98,7 @@ public class PublicUserController : CustomControllerBase
     /// <response code="404">User or avatar not found.</response>
     [HttpGet("{userId}/avatar")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status304NotModified), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAvatar([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> GetAvatar([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {

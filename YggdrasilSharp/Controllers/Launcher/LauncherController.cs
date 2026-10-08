@@ -13,6 +13,7 @@ using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.Launcher;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.AntiVirus;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
@@ -67,7 +68,7 @@ public class LauncherController : CustomControllerBase
             var versions = (await _launcherVersionRepo.QueryAsync(null)).ToList();
             if (versions.Count == 0)
                 return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
-            return JsonResult(versions);
+            return JsonResult(versions, CustomJsonContext.Default.ListLauncherVersion);
         }
         catch (Exception ex)
         {
@@ -95,7 +96,7 @@ public class LauncherController : CustomControllerBase
 
             if (version == null)
                 return JsonResult(HttpStatusCode.NotFound, "No launcher versions found.");
-            return JsonResult(version);
+            return JsonResult(version, CustomJsonContext.Default.LauncherVersion);
         }
         catch (Exception ex)
         {
@@ -132,7 +133,7 @@ public class LauncherController : CustomControllerBase
                 return JsonResult(HttpStatusCode.NotFound, "Launcher version not found.");
 
             var versionDetails = await _launcherVersionDataRepo.QueryAsync(x => x.VersionId == version.Id);
-            return JsonResult(versionDetails);
+            return JsonResult(versionDetails, CustomJsonContext.Default.ListLauncherVersionData);
         }
         catch (Exception ex)
         {

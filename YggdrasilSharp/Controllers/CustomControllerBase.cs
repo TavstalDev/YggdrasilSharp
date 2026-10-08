@@ -2,13 +2,15 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Responses;
 using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
-using Tavstal.YggdrasilSharp.Utils.Helpers;
 
 namespace Tavstal.YggdrasilSharp.Controllers;
 
@@ -77,12 +79,10 @@ public abstract class CustomControllerBase : Controller
     /// <param name="details">Optional additional information about the failure.</param>
     /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="YigErrorResponse"/>.</returns>
     protected IActionResult YigErrorResult(HttpStatusCode code, string message, string? details = null)
-        => JsonResult(new YigErrorResponse
-        {
-            Error = code.ToString(),
-            ErrorMessage = message,
-            Cause = details
-        });
+    {
+        return JsonResult(new YigErrorResponse { Error = code.ToString(), ErrorMessage = message, Cause = details },
+            CustomJsonContext.Default.YigErrorResponse);
+    }
 
     /// <summary>
     /// Returns an HTTP response with the specified status code and message.
@@ -105,36 +105,30 @@ public abstract class CustomControllerBase : Controller
     /// <param name="details">Optional additional information about the failure.</param>
     /// <returns>An <see cref="IActionResult"/> containing the serialized <see cref="ErrorResponse"/>.</returns>
     protected IActionResult JsonResult(HttpStatusCode code, string message, string? details = null)
-        => JsonResult(new ErrorResponse
-        {
-            StatusCode = code,
-            Message = message,
-            Details = details
-        });
+    {
+        return JsonResult(new ErrorResponse { StatusCode = code, Message = message, Details = details },
+            CustomJsonContext.Default.ErrorResponse);
+    }
 
     /// <summary>
-    /// Returns a JSON response with the specified object serialized to JSON.
-    /// This method intelligently handles different input types to optimize serialization.
+    /// Returns a JSON response containing the specified object, serialized with the given type information.
     /// </summary>
-    /// <param name="obj">
-    /// The object to serialize and include in the response. Supported types include:
-    /// <list type="bullet">
-    /// <item><description><see cref="string"/> - Raw JSON string (returned as-is)</description></item>
-    /// <item><description>Any other object - Serialized using <see cref="JsonHelper.SerializeJson"/></description></item>
-    /// </list>
-    /// </param>
-    /// <returns>
-    /// An <see cref="IActionResult"/> containing the JSON-formatted response with content type "application/json".
-    /// </returns>
-    protected IActionResult JsonResult(object obj)
+    /// <param name="obj">The object to serialize into the response body.</param>
+    /// <param name="typeInfo">The <see cref="JsonTypeInfo"/> used to serialize <paramref name="obj"/>.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the serialized JSON payload.</returns>
+    protected IActionResult JsonResult(object obj, JsonTypeInfo typeInfo)
     {
-        switch (obj)
-        {
-            case string str:
-                return Content(str, "application/json");
-            default:
-               return Content(JsonHelper.SerializeJson(obj), "application/json");
-        }
+        return Content(JsonSerializer.Serialize(obj, typeInfo), "application/json");
+    }
+
+    /// <summary>
+    /// Returns a JSON response containing the specified, already serialized JSON string.
+    /// </summary>
+    /// <param name="json">The JSON string to return as the response body.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the raw JSON payload.</returns>
+    protected IActionResult JsonResult(string json)
+    {
+        return Content(json, "application/json");
     }
 
     /// <summary>

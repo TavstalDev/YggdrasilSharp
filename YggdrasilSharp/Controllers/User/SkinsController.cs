@@ -236,7 +236,7 @@ public class SkinsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> GetSkinAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {
@@ -303,7 +303,7 @@ public class SkinsController : CustomControllerBase
     [Consumes("multipart/form-data")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest), TextResponse(StatusCodes.Status401Unauthorized),
      TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
+    public async Task<IActionResult> UploadSkinAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId, [BindRequired, FormFile(500, EFileSizeUnit.Kilobytes)] IFormFile file)
     {
         try
         {
@@ -398,7 +398,7 @@ public class SkinsController : CustomControllerBase
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> DeleteSkinAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {

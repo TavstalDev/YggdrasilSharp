@@ -9,6 +9,7 @@ using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.RateLimiting.Constants;
 using Tavstal.YggdrasilSharp.Models.Responses.Auth;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Auth;
@@ -161,7 +162,7 @@ public class TwoFactorController : CustomControllerBase
                 UserId = user.Id,
                 Email = user.Email,
                 Secret = rawSecret,
-            });
+            }, CustomJsonContext.Default.TwoFactorSecretResponse);
         }
         catch (Exception ex)
         {
@@ -205,7 +206,7 @@ public class TwoFactorController : CustomControllerBase
                 UserId = user.Id,
                 Email = user.Email,
                 RecoveryCodes = newCodes
-            });
+            }, CustomJsonContext.Default.TwoFactorCodeResponse);
         }
         catch (Exception ex)
         {

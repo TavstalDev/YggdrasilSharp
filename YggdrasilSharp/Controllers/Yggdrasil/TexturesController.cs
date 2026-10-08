@@ -52,7 +52,7 @@ public class TexturesController : CustomControllerBase
     /// <response code="404">Texture not found.</response>
     /// <response code="500">Failed to retrieve texture data.</response>
     [HttpGet("{hash}")]
-    public async Task<IActionResult> GetTexture([BindRequired, FromRoute, MinLength(64), MaxLength(64)] string hash)
+    public async Task<IActionResult> GetTexture([BindRequired, FromRoute, StringLength(64, MinimumLength = 64)] string hash)
     {
         try
         {

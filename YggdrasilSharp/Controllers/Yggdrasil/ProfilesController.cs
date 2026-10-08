@@ -1,9 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
 
 namespace Tavstal.YggdrasilSharp.Controllers.Yggdrasil;
@@ -38,6 +41,7 @@ public class ProfilesController : CustomControllerBase
     /// <response code="404">No users found with the provided usernames.</response>
     [HttpPost("minecraft")]
     [JsonResponse(typeof(List<Dictionary<string, string>>)), TextResponse(StatusCodes.Status404NotFound)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public async Task<IActionResult> MinecraftProfile([Required, MaxLength(10), FromBody] List<string> names)
     {
         try
@@ -58,19 +62,18 @@ public class ProfilesController : CustomControllerBase
                 return JsonResult("[]");
 
             // Prepare the response containing user IDs and usernames.
-            List<Dictionary<string, string>> response = new List<Dictionary<string, string>>();
+            List<YigProfileResponse> response = new List<YigProfileResponse>();
             foreach (CustomUser user in users)
             {
-                Dictionary<string, string> userData = new Dictionary<string, string>
+                response.Add(new YigProfileResponse
                 {
-                    { "id", user.Id },
-                    { "name", user.UserName }
-                };
-                response.Add(userData);
+                    Id = user.Id,
+                    Name = user.UserName,
+                });
             }
 
             // Return the response as JSON.
-            return JsonResult(response);
+            return JsonResult(response, CustomJsonContext.Default.ListYigProfileResponse);
         }
         catch (Exception ex)
         {

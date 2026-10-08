@@ -8,6 +8,7 @@ using Tavstal.YggdrasilSharp.Models;
 using Tavstal.YggdrasilSharp.Models.Attributes;
 using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Database.User;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services.Database;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
 
@@ -58,7 +59,7 @@ public class SessionsController : CustomControllerBase
                 return JsonResult(HttpStatusCode.Forbidden, "Permission denied.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == user.Id);
-            return JsonResult(userLogins);
+            return JsonResult(userLogins, CustomJsonContext.Default.ListCustomUserLogin);
         }
         catch (Exception ex)
         {
@@ -158,7 +159,7 @@ public class SessionsController : CustomControllerBase
     [HttpGet("{userId}/sessions")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [JsonResponse(typeof(List<CustomUserLogin>)),TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> GetSessionsAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {
@@ -187,7 +188,7 @@ public class SessionsController : CustomControllerBase
                 return JsonResult(HttpStatusCode.Forbidden, "You do not have permission to manage this user.");
 
             var userLogins = await UserStore.UserLogins.QueryAsync(x => x.UserId == targetUser.Id);
-            return JsonResult(userLogins);
+            return JsonResult(userLogins, CustomJsonContext.Default.ListCustomUserLogin);
         }
         catch (Exception ex)
         {
@@ -209,7 +210,7 @@ public class SessionsController : CustomControllerBase
     [HttpDelete("{userId}/sessions/{sessionId}")]
     [EnableRateLimiting(RateLimits.FixedWindow.ADMIN)]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status401Unauthorized), TextResponse(StatusCodes.Status403Forbidden), TextResponse(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired, FromRoute] ulong sessionId)
+    public async Task<IActionResult> RevokeSessionAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId, [BindRequired, FromRoute] ulong sessionId)
     {
         try
         {

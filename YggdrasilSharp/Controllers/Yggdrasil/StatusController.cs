@@ -2,6 +2,8 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
 using Tavstal.YggdrasilSharp.Models;
+using Tavstal.YggdrasilSharp.Models.Responses.Yggdrasil;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 
@@ -51,11 +53,11 @@ public class StatusController : CustomControllerBase
     {
         try
         {
-            return JsonResult(new
+            return JsonResult(new YigStatusResponse
             {
-                skinDomains = _appConfiguration.Yggdrasil.SkinDomains,
-                signaturePublickey = _signature,
-                meta = new Dictionary<string, object>
+                SkinDomains = _appConfiguration.Yggdrasil.SkinDomains,
+                SignaturePublicKey = _signature,
+                Meta = new Dictionary<string, object>
                 {
                     { "serverName", _appConfiguration.Yggdrasil.ServerName },
                     { "implementationName", _appConfiguration.Yggdrasil.ImplementationName },
@@ -67,7 +69,7 @@ public class StatusController : CustomControllerBase
                     { "meta.links.homepage", _appConfiguration.Yggdrasil.HomepageUrl ?? "" },
                     { "meta.links.register", _appConfiguration.Yggdrasil.RegisterUrl ?? "" }
                 }
-            });
+            }, CustomJsonContext.Default.YigStatusResponse);
         }
         catch (Exception ex)
         {
@@ -87,6 +89,6 @@ public class StatusController : CustomControllerBase
     [HttpGet("minecraftservices/publickeys")]
     public IActionResult GetPublicKeys()
     {
-        return JsonResult(new { profileKeys = Array.Empty<object>() });
+        return JsonResult(new YigProfileKeysResponse { ProfileKeys = [] }, CustomJsonContext.Default.YigProfileKeysResponse);
     }
 }

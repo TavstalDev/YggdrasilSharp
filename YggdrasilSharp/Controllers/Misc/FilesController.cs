@@ -53,7 +53,7 @@ public class FilesController : CustomControllerBase
      TextResponse(StatusCodes.Status304NotModified),
      TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetFile([BindRequired, FromRoute, MinLength(64), MaxLength(64)] string hash)
+    public async Task<IActionResult> GetFile([BindRequired, FromRoute, StringLength(64, MinimumLength = 64)] string hash)
     {
         try
         {

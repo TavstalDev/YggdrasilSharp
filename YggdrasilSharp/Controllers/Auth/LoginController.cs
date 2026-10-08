@@ -10,6 +10,7 @@ using Tavstal.YggdrasilSharp.Models.Bodies.Auth;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Database.User;
 using Tavstal.YggdrasilSharp.Models.Responses.Auth;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using RateLimits = Tavstal.YggdrasilSharp.Models.RateLimiting.Constants.RateLimits;
@@ -101,7 +102,7 @@ public class LoginController : CustomControllerBase
                     Email = user.Email,
                     Url = uriBuilder.ToString(),
                     SessionToken = sessionToken
-                });
+                }, CustomJsonContext.Default.LoginRedirectResponse);
             }
 
             if (!result.Succeeded)
@@ -117,7 +118,7 @@ public class LoginController : CustomControllerBase
                 UserId = userToken.UserId,
                 Token = result.RawToken!,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
-            });
+            }, CustomJsonContext.Default.LoginResponse);
         }
         catch (Exception ex)
         {
@@ -182,7 +183,7 @@ public class LoginController : CustomControllerBase
                 UserId = userToken.UserId,
                 Token = result.RawToken!,
                 Expires = userLogin.ExpireDate.ToString(CultureInfo.InvariantCulture)
-            });
+            }, CustomJsonContext.Default.LoginResponse);
         }
         catch (Exception ex)
         {
@@ -235,7 +236,7 @@ public class LoginController : CustomControllerBase
                     UserId = user.Id,
                     Token = sessionToken,
                     Url = $"{AppConfiguration.Misc.ApiUrl}/login/launcher/2fa"
-                });
+                }, CustomJsonContext.Default.LoginLauncherRedirectResponse);
             }
 
             if (!result.Succeeded)
@@ -249,7 +250,7 @@ public class LoginController : CustomControllerBase
                 UserId = userPlaySession.UserId,
                 Token = result.RawToken,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
-            });
+            }, CustomJsonContext.Default.LoginResponse);
         }
         catch (Exception ex)
         {
@@ -308,7 +309,7 @@ public class LoginController : CustomControllerBase
                 UserId = userPlaySession.UserId,
                 Token = result.RawToken,
                 Expires = userPlaySession.ExpiresAt.ToString(CultureInfo.InvariantCulture)
-            });
+            }, CustomJsonContext.Default.LoginResponse);
         }
         catch (Exception ex)
         {
@@ -331,7 +332,7 @@ public class LoginController : CustomControllerBase
     [HttpPost("/logout")]
     [TextResponse(StatusCodes.Status200OK), TextResponse(StatusCodes.Status400BadRequest),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> LogoutAsync([MinLength(48), MaxLength(48)] string? token)
+    public async Task<IActionResult> LogoutAsync([StringLength(48, MinimumLength = 48)] string? token)
     {
         try
         {

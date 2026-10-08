@@ -13,6 +13,7 @@ using Tavstal.YggdrasilSharp.Models.Claims;
 using Tavstal.YggdrasilSharp.Models.Common;
 using Tavstal.YggdrasilSharp.Models.Database;
 using Tavstal.YggdrasilSharp.Models.Responses.News;
+using Tavstal.YggdrasilSharp.Serialization;
 using Tavstal.YggdrasilSharp.Services;
 using Tavstal.YggdrasilSharp.Services.Database;
 using Tavstal.YggdrasilSharp.Services.Database.Interfaces;
@@ -68,7 +69,7 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return JsonResult(cachedNews);
+                return JsonResult(cachedNews, CustomJsonContext.Default.ListNewsResponseBody);
             }
 
 
@@ -92,7 +93,7 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue("news:all", newsResponse, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return JsonResult(newsResponse);
+            return JsonResult(newsResponse, CustomJsonContext.Default.ListNewsResponseBody);
         }
         catch (Exception ex)
         {
@@ -130,7 +131,7 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return JsonResult(cachedNews);
+                return JsonResult(cachedNews, CustomJsonContext.Default.ListNewsResponseBody);
             }
 
             var news = await _newsRepo.QueryAsync(null);
@@ -155,7 +156,7 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue("news:latest", newsResponse, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return JsonResult(newsResponse);
+            return JsonResult(newsResponse, CustomJsonContext.Default.ListNewsResponseBody);
         }
         catch (Exception ex)
         {
@@ -190,7 +191,7 @@ public class NewsController : CustomControllerBase
             {
                 Response.Headers.CacheControl =
                     "public,max-age=3600,immutable";
-                return JsonResult(cachedNews);
+                return JsonResult(cachedNews, CustomJsonContext.Default.NewsResponseBody);
             }
 
             News? news = await _newsRepo.FindByIdAsync(id);
@@ -212,7 +213,7 @@ public class NewsController : CustomControllerBase
             _cacheService.SetValue($"news:{id}", responseBody, CacheTTL);
             Response.Headers.CacheControl =
                 "public,max-age=3600,immutable";
-            return JsonResult(responseBody);
+            return JsonResult(responseBody, CustomJsonContext.Default.NewsResponseBody);
         }
         catch (Exception ex)
         {

@@ -266,7 +266,7 @@ public class AvatarController : CustomControllerBase
         TextResponse(StatusCodes.Status403Forbidden),
         TextResponse(StatusCodes.Status404NotFound),
         TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId, [BindRequired] IFormFile file)
+    public async Task<IActionResult> UploadAvatarAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId, [BindRequired] IFormFile file)
     {
         try
         {
@@ -362,7 +362,7 @@ public class AvatarController : CustomControllerBase
      TextResponse(StatusCodes.Status403Forbidden),
      TextResponse(StatusCodes.Status404NotFound),
      TextResponse(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromRoute, MinLength(32), MaxLength(36)] string userId)
+    public async Task<IActionResult> DeleteAvatarAdmin([BindRequired, FromRoute, StringLength(36, MinimumLength = 32)] string userId)
     {
         try
         {
